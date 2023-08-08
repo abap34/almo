@@ -25,6 +25,8 @@ namespace almo {
         PlainText,
         InfoBlock,
         NewLine,
+        ListBlock,
+        Item,
     };
 
     struct AST {
