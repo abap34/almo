@@ -32,20 +32,20 @@ namespace almo {
                     memo.emplace_back(std::regex_replace(s, math_regex, "$2"));
                     s = std::regex_replace(s, math_regex, format);
                 }
-                else if(std::regex_match(s, image_regex)) {
+                else if (std::regex_match(s, image_regex)) {
                     auto& memo = map[InlineImage];
                     int id_url = memo.size();
-                    int id_str = id_url+1;
+                    int id_str = id_url + 1;
                     std::string format = "$1<__image=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__image>$4";
                     memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
                     memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
 
                     s = std::regex_replace(s, url_regex, format);
                 }
-                else if(std::regex_match(s, url_regex)) {
+                else if (std::regex_match(s, url_regex)) {
                     auto& memo = map[InlineUrl];
                     int id_url = memo.size();
-                    int id_str = id_url+1;
+                    int id_str = id_url + 1;
                     std::string format = "$1<__url=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__url>$4";
                     memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
                     memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
@@ -81,7 +81,7 @@ namespace almo {
             return node;
         }
 
-private:
+    private:
         // パースの内部で呼ばれるdfsです。
         // processer以外で呼ばれることはないです
         std::vector<AST::node_ptr> dfs(std::string s) {
@@ -131,7 +131,7 @@ private:
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
-            else if(std::regex_match(s, url_html_regex)) {
+            else if (std::regex_match(s, url_html_regex)) {
                 auto node = std::make_shared<AST>(InlineUrl);
                 int id_url = std::stoi(std::regex_replace(s, url_html_regex, "$2"));
                 int id_str = std::stoi(std::regex_replace(s, url_html_regex, "$3"));
@@ -288,14 +288,14 @@ private:
                     }
                     asts.emplace_back(block);
                 }
-                else if (line.starts_with("- ")){
+                else if (line.starts_with("- ")) {
                     // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
                     // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int,AST::node_ptr> {
+                    auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
                         auto block = std::make_shared<AST>(Item);
-                        assert(lines[line_id].substr(cur,2) == "- ");
-                        std::string aitem = lines[line_id].substr(cur+2);
-                        while (true){
+                        assert(lines[line_id].substr(cur, 2) == "- ");
+                        std::string aitem = lines[line_id].substr(cur + 2);
+                        while (true) {
                             line_id++;
                             if (line_id == (int)(lines.size())) break;
                             if (lines[line_id].starts_with("- ")) break;
@@ -307,10 +307,10 @@ private:
                             aitem += lines[line_id];
                         }
                         block->childs.emplace_back(inline_parser.processer(aitem));
-                        return std::make_pair(line_id,block);
-                    };
+                        return std::make_pair(line_id, block);
+                        };
                     auto block = std::make_shared<AST>(ListBlock);
-                    while (true){
+                    while (true) {
                         auto [nxt, ptr] = item_parser(idx);
                         block->childs.emplace_back(ptr);
                         idx = nxt;
@@ -320,54 +320,77 @@ private:
                     idx--;
                     asts.emplace_back(block);
                 }
-                else if (line.starts_with("- ")){
-                    // // item が途切れるまで行を跨いでパースする。返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    // auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int,AST::node_ptr> {
-                    //     auto block = std::make_shared<AST>(Item);
-                    //     assert(lines[line_id].substr(cur,2) == "- ");
-                    //     std::string aitem = lines[line_id].substr(cur+2);
-                    //     while (true){
-                    //         line_id++;
-                    //         if (line_id == (int)(lines.size())) break;
-                    //         if (lines[line_id].starts_with("- ")) break;
-                    //         if (lines[line_id].starts_with("#")) break;
-                    //         if (lines[line_id].starts_with(":::")) break;
-                    //         if (lines[line_id].starts_with("```")) break;
-                    //         if (lines[line_id].starts_with("$$")) break;
-                    //         if (lines[line_id] == "") break;
-                    //         // TODO ここには、item -> ListBlock の遷移が書かれる
-                    //         aitem += lines[line_id];
-                    //     }
-                    //     block->childs.emplace_back(inline_parser.processer(aitem));
-                    // };
-                    // auto get_indent = [](const std::string &____str){
-                    //     int indent_cur = 0;
-                    //     while (indent_cur < (int)(____str.size()) && ____str[indent_cur] == ' ') indent_cur++;
-                    //     return indent_cur;
-                    // };
-                    // auto list_dfs = [&](auto list_dfs, int line_id, int ListBlock_Item_PlainText) -> std::pair<int,AST::node_ptr> {
-                    //     if (ListBlock_Item_PlainText == 2){
-                    //         int indent_cur = get_indent(lines[line_id]);
-                    //         assert(lines[line_id].substr(indent_cur,2) == "- ");
-                    //         auto block = std::make_shared<AST>();
-                    //         block->childs.emplace_back(inline_parser.processer(lines[line_id].substr(indent_cur+2)));
-                    //     }
-                    //     int indent_cur = get_indent(lines[line_id]);
-                    //     assert(lines[line_id].substr(indent_cur,2) == "- ");
-                    //     auto block = std::make_shared<AST>(ListBlock);
-                    //     int cur_id = line_id;
-                    //     while (true){
-                    //         if ((int)lines[cur_id].size() >= indent_cur+2 && lines[cur_id].substr(indent_cur,2) == "- "){
-                    //             block->childs.emplace_back(std::make_shared<AST>())
-                    //         }
-                    //     }
-                    // };
-                    // auto [next_idx, block] = list_dfs(list_dfs,idx,0);
-                    // idx = next_idx;
-                    // asts.emplace_back(block);
-                }
                 else if (line == "") {
                     auto block = std::make_shared<AST>(NewLine);
+                    asts.emplace_back(block);
+                }
+                else if (std::regex_match(line, std::regex("(\\|[^\\|]+).+\\|"))) {
+                    const std::regex each_col_regex = std::regex("\\|[^\\|]+");
+
+                    int n_col = 0;
+
+                    std::vector<std::string> col_names(n_col);
+                    std::smatch match;
+
+                    while (std::regex_search(line, match, each_col_regex)) {
+                        col_names.push_back(match[0].str().substr(1, match[0].str().size()));
+                        line = match.suffix();
+                        n_col++;
+                    }
+
+                    // 0 -> 左寄せ, 1 -> 中央寄せ, 2 -> 右寄せ
+                    std::vector<int> col_format(0);
+
+                    idx++;
+
+                    std::string line2 = lines[idx];
+                    std::smatch match2;
+                    while (std::regex_search(line2, match2, each_col_regex)) {
+                        if (match2[0].str().starts_with("|:") && match2[0].str().ends_with(":")) {
+                            col_format.push_back(1);
+                        }
+                        else if (match2[0].str().starts_with("|:")) {
+                            col_format.push_back(0);
+                        }
+                        else if (match2[0].str().ends_with(":")) {
+                            col_format.push_back(2);
+                        }
+                        else {
+                            col_format.push_back(0);
+                        }
+
+                        line2 = match2.suffix();
+                    }
+
+
+                    idx++;
+                    int n_row = 0;
+                    std::vector<std::string> table;
+
+
+                    while (idx < (int)(lines.size()) && lines[idx] != "") {
+                        n_row++;
+                        std::string line = lines[idx];
+                        std::smatch match;
+                        std::regex_search(line, match, each_col_regex);
+                        while (std::regex_search(line, match, each_col_regex)) {
+                            table.push_back(match[0].str().substr(1, match[0].str().size()));
+                            line = match.suffix();
+                        }
+                        idx++;
+                    }
+
+
+                    auto block = std::make_shared<AST>(Table);
+                    block->table.emplace_back("n_col", std::to_string(n_col));
+                    block->table.emplace_back("n_row", std::to_string(n_row));
+                    block->col_format = col_format;
+                    block->col_names = col_names;
+
+                    for (int i = 0; i < table.size(); i++) {
+                        block->childs.emplace_back(inline_parser.processer(table[i]));
+                    }
+
                     asts.emplace_back(block);
                 }
                 else {

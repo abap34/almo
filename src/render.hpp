@@ -229,6 +229,21 @@ namespace almo {
             width: 50%;
         }
 
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
     </style>
 </head>
 
@@ -795,6 +810,26 @@ namespace almo {
         return output;
     }
 
+    std::string render_table(std::vector<std::string> from_render, int n_row, int n_col, std::vector<std::string> col_names, std::vector<int> col_format) {
+        // std::cout << "render table" << std::endl;
+        std::string output = "<table>";
+        output += "<tr>";
+        for (int i = 0; i < n_col; i++) {
+            output += "<th>" + col_names[i] + "</th>";
+        }
+
+        output += "</tr>";
+
+        for (int i = 0; i < n_row; i++) {
+            output += "<tr>";
+            for (int j = 0; j < n_col; j++) {
+                std::string align = col_format[j] == 0 ? "left" : col_format[j] == 1 ? "center" : "right";
+                output += "<td align=\"" + align + "\">" + from_render[i * n_col + j] + "</td>";
+            }
+            output += "</tr>";
+        }
+        return output;
+    }
 
 
 
@@ -818,6 +853,24 @@ namespace almo {
                 }
             }
             render_str = render_map[j["class"]](url, from_render);
+        }
+        else if (j["class"] == "Table") {
+            std::vector<std::string> from_render;
+            for (nlohmann::json child : j["content"]) {
+                from_render.push_back(build_block(child, render_map));
+            }
+            std::vector<int> col_format = j["col_format"];
+            std::vector<std::string> col_names = j["col_names"];
+
+            std::string n_row_str = j["n_row"];
+            std::string n_col_str = j["n_col"];
+            
+            int n_row = std::stoi(n_row_str);
+            int n_col = std::stoi(n_col_str);
+
+
+            return render_table(from_render, n_row, n_col, col_names, col_format);
+
         }
         else if (haschild(j)) {
             for (nlohmann::json child : j["content"]) {

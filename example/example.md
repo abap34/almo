@@ -54,3 +54,9 @@ in=example/in/*.txt
 out=example/out/*.txt
 judge=equal
 :::
+
+
+| **TOKYO** | 2 | 3 |
+|:---|:---:|---:|
+| *4* | **おい** |  9 |
+| 7 | 8 | 9 |
