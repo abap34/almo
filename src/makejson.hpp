@@ -76,12 +76,12 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
     return cur_json;
 }
 
-void make_json(std::vector<AST::node_ptr> ast) {
+nlohmann::json make_json(std::vector<AST::node_ptr> ast) {
     nlohmann::json output_json;
     for (AST::node_ptr ptr : ast){
         output_json.push_back(dp_on_AST(ptr));
     }
-    // output
-    std::cout << output_json.dump(4) << std::endl;
+    
+    return output_json;
 }
 } // namespace almo
