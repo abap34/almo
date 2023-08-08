@@ -28,7 +28,7 @@ namespace almo {
                 if (std::regex_match(s, math_regex)) {
                     auto& memo = map[InlineMath];
                     int id = memo.size();
-                    std::string format = "$1<math>" + std::to_string(id) + "</math>$3";
+                    std::string format = "$1<__math>" + std::to_string(id) + "</__math>$3";
                     memo.emplace_back(std::regex_replace(s, math_regex, "$2"));
                     s = std::regex_replace(s, math_regex, format);
                 }
@@ -45,21 +45,21 @@ namespace almo {
                 else if (std::regex_match(s, overline_regex)) {
                     auto& memo = map[InlineOverline];
                     int id = memo.size();
-                    std::string format = "$1<overline>" + std::to_string(id) + "</overline>$3";
+                    std::string format = "$1<__overline>" + std::to_string(id) + "</__overline>$3";
                     memo.emplace_back(std::regex_replace(s, overline_regex, "$2"));
                     s = std::regex_replace(s, overline_regex, format);
                 }
                 else if (std::regex_match(s, strong_regex)) {
                     auto& memo = map[InlineStrong];
                     int id = memo.size();
-                    std::string format = "$1<strong>" + std::to_string(id) + "</strong>$3";
+                    std::string format = "$1<__strong>" + std::to_string(id) + "</__strong>$3";
                     memo.emplace_back(std::regex_replace(s, strong_regex, "$2"));
                     s = std::regex_replace(s, strong_regex, format);
                 }
                 else if (std::regex_match(s, italic_regex)) {
                     auto& memo = map[InlineItalic];
                     int id = memo.size();
-                    std::string format = "$1<i>" + std::to_string(id) + "</i>$3";
+                    std::string format = "$1<__i>" + std::to_string(id) + "</__i>$3";
                     memo.emplace_back(std::regex_replace(s, italic_regex, "$2"));
                     s = std::regex_replace(s, italic_regex, format);
                 }
@@ -163,11 +163,11 @@ private:
         const std::regex overline_regex = std::regex("(.*)\\~\\~(.*)\\~\\~(.*)");
         const std::regex strong_regex = std::regex("(.*)\\*\\*(.*)\\*\\*(.*)");
         const std::regex italic_regex = std::regex("(.*)\\*(.*)\\*(.*)");
-        const std::regex math_html_regex = std::regex("(.*)<math>(.*)</math>(.*)");
+        const std::regex math_html_regex = std::regex("(.*)<__math>(.*)</__math>(.*)");
         const std::regex url_html_regex = std::regex("(.*)<__url=(.*)>(.*)</__url>(.*)");
-        const std::regex overline_html_regex = std::regex("(.*)<overline>(.*)</overline>(.*)");
-        const std::regex strong_html_regex = std::regex("(.*)<strong>(.*)</strong>(.*)");
-        const std::regex italic_html_regex = std::regex("(.*)<i>(.*)</i>(.*)");
+        const std::regex overline_html_regex = std::regex("(.*)<__overline>(.*)</__overline>(.*)");
+        const std::regex strong_html_regex = std::regex("(.*)<__strong>(.*)</__strong>(.*)");
+        const std::regex italic_html_regex = std::regex("(.*)<__i>(.*)</__i>(.*)");
     };
 
     // md全体をパースするための関数をメンバーに持つ構造体です。
