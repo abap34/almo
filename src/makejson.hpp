@@ -72,6 +72,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         if (ptr->type == InlineItalic)   cur_json["class"] = "InlineItalic";
         if (ptr->type == InlineMath)     cur_json["class"] = "InlineMath";
         if (ptr->type == InlineUrl)      cur_json["class"] = "InlineUrl";
+        if (ptr->type == InlineImage)    cur_json["class"] = "InlineImage";
 
         for (AST::node_ptr child : ptr->childs){
             cur_json["content"].push_back(dp_on_AST(child));
