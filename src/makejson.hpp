@@ -59,8 +59,20 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         sub["uuid"] = uuid();
         cur_json["content"].push_back(sub);
     }
+    else if (ptr->type == Table){
+        cur_json["class"] = "Table";
+        for (AST::node_ptr child : ptr->childs){
+            cur_json["content"].push_back(dp_on_AST(child));
+        }
 
+        for (auto [property, name] : ptr->table){
+            cur_json[property] = name;
+        }
 
+        cur_json["col_format"] = ptr->col_format;
+        cur_json["col_names"] = ptr->col_names;
+   
+    }
     else {
         if (ptr->type == H1) cur_json["class"] = "H1";
         if (ptr->type == H2) cur_json["class"] = "H2";
