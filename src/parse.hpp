@@ -13,7 +13,15 @@ namespace almo {
     struct InlineParser;
     struct BlockParser;
 
+    // インラインのmd記法をパースします
+    // 使用例:
+    //   InlineParser inline_parser;
+    //   inline_parser.processer(s);
     struct InlineParser {
+        // mdの1行を入力しインラインのmd記法をパースしてその行の構文木の根ノードを返します。
+        // パースの例:
+        //    "**a**b$c$" をhtml表記にすると"<strong>a</strong>b\[c\]"です。
+        //    最終的にhtmlを生成するためにこの関数ではパースしてできる構文木を作ります。
         AST::node_ptr processer(std::string s) {
             map.clear();
             while (1) {
@@ -53,6 +61,9 @@ namespace almo {
             return node;
         }
 
+private:
+        // パースの内部で呼ばれるdfsです。
+        // processer以外で呼ばれることはないです
         std::vector<AST::node_ptr> dfs(std::string s) {
             std::vector<AST::node_ptr> nodes;
             if (std::regex_match(s, italic_html_regex)) {
@@ -132,7 +143,12 @@ namespace almo {
         const std::regex italic_html_regex = std::regex("(.*)<i>(.*)</i>(.*)");
     };
 
+    // md全体をパースするための関数をメンバーに持つ構造体です。
     struct BlockParser {
+        // md全体を入力として与え、それをパースした構文木の列を返す関数です。
+        // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
+        // 使用例:
+        //    BlockParser::processer(lines);
         static std::vector<AST::node_ptr> processer(const std::vector<std::string>& lines) {
             std::vector<AST::node_ptr> asts;
             InlineParser inline_parser;
@@ -240,6 +256,9 @@ namespace almo {
         }
     };
 
+    // mdファイルのパスを入力として与えて、mdファイルの中身を行ごとに分割したstd::vector<std::string>を返します。
+    // 仕様例:
+    //    read_md("example.md");
     std::vector<std::string> read_md(const std::string& path) {
         std::vector<std::string> lines;
         std::ifstream file(path);
@@ -258,6 +277,9 @@ namespace almo {
         return lines;
     }
 
+    // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果（構文木のリスト）を返します。
+    // 使用例:
+    //     parse_md_file("example.md");
     std::vector<AST::node_ptr> parse_md_file(std::string path) {
         auto lines = almo::read_md(path);
         return BlockParser::processer(lines);
