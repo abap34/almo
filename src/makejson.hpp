@@ -23,6 +23,10 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         cur_json["class"] = "NewLine";
         cur_json["content"] = "";
     }
+    else if (ptr->type == Url) {
+        cur_json["class"] = "Url";
+        cur_json["content"] = ptr->content;
+    }
     else if (ptr->type == CodeRunner){
         cur_json["class"] = "CodeRunner";
         for (auto [property, name] : ptr->code_runner){
@@ -67,6 +71,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         if (ptr->type == InlineStrong)   cur_json["class"] = "InlineStrong";
         if (ptr->type == InlineItalic)   cur_json["class"] = "InlineItalic";
         if (ptr->type == InlineMath)     cur_json["class"] = "InlineMath";
+        if (ptr->type == InlineUrl)      cur_json["class"] = "InlineUrl";
 
         for (AST::node_ptr child : ptr->childs){
             cur_json["content"].push_back(dp_on_AST(child));

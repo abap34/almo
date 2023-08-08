@@ -23,6 +23,8 @@ namespace almo {
         InlineOverline, // インラインの打消し
         InlineStrong, // インラインの強調
         InlineItalic, // イタリック
+        InlineUrl, // インラインのurl
+        Url, // url
         PlainText, // 生のテキスト
         InfoBlock, // infoブロック
         NewLine, // 改行
