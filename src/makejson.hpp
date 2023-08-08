@@ -23,6 +23,10 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         cur_json["class"] = "NewLine";
         cur_json["content"] = "";
     }
+    else if (ptr->type == Url) {
+        cur_json["class"] = "Url";
+        cur_json["content"] = ptr->content;
+    }
     else if (ptr->type == CodeRunner){
         cur_json["class"] = "CodeRunner";
         for (auto [property, name] : ptr->code_runner){
@@ -69,6 +73,8 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         if (ptr->type == InlineMath)     cur_json["class"] = "InlineMath";
         if (ptr->type == ListBlock)      cur_json["class"] = "ListBlock";
         if (ptr->type == Item)           cur_json["class"] = "Item";
+        if (ptr->type == InlineUrl)      cur_json["class"] = "InlineUrl";
+        if (ptr->type == InlineImage)    cur_json["class"] = "InlineImage";
 
         for (AST::node_ptr child : ptr->childs){
             cur_json["content"].push_back(dp_on_AST(child));
@@ -78,12 +84,12 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
     return cur_json;
 }
 
-void make_json(std::vector<AST::node_ptr> ast) {
+nlohmann::json make_json(std::vector<AST::node_ptr> ast) {
     nlohmann::json output_json;
     for (AST::node_ptr ptr : ast){
         output_json.push_back(dp_on_AST(ptr));
     }
-    // output
-    std::cout << output_json.dump(4) << std::endl;
+    
+    return output_json;
 }
 } // namespace almo

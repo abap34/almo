@@ -13,35 +13,63 @@ namespace almo {
     struct InlineParser;
     struct BlockParser;
 
+    // インラインのmd記法をパースします
+    // 使用例:
+    //   InlineParser inline_parser;
+    //   inline_parser.processer(s);
     struct InlineParser {
+        // mdの1行を入力しインラインのmd記法をパースしてその行の構文木の根ノードを返します。
+        // パースの例:
+        //    "**a**b$c$" をhtml表記にすると"<strong>a</strong>b\[c\]"です。
+        //    最終的にhtmlを生成するためにこの関数ではパースしてできる構文木を作ります。
         AST::node_ptr processer(std::string s) {
             map.clear();
             while (1) {
                 if (std::regex_match(s, math_regex)) {
                     auto& memo = map[InlineMath];
                     int id = memo.size();
-                    std::string format = "$1<math>" + std::to_string(id) + "</math>$3";
+                    std::string format = "$1<__math>" + std::to_string(id) + "</__math>$3";
                     memo.emplace_back(std::regex_replace(s, math_regex, "$2"));
                     s = std::regex_replace(s, math_regex, format);
+                }
+                else if(std::regex_match(s, image_regex)) {
+                    auto& memo = map[InlineImage];
+                    int id_url = memo.size();
+                    int id_str = id_url+1;
+                    std::string format = "$1<__image=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__image>$4";
+                    memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
+                    memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
+
+                    s = std::regex_replace(s, url_regex, format);
+                }
+                else if(std::regex_match(s, url_regex)) {
+                    auto& memo = map[InlineUrl];
+                    int id_url = memo.size();
+                    int id_str = id_url+1;
+                    std::string format = "$1<__url=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__url>$4";
+                    memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
+                    memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
+
+                    s = std::regex_replace(s, url_regex, format);
                 }
                 else if (std::regex_match(s, overline_regex)) {
                     auto& memo = map[InlineOverline];
                     int id = memo.size();
-                    std::string format = "$1<overline>" + std::to_string(id) + "</overline>$3";
+                    std::string format = "$1<__overline>" + std::to_string(id) + "</__overline>$3";
                     memo.emplace_back(std::regex_replace(s, overline_regex, "$2"));
                     s = std::regex_replace(s, overline_regex, format);
                 }
                 else if (std::regex_match(s, strong_regex)) {
                     auto& memo = map[InlineStrong];
                     int id = memo.size();
-                    std::string format = "$1<strong>" + std::to_string(id) + "</strong>$3";
+                    std::string format = "$1<__strong>" + std::to_string(id) + "</__strong>$3";
                     memo.emplace_back(std::regex_replace(s, strong_regex, "$2"));
                     s = std::regex_replace(s, strong_regex, format);
                 }
                 else if (std::regex_match(s, italic_regex)) {
                     auto& memo = map[InlineItalic];
                     int id = memo.size();
-                    std::string format = "$1<i>" + std::to_string(id) + "</i>$3";
+                    std::string format = "$1<__i>" + std::to_string(id) + "</__i>$3";
                     memo.emplace_back(std::regex_replace(s, italic_regex, "$2"));
                     s = std::regex_replace(s, italic_regex, format);
                 }
@@ -53,6 +81,9 @@ namespace almo {
             return node;
         }
 
+private:
+        // パースの内部で呼ばれるdfsです。
+        // processer以外で呼ばれることはないです
         std::vector<AST::node_ptr> dfs(std::string s) {
             std::vector<AST::node_ptr> nodes;
             if (std::regex_match(s, italic_html_regex)) {
@@ -100,6 +131,36 @@ namespace almo {
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
+            else if(std::regex_match(s, url_html_regex)) {
+                auto node = std::make_shared<AST>(InlineUrl);
+                int id_url = std::stoi(std::regex_replace(s, url_html_regex, "$2"));
+                int id_str = std::stoi(std::regex_replace(s, url_html_regex, "$3"));
+                auto s1 = std::regex_replace(s, url_html_regex, "$1");
+                auto s4 = std::regex_replace(s, url_html_regex, "$4");
+                auto d1 = dfs(s1);
+                node->childs.emplace_back(std::make_shared<AST>(Url, map[InlineUrl][id_url]));
+                node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineUrl][id_str]));
+                auto d4 = dfs(s4);
+
+                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.emplace_back(node);
+                nodes.insert(nodes.end(), d4.begin(), d4.end());
+            }
+            else if (std::regex_match(s, image_html_regex)) {
+                auto node = std::make_shared<AST>(InlineImage);
+                int id_url = std::stoi(std::regex_replace(s, image_html_regex, "$2"));
+                int id_str = std::stoi(std::regex_replace(s, image_html_regex, "$3"));
+                auto s1 = std::regex_replace(s, image_html_regex, "$1");
+                auto s4 = std::regex_replace(s, image_html_regex, "$4");
+                auto d1 = dfs(s1);
+                node->childs.emplace_back(std::make_shared<AST>(Url, map[InlineImage][id_url]));
+                node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineImage][id_str]));
+                auto d4 = dfs(s4);
+
+                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.emplace_back(node);
+                nodes.insert(nodes.end(), d4.begin(), d4.end());
+            }
             else if (std::regex_match(s, math_html_regex)) {
                 auto node = std::make_shared<AST>();
                 node->type = InlineMath;
@@ -123,16 +184,25 @@ namespace almo {
 
         std::map<Type, std::vector<std::string>> map;
         const std::regex math_regex = std::regex("(.*)\\$(.*)\\$(.*)");
+        const std::regex image_regex = std::regex("(.*)\\!\\[(.*)\\]\\((.*)\\)(.*)");
+        const std::regex url_regex = std::regex("(.*)\\[(.*)\\]\\((.*)\\)(.*)");
         const std::regex overline_regex = std::regex("(.*)\\~\\~(.*)\\~\\~(.*)");
         const std::regex strong_regex = std::regex("(.*)\\*\\*(.*)\\*\\*(.*)");
         const std::regex italic_regex = std::regex("(.*)\\*(.*)\\*(.*)");
-        const std::regex math_html_regex = std::regex("(.*)<math>(.*)</math>(.*)");
-        const std::regex overline_html_regex = std::regex("(.*)<overline>(.*)</overline>(.*)");
-        const std::regex strong_html_regex = std::regex("(.*)<strong>(.*)</strong>(.*)");
-        const std::regex italic_html_regex = std::regex("(.*)<i>(.*)</i>(.*)");
+        const std::regex math_html_regex = std::regex("(.*)<__math>(.*)</__math>(.*)");
+        const std::regex image_html_regex = std::regex("(.*)<__image=(.*)>(.*)</__image>(.*)");
+        const std::regex url_html_regex = std::regex("(.*)<__url=(.*)>(.*)</__url>(.*)");
+        const std::regex overline_html_regex = std::regex("(.*)<__overline>(.*)</__overline>(.*)");
+        const std::regex strong_html_regex = std::regex("(.*)<__strong>(.*)</__strong>(.*)");
+        const std::regex italic_html_regex = std::regex("(.*)<__i>(.*)</__i>(.*)");
     };
 
+    // md全体をパースするための関数をメンバーに持つ構造体です。
     struct BlockParser {
+        // md全体を入力として与え、それをパースした構文木の列を返す関数です。
+        // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
+        // 使用例:
+        //    BlockParser::processer(lines);
         static std::vector<AST::node_ptr> processer(const std::vector<std::string>& lines) {
             std::vector<AST::node_ptr> asts;
             InlineParser inline_parser;
@@ -205,6 +275,7 @@ namespace almo {
                         block->childs.emplace_back(std::make_shared<AST>(PlainText, lines[idx]));
                         idx++;
                     }
+                    assert(lines[idx] == "```");
                     asts.emplace_back(block);
                 }
                 else if (line == "$$") {
@@ -309,6 +380,9 @@ namespace almo {
         }
     };
 
+    // mdファイルのパスを入力として与えて、mdファイルの中身を行ごとに分割したstd::vector<std::string>を返します。
+    // 仕様例:
+    //    read_md("example.md");
     std::vector<std::string> read_md(const std::string& path) {
         std::vector<std::string> lines;
         std::ifstream file(path);
@@ -327,6 +401,9 @@ namespace almo {
         return lines;
     }
 
+    // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果（構文木のリスト）を返します。
+    // 使用例:
+    //     parse_md_file("example.md");
     std::vector<AST::node_ptr> parse_md_file(std::string path) {
         auto lines = almo::read_md(path);
         return BlockParser::processer(lines);
