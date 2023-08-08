@@ -203,8 +203,7 @@ private:
         // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
         // 使用例:
         //    BlockParser::processer(lines);
-        static std::vector<AST::node_ptr> processer(std::vector<std::string> lines) {
-            for(auto &line: lines) line.pop_back();
+        static std::vector<AST::node_ptr> processer(const std::vector<std::string>& lines) {
             std::vector<AST::node_ptr> asts;
             InlineParser inline_parser;
             int idx = 0;
