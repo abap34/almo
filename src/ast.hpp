@@ -31,6 +31,7 @@ namespace almo {
         NewLine, // 改行
         ListBlock, // 箇条書きのブロック
         Item, // 箇条書きの要素
+        Table, // テーブル
     };
 
     // 構文木のノードを表す構造体
@@ -45,5 +46,10 @@ namespace almo {
 
         // typeがCodeRunnerのときのみ使用されます。CodeRunnerの情報を持ちます。
         std::vector<std::pair<std::string, std::string>> code_runner;
+
+        // typeがTableのときのみ使用されます。Tableの情報を持ちます。
+        std::vector<std::pair<std::string, std::string>> table;
+        std::vector<int> col_format;
+        std::vector<std::string> col_names;
     };
 }
