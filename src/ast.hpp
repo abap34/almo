@@ -29,6 +29,8 @@ namespace almo {
         PlainText, // 生のテキスト
         InfoBlock, // infoブロック
         NewLine, // 改行
+        ListBlock, // 箇条書きのブロック
+        Item, // 箇条書きの要素
     };
 
     // 構文木のノードを表す構造体

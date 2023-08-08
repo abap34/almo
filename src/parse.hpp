@@ -288,14 +288,83 @@ private:
                     }
                     asts.emplace_back(block);
                 }
-                else if (line == ":::info"){
-                    idx++;
-                    auto block = std::make_shared<AST>(InfoBlock);
-                    while (idx < (int)lines.size()) {
-                        if (lines[idx] == "```") break;
-                        block->childs.emplace_back(inline_parser.processer(lines[idx]));
-                        idx++;
+                else if (line.starts_with("- ")){
+                    // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
+                    // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
+                    auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int,AST::node_ptr> {
+                        auto block = std::make_shared<AST>(Item);
+                        assert(lines[line_id].substr(cur,2) == "- ");
+                        std::string aitem = lines[line_id].substr(cur+2);
+                        while (true){
+                            line_id++;
+                            if (line_id == (int)(lines.size())) break;
+                            if (lines[line_id].starts_with("- ")) break;
+                            if (lines[line_id].starts_with("#")) break;
+                            if (lines[line_id].starts_with(":::")) break;
+                            if (lines[line_id].starts_with("```")) break;
+                            if (lines[line_id].starts_with("$$")) break;
+                            if (lines[line_id] == "") break;
+                            aitem += lines[line_id];
+                        }
+                        block->childs.emplace_back(inline_parser.processer(aitem));
+                        return std::make_pair(line_id,block);
+                    };
+                    auto block = std::make_shared<AST>(ListBlock);
+                    while (true){
+                        auto [nxt, ptr] = item_parser(idx);
+                        block->childs.emplace_back(ptr);
+                        idx = nxt;
+                        if (idx < (int)(lines.size()) && lines[idx].starts_with("- ")) continue;
+                        break;
                     }
+                    idx--;
+                    asts.emplace_back(block);
+                }
+                else if (line.starts_with("- ")){
+                    // // item が途切れるまで行を跨いでパースする。返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
+                    // auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int,AST::node_ptr> {
+                    //     auto block = std::make_shared<AST>(Item);
+                    //     assert(lines[line_id].substr(cur,2) == "- ");
+                    //     std::string aitem = lines[line_id].substr(cur+2);
+                    //     while (true){
+                    //         line_id++;
+                    //         if (line_id == (int)(lines.size())) break;
+                    //         if (lines[line_id].starts_with("- ")) break;
+                    //         if (lines[line_id].starts_with("#")) break;
+                    //         if (lines[line_id].starts_with(":::")) break;
+                    //         if (lines[line_id].starts_with("```")) break;
+                    //         if (lines[line_id].starts_with("$$")) break;
+                    //         if (lines[line_id] == "") break;
+                    //         // TODO ここには、item -> ListBlock の遷移が書かれる
+                    //         aitem += lines[line_id];
+                    //     }
+                    //     block->childs.emplace_back(inline_parser.processer(aitem));
+                    // };
+                    // auto get_indent = [](const std::string &____str){
+                    //     int indent_cur = 0;
+                    //     while (indent_cur < (int)(____str.size()) && ____str[indent_cur] == ' ') indent_cur++;
+                    //     return indent_cur;
+                    // };
+                    // auto list_dfs = [&](auto list_dfs, int line_id, int ListBlock_Item_PlainText) -> std::pair<int,AST::node_ptr> {
+                    //     if (ListBlock_Item_PlainText == 2){
+                    //         int indent_cur = get_indent(lines[line_id]);
+                    //         assert(lines[line_id].substr(indent_cur,2) == "- ");
+                    //         auto block = std::make_shared<AST>();
+                    //         block->childs.emplace_back(inline_parser.processer(lines[line_id].substr(indent_cur+2)));
+                    //     }
+                    //     int indent_cur = get_indent(lines[line_id]);
+                    //     assert(lines[line_id].substr(indent_cur,2) == "- ");
+                    //     auto block = std::make_shared<AST>(ListBlock);
+                    //     int cur_id = line_id;
+                    //     while (true){
+                    //         if ((int)lines[cur_id].size() >= indent_cur+2 && lines[cur_id].substr(indent_cur,2) == "- "){
+                    //             block->childs.emplace_back(std::make_shared<AST>())
+                    //         }
+                    //     }
+                    // };
+                    // auto [next_idx, block] = list_dfs(list_dfs,idx,0);
+                    // idx = next_idx;
+                    // asts.emplace_back(block);
                 }
                 else if (line == "") {
                     auto block = std::make_shared<AST>(NewLine);
