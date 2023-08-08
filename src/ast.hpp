@@ -24,6 +24,7 @@ namespace almo {
         InlineStrong, // インラインの強調
         InlineItalic, // イタリック
         InlineUrl, // インラインのurl
+        InlineImage, // インラインの画像
         Url, // url
         PlainText, // 生のテキスト
         InfoBlock, // infoブロック
