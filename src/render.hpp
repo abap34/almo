@@ -7,6 +7,9 @@
 #include <glob.h>
 #include "json.hpp"
 
+
+namespace almo{
+
 std::string read_file(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -37,7 +40,7 @@ std::vector<std::string> glob(const std::string& pattern) {
 }
 
 std::pair<std::string, std::string> load_html_template() {
-    std::string html_template = read_file("template.html");
+    std::string html_template = read_file("src/template.html");
     std::string head = html_template.substr(0, html_template.find("<!-- ___split___ -->"));
     std::string tail = html_template.substr(html_template.find("<!-- ___split___ -->") + 20);
     return std::make_pair(head, tail);
@@ -219,12 +222,12 @@ std::string render_block(nlohmann::json j, std::string content) {
     return content;
 }
 
-std::string render_newline(nlohmann::json j, std::string content){
+std::string render_newline(nlohmann::json j, std::string content) {
     return "<br>" + content;
 }
 
 bool haschild(nlohmann::json j) {
-   return !(j["class"] == "PlainText" || j["class"] == "NewLine");
+    return !(j["class"] == "PlainText" || j["class"] == "NewLine");
 }
 
 std::string build_block(nlohmann::json j, std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map) {
@@ -235,56 +238,54 @@ std::string build_block(nlohmann::json j, std::map<std::string, std::function<st
             render_str += from_render;
         }
         render_str = render_map[j["class"]](j, render_str);
-    } else {
+    }
+    else {
         render_str = render_map[j["class"]](j, j["content"]);
     }
     return render_str;
 }
 
 
-    int main() {
+void render(nlohmann::json json_ir) {
 
-        // クラス名とレンダリング関数の対応map
-        std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map;
-        render_map["H1"] = render_h1;
-        render_map["H2"] = render_h2;
-        render_map["H3"] = render_h3;
-        render_map["H4"] = render_h4;
-        render_map["H5"] = render_h5;
-        render_map["H6"] = render_h6;
-        render_map["InlineStrong"] = render_strong;
-        render_map["InlineItalic"] = render_italic;
-        render_map["InlineOverline"] = render_over_line;
-        render_map["InlineMath"] = render_inline_math;
-        render_map["MathBlock"] = render_math_block;
-        render_map["CodeBlock"] = render_code_block;
-        render_map["CodeRunner"] = render_code_runner;
-        render_map["PlainText"] = render_plain_text;
-        render_map["Block"] = render_block;
-        render_map["NewLine"] = render_newline;
+    // クラス名とレンダリング関数の対応map
+    std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map;
+    render_map["H1"] = render_h1;
+    render_map["H2"] = render_h2;
+    render_map["H3"] = render_h3;
+    render_map["H4"] = render_h4;
+    render_map["H5"] = render_h5;
+    render_map["H6"] = render_h6;
+    render_map["InlineStrong"] = render_strong;
+    render_map["InlineItalic"] = render_italic;
+    render_map["InlineOverline"] = render_over_line;
+    render_map["InlineMath"] = render_inline_math;
+    render_map["MathBlock"] = render_math_block;
+    render_map["CodeBlock"] = render_code_block;
+    render_map["CodeRunner"] = render_code_runner;
+    render_map["PlainText"] = render_plain_text;
+    render_map["Block"] = render_block;
+    render_map["NewLine"] = render_newline;
 
+    std::string outputs;
 
-        nlohmann::json json_ir;
-        std::ifstream expect_file("noya2.json");
-        expect_file >> json_ir;
-
-        std::string outputs;
-
-        for (nlohmann::json block : json_ir) {
-            if (block["class"] == "CodeRunner"){
-                outputs += render_code_runner(block, "");
-            } else {
-                std::string render_str;
-                render_str = build_block(block, render_map);
-                outputs += render_str + "\n";
-            }
-            
+    for (nlohmann::json block : json_ir) {
+        if (block["class"] == "CodeRunner") {
+            outputs += render_code_runner(block, "");
+        }
+        else {
+            std::string render_str;
+            render_str = build_block(block, render_map);
+            outputs += render_str + "\n";
         }
 
-        std::pair<std::string, std::string> html_template = load_html_template();
-
-        std::string output_html = html_template.first + outputs + html_template.second;
-
-        std::cout << output_html << std::endl;
     }
 
+    std::pair<std::string, std::string> html_template = load_html_template();
+
+    std::string output_html = html_template.first + outputs + html_template.second;
+
+    std::cout << output_html << std::endl;
+}
+
+}
