@@ -43,6 +43,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         nlohmann::json sub;
         sub["class"] = "PlainText";
         sub["content"] = codes;
+        sub["uuid"] = uuid();
         cur_json["content"].push_back(sub);
     }
     else if (ptr->type == MathBlock){
@@ -55,6 +56,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         nlohmann::json sub;
         sub["class"] = "PlainText";
         sub["content"] = codes;
+        sub["uuid"] = uuid();
         cur_json["content"].push_back(sub);
     }
 

@@ -41,7 +41,10 @@ int main() {
 
 [url](https://atcoder.jp/)
 
-f![xx](ff)f
+f![xx](example/image/sum.png)
+
+インターネット上の画像をBas64でエンコードして埋め込むこともできます。
+![](https://www.abap34.com/assets/myicon-3ebaec7d.png)
 
 :::code
 title=Sum Function
