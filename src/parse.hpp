@@ -463,7 +463,36 @@ namespace almo {
     // 使用例:
     //     parse_md_file("example.md");
     std::vector<AST::node_ptr> parse_md_file(std::string path) {
-        auto lines = almo::read_md(path);
-        return BlockParser::processer(lines);
+        std::vector<std::string> lines = almo::read_md(path);
+        
+        std::string all_line_str;
+
+        for (std::string line : lines) {
+            all_line_str += line;
+            all_line_str += '\n';
+        }
+
+        std::regex comment = std::regex("([\\s\\S]*)<!--([\\s\\S]*)-->([\\s\\S]*)");
+        std::smatch match;
+
+        while (std::regex_search(all_line_str, match, comment)) {
+            all_line_str = std::regex_replace(all_line_str, comment, match[1].str() + match[3].str());
+        }
+
+        std::vector<std::string> processed_lines;
+
+        std::string current_line = "";
+        for (char c : all_line_str) {
+            if (c == '\n') {    
+                processed_lines.push_back(current_line);
+                current_line = "";
+                
+            }
+            else {
+                current_line += c;
+            }
+        }
+
+        return BlockParser::processer(processed_lines);
     }
 }
