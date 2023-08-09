@@ -98,6 +98,15 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
     return cur_json;
 }
 
+nlohmann::json make_meta_data_json(std::vector<std::pair<std::string, std::string>> meta_data) {
+    nlohmann::json output_json;
+    for(auto [key, data]: meta_data) {
+        std::cerr << key << " " << data << '\n';
+        output_json[key] = data;
+    }
+    return output_json;
+}
+
 nlohmann::json make_json(std::vector<AST::node_ptr> ast) {
     nlohmann::json output_json;
     for (AST::node_ptr ptr : ast){

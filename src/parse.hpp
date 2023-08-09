@@ -462,7 +462,7 @@ namespace almo {
     // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果（構文木のリスト）を返します。
     // 使用例:
     //     parse_md_file("example.md");
-    std::vector<AST::node_ptr> parse_md_file(std::string path) {
+    std::pair<std::vector<std::pair<std::string, std::string>>, std::vector<AST::node_ptr>> parse_md_file(std::string path) {
         std::vector<std::string> lines = almo::read_md(path);
         
         std::string all_line_str;
@@ -492,7 +492,18 @@ namespace almo {
                 current_line += c;
             }
         }
-
-        return BlockParser::processer(processed_lines);
+        std::vector<std::pair<std::string, std::string>> meta_data;
+        int meta_data_end = 0;
+        if(!processed_lines.empty() && processed_lines[0] == "---") {
+            int index = 1;
+            while(index < (int)processed_lines.size() && processed_lines[index] != "---") {
+                std::string key = std::regex_replace(processed_lines[index], std::regex("(.*):(.*)"), "$1");
+                std::string data = std::regex_replace(processed_lines[index], std::regex("(.*):(.*)"), "$2");
+                meta_data.emplace_back(key, data);
+                index++;
+            }
+            meta_data_end = index + 1;
+        }
+        return {meta_data, BlockParser::processer({processed_lines.begin() + meta_data_end, processed_lines.end()})};
     }
 }
