@@ -19,7 +19,7 @@ namespace almo {
 <meta charset="UTF-8">
 
 <head>
-    <title>ALMO</title>
+    <title> {____THIS____IS___TITLE___PLACE____} </title>
 
     <!-- syntax hightlihgt -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/monokai-sublime.min.css">
@@ -244,6 +244,38 @@ namespace almo {
             border: 1px solid #ddd;
             padding: 8px;
         }
+
+
+        .date {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e0e0e0;
+            border: 1px solid #fff;
+            margin: 0 8px;
+            text-align: center;
+            display: inline-block;
+            /* set more left */
+            position: absolute;
+            right: 0;
+            top: 10px;
+        }
+
+        .author {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e0e0e0;
+            border: 1px solid #fff;
+            margin: 0 8px;
+            text-align: center;
+            display: inline-block;
+            position: absolute;
+            right: 0;
+            top: 60px;
+        }
     </style>
 </head>
 
@@ -397,6 +429,10 @@ namespace almo {
         }
     </script>
 
+
+    <div class="date"> Date: {____THIS____IS___DATE___PLACE____} </div>
+    <div class="author"> Author: {____THIS____IS___AUTHOR___PLACE____} </div>
+
     <!-- ___split___ -->
 
     <div class="sidebar">
@@ -491,14 +527,6 @@ namespace almo {
 
 </html>
 )";
-
-
-
-
-
-
-
-
 
     std::string read_file(const std::string& path) {
         std::ifstream file(path);
@@ -647,15 +675,15 @@ namespace almo {
 
         std::string sample_in_area =
             "<div class=\"box-title\"> サンプルの入力 </div>"
-            "<pre class=\"sample_in\" id=\"" + uuid + "_sample_in\"><code>" + sample_in + "</code></pre>\n";
+            "<pre class=\"sample_in\" id=\"" + uuid + "_sample_in\">" + sample_in + "</pre>\n";
 
         std::string sample_out_area =
             "<div class=\"box-title\"> 出力 </div>"
-            "<pre class=\"sample_out\" id=\"" + uuid + "_sample_out\"><code></code></pre>\n";
+            "<pre class=\"sample_out\" id=\"" + uuid + "_sample_out\"></pre>\n";
 
         std::string expect_out_area =
             "<div class=\"box-title\"> サンプルの答え </div>"
-            "<pre class=\"expect_out\" id=\"" + uuid + "_expect_out\"><code>" + sample_out + "</code></pre>\n";
+            "<pre class=\"expect_out\" id=\"" + uuid + "_expect_out\">" + sample_out + "</pre>\n";
 
 
         std::string define_data =
@@ -864,7 +892,7 @@ namespace almo {
 
             std::string n_row_str = j["n_row"];
             std::string n_col_str = j["n_col"];
-            
+
             int n_row = std::stoi(n_row_str);
             int n_col = std::stoi(n_col_str);
 
@@ -886,8 +914,7 @@ namespace almo {
     }
 
 
-    void render(nlohmann::json json_ir) {
-
+    void render(nlohmann::json json_ir, nlohmann::json json_meta_data) {
         // クラス名とレンダリング関数の対応map
         std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map;
         render_map["H1"] = render_h1;
@@ -926,6 +953,14 @@ namespace almo {
         }
 
         std::pair<std::string, std::string> html_template = load_html_template();
+
+        std::string title = json_meta_data["title"];
+        std::string date = json_meta_data["date"];
+        std::string author = json_meta_data["author"];
+
+        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___TITLE___PLACE____\\}"), title);
+        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___DATE___PLACE____\\}"), date);
+        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___AUTHOR___PLACE____\\}"), author);
 
         std::string output_html = html_template.first + outputs + html_template.second;
 
