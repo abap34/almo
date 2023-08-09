@@ -25,7 +25,14 @@ namespace almo {
         AST::node_ptr processer(std::string s) {
             map.clear();
             while (1) {
-                if (std::regex_match(s, math_regex)) {
+                if (std::regex_match(s, code_block_regex)) {
+                    auto& memo = map[InlineCodeBlock];
+                    int id = memo.size();
+                    std::string format = "$1<__code>" + std::to_string(id) + "</__code>$3";
+                    memo.emplace_back(std::regex_replace(s, code_block_regex, "$2"));
+                    s = std::regex_replace(s, code_block_regex, format);
+                }
+                else if (std::regex_match(s, math_regex)) {
                     auto& memo = map[InlineMath];
                     int id = memo.size();
                     std::string format = "$1<__math>" + std::to_string(id) + "</__math>$3";
@@ -176,6 +183,20 @@ namespace almo {
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
+            else if (std::regex_match(s, code_block_html_regex)) {
+                auto node = std::make_shared<AST>();
+                node->type = InlineCodeBlock;
+                int id = std::stoi(std::regex_replace(s, code_block_html_regex, "$2"));
+                auto s1 = std::regex_replace(s, code_block_html_regex, "$1");
+                auto s2 = map[InlineCodeBlock][id];
+                auto s3 = std::regex_replace(s, code_block_html_regex, "$3");
+                auto d1 = dfs(s1);
+                node->childs.emplace_back(std::make_shared<AST>(PlainText, s2));
+                auto d3 = dfs(s3);
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
+                nodes.emplace_back(node);
+                nodes.insert(nodes.end(), d3.begin(), d3.end());
+            }
             else {
                 nodes.emplace_back(std::make_shared<AST>(PlainText, s));
             }
@@ -183,12 +204,14 @@ namespace almo {
         }
 
         std::map<Type, std::vector<std::string>> map;
+        const std::regex code_block_regex = std::regex("(.*)\\`(.*)\\`(.*)");
         const std::regex math_regex = std::regex("(.*)\\$(.*)\\$(.*)");
         const std::regex image_regex = std::regex("(.*)\\!\\[(.*)\\]\\((.*)\\)(.*)");
         const std::regex url_regex = std::regex("(.*)\\[(.*)\\]\\((.*)\\)(.*)");
         const std::regex overline_regex = std::regex("(.*)\\~\\~(.*)\\~\\~(.*)");
         const std::regex strong_regex = std::regex("(.*)\\*\\*(.*)\\*\\*(.*)");
         const std::regex italic_regex = std::regex("(.*)\\*(.*)\\*(.*)");
+        const std::regex code_block_html_regex = std::regex("(.*)<__code>(.*)</__code>(.*)");
         const std::regex math_html_regex = std::regex("(.*)<__math>(.*)</__math>(.*)");
         const std::regex image_html_regex = std::regex("(.*)<__image=(.*)>(.*)</__image>(.*)");
         const std::regex url_html_regex = std::regex("(.*)<__url=(.*)>(.*)</__url>(.*)");
