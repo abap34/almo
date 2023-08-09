@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 
 <head>
-    <title>ALMO</title>
+    <title>プログラミング入門</title>
 
     <!-- syntax hightlihgt -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/monokai-sublime.min.css">
@@ -208,6 +208,36 @@
             width: auto;
         }
 
+        .date {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e0e0e0;
+            border: 1px solid #fff;
+            margin: 0 8px;
+            text-align: center;
+            display: inline-block;
+            /* set more left */
+            position: absolute;
+            right: 0;
+            top: 10px;
+        }
+
+        .author {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #e0e0e0;
+            border: 1px solid #fff;
+            margin: 0 8px;
+            text-align: center;
+            display: inline-block;
+            position: absolute;
+            right: 0;
+            top: 60px;
+        }
     </style>
 </head>
 
@@ -330,7 +360,7 @@
                 expect_out = expect_out.slice(0, -1);
             }
 
-            
+
             let result_bar_id = target_objectid + "_status";
             let judge_type = judge_types[target_objectid];
             if (judge_type == 'equal') {
@@ -360,6 +390,9 @@
             }
         }
     </script>
+
+    <div class="date">Date: 2021/10/10</div>
+    <div class="author">Author: abap34 </div>
 
     <!-- ___split___ -->
 
@@ -421,7 +454,7 @@
                 const onCursorMove = (event) => {
                     const cursorX = event.clientX;
 
-                    if (!isMenuOpen && (cursorX <= 30)) { 
+                    if (!isMenuOpen && (cursorX <= 30)) {
                         gsap.to(sidebar, {
                             x: "0",
                             opacity: 1,
