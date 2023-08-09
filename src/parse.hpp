@@ -97,7 +97,7 @@ namespace almo {
                 node->childs = dfs(s2);
                 auto d3 = dfs(s3);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
@@ -112,7 +112,7 @@ namespace almo {
                 node->childs = dfs(s2);
                 auto d3 = dfs(s3);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
@@ -127,7 +127,7 @@ namespace almo {
                 node->childs = dfs(s2);
                 auto d3 = dfs(s3);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
@@ -142,7 +142,7 @@ namespace almo {
                 node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineUrl][id_str]));
                 auto d4 = dfs(s4);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d4.begin(), d4.end());
             }
@@ -157,7 +157,7 @@ namespace almo {
                 node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineImage][id_str]));
                 auto d4 = dfs(s4);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d4.begin(), d4.end());
             }
@@ -172,7 +172,7 @@ namespace almo {
                 node->childs.emplace_back(std::make_shared<AST>(PlainText, s2));
                 auto d3 = dfs(s3);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.begin());
+                nodes.insert(nodes.end(), d1.begin(), d1.end());
                 nodes.emplace_back(node);
                 nodes.insert(nodes.end(), d3.begin(), d3.end());
             }
@@ -419,7 +419,6 @@ namespace almo {
                     asts.emplace_back(block);
                 }
                 else {
-                    auto plain_block = std::make_shared<AST>();
                     asts.emplace_back(inline_parser.processer(line));
                 }
                 idx++;
