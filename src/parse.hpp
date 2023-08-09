@@ -203,7 +203,7 @@ namespace almo {
         // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
         // 使用例:
         //    BlockParser::processer(lines);
-        static std::vector<AST::node_ptr> processer(const std::vector<std::string>& lines) {
+        static std::vector<AST::node_ptr> processer( std::vector<std::string> lines) {
             std::vector<AST::node_ptr> asts;
             InlineParser inline_parser;
             int idx = 0;
@@ -291,34 +291,59 @@ namespace almo {
                 else if (line.starts_with("- ")) {
                     // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
                     // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    auto item_parser = [&](int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
-                        auto block = std::make_shared<AST>(Item);
+                    auto list_parser = [&](auto &&self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
+                        auto block = std::make_shared<AST>(ListBlock);
                         assert(lines[line_id].substr(cur, 2) == "- ");
-                        std::string aitem = lines[line_id].substr(cur + 2);
+                        AST::node_ptr now = nullptr;
+                        std::string content = "";
                         while (true) {
-                            line_id++;
                             if (line_id == (int)(lines.size())) break;
-                            if (lines[line_id].starts_with("- ")) break;
-                            if (lines[line_id].starts_with("#")) break;
-                            if (lines[line_id].starts_with(":::")) break;
-                            if (lines[line_id].starts_with("```")) break;
-                            if (lines[line_id].starts_with("$$")) break;
-                            if (lines[line_id] == "") break;
-                            aitem += lines[line_id];
+                            if(is_header(lines[line_id])) break;
+                            else if (lines[line_id].starts_with(":::")) break;
+                            else if (lines[line_id].starts_with("```")) break;
+                            else if (lines[line_id].starts_with("$$")) break;
+                            else if (lines[line_id] == "") break;
+                            else {
+                                std::string list_header = "- ";
+                                bool is_upper = false;
+                                for(int i = 0; i < cur; i += 2) {
+                                    if(lines[line_id].starts_with(list_header)) {
+                                        assert(now != nullptr);
+                                        is_upper = true;
+                                        break;
+                                    }
+                                    list_header = "  " + list_header;
+                                }
+                                if(is_upper) break;
+                                if(lines[line_id].starts_with(list_header)) {
+                                    if(now != nullptr) {
+                                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
+                                        block->childs.emplace_back(now);
+                                        content.clear();
+                                    }
+                                    now = std::make_shared<AST>(Item);
+                                    content = lines[line_id].substr(list_header.size());
+                                }
+                                else if (lines[line_id].starts_with("  " + list_header)) {
+                                    assert(now != nullptr);
+                                    auto [next_line, item_ptr] = self(self, line_id, cur + 2);
+                                    line_id = next_line - 1;
+                                    now->childs.emplace_back(item_ptr);
+                                }
+                                else {
+                                    assert(now != nullptr);
+                                    content += " " + lines[line_id];
+                                }
+                                line_id++;
+                            }
                         }
-                        block->childs.emplace_back(inline_parser.processer(aitem));
+                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
+                        block->childs.emplace_back(now);
                         return std::make_pair(line_id, block);
-                        };
-                    auto block = std::make_shared<AST>(ListBlock);
-                    while (true) {
-                        auto [nxt, ptr] = item_parser(idx);
-                        block->childs.emplace_back(ptr);
-                        idx = nxt;
-                        if (idx < (int)(lines.size()) && lines[idx].starts_with("- ")) continue;
-                        break;
-                    }
-                    idx--;
-                    asts.emplace_back(block);
+                    };
+                    auto [next, list_ast] = list_parser(list_parser, idx);
+                    idx = next;
+                    asts.emplace_back(list_ast);
                 }
                 else if (line == "") {
                     auto block = std::make_shared<AST>(NewLine);
@@ -387,7 +412,7 @@ namespace almo {
                     block->col_format = col_format;
                     block->col_names = col_names;
 
-                    for (int i = 0; i < table.size(); i++) {
+                    for (int i = 0; i < (int)table.size(); i++) {
                         block->childs.emplace_back(inline_parser.processer(table[i]));
                     }
 
@@ -400,6 +425,17 @@ namespace almo {
                 idx++;
             }
             return asts;
+        }
+
+        private:
+        // headerブロックであるか判定
+        static bool is_header(const std::string &s) {
+            std::string header = "";
+            for(int i = 1; i <= 6; i++) {
+                header += '#';
+                if(s.starts_with(header + " ")) return true;
+            }
+            return false;
         }
     };
 
