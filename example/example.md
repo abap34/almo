@@ -20,9 +20,15 @@ $x^2 + y^2 = z^2$
 とか**野球部**ね。~~a~~
 
 - vector
+  - fff
+    - xx
 - array
+  - ネストできます
+  - すごいね
 yaa
 - gg
+
+- ff
 ## guo-
 
 *ff*
