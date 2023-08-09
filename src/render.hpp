@@ -816,7 +816,7 @@ namespace almo {
         std::string base64_image = base64_encode(image_data);
 
         // Generate the HTML tag with Base64-encoded image data
-        std::string output = "<img src=\"data:image/jpeg;base64," + base64_image + "\" alt=\"" + content + "\" width=\"50%\" class=\"center\">";
+        std::string output = "<img src=\"data:image/png;base64," + base64_image + "\" alt=\"" + content + "\" width=\"50%\" class=\"center\">";
         return output;
     }
 
@@ -839,7 +839,7 @@ namespace almo {
     }
 
     std::string render_table(std::vector<std::string> from_render, int n_row, int n_col, std::vector<std::string> col_names, std::vector<int> col_format) {
-        // std::cout << "render table" << std::endl;
+        
         std::string output = "<table>";
         output += "<tr>";
         for (int i = 0; i < n_col; i++) {
@@ -856,9 +856,16 @@ namespace almo {
             }
             output += "</tr>";
         }
+
+        output += "</table>";
         return output;
     }
 
+
+   std::string render_inline_code(nlohmann::json j, std::string content) {
+        std::string output = "<code>" + content + "</code>";
+        return output;
+    }
 
 
     bool haschild(nlohmann::json j) {
@@ -887,11 +894,14 @@ namespace almo {
             for (nlohmann::json child : j["content"]) {
                 from_render.push_back(build_block(child, render_map));
             }
+
+
             std::vector<int> col_format = j["col_format"];
             std::vector<std::string> col_names = j["col_names"];
 
             std::string n_row_str = j["n_row"];
             std::string n_col_str = j["n_col"];
+
 
             int n_row = std::stoi(n_row_str);
             int n_col = std::stoi(n_col_str);
@@ -937,6 +947,8 @@ namespace almo {
         render_map["InlineImage"] = render_inline_image;
         render_map["ListBlock"] = render_list_block;
         render_map["Item"] = render_item;
+        render_map["InlineCodeBlock"] = render_inline_code;
+
 
         std::string outputs;
 
