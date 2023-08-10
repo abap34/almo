@@ -2,6 +2,26 @@
 
 ALMOはC++製の拡張Markdownパーサです。 [デモページ](https://www.abap34.com/almo.html)
 
+## 使い方
+
+`almo example.md > index.html`
+
+第一引数としてMarkdownファイルを渡すと変換した結果を標準出力に出力します。
+
+Markdownファイルの先頭は
+
+```
+---
+title: タイトル
+date: 日付
+author: 名前
+---
+```
+
+としてください。
+
+
+
 ## 使える記法
 
 - H1, H2, H3, H4, H5, H6
