@@ -4,9 +4,14 @@ ALMOはC++製の拡張Markdownパーサです。 [デモページ](https://www.a
 
 ## 使い方
 
-`almo example.md > index.html`
+`almo example.md > index.html --theme light`
 
 第一引数としてMarkdownファイルを渡すと変換した結果を標準出力に出力します。
+
+オプションとして、テーマが切り替えられます。
+`--theme dark` とするとダークテーマ、
+`--theme light` とするとライトテーマとなります。
+(省略可能, デフォルトは `dark`
 
 Markdownファイルの先頭は
 
@@ -19,7 +24,6 @@ author: 名前
 ```
 
 としてください。
-
 
 
 ## 使える記法
