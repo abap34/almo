@@ -12,38 +12,7 @@
 
 namespace almo {
 
-
-    std::string TEMPLATE = R"(
-<!DOCTYPE html>
-<html>
-<meta charset="UTF-8">
-
-<head>
-    <title> {____THIS____IS___TITLE___PLACE____} </title>
-
-    <!-- syntax hightlihgt -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/monokai-sublime.min.css">
-    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-
-    <!-- Pythonのランタイム -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
-    <!-- ACした時にブワーって出るアニメーション -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
-
-    <!-- エディタ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
-
-    <!-- Math Jax -->
-    <script type="text/javascript" id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
-    <!-- アニメーション関連のやつ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
-
-    <style>
+    std::string DARK_THEME = R"(
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -220,31 +189,9 @@ namespace almo {
             margin-bottom: 10px;
         }
 
-        
-
-        .center {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            width: 50%;
+        .image {
+            width: auto;
         }
-
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-
 
         .date {
             padding: 8px 20px;
@@ -276,7 +223,223 @@ namespace almo {
             right: 0;
             top: 60px;
         }
+    )";
+
+    std::string LIGHT_THEME = R"(
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #F7F7F7;
+    color: #333;
+    flex-direction: column;
+}
+
+h1, h2 {
+    color: #006699;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h2 {
+    text-align: left;
+    padding-left: 10px;
+    border-bottom: solid 1px #006699;
+}
+
+p {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+a {
+    color: #006699;
+}
+
+.sidebar {
+    border-right: 1px solid #eee;
+    height: 100%;
+    width: auto;
+    padding: 10px 10px;
+    left: 0;
+    overflow: auto;
+    position: fixed;
+    top: 0;
+    width: 200px;
+    z-index: 1000;
+    background-color: #F2F2F2;
+}
+
+.each_problem_div {
+    margin-bottom: 10px;
+    float: left;
+    width: 100%;
+}
+
+.content_list_h1 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: solid 1px #006699;
+    color: #006699;
+}
+
+.content_list_h2 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #006699;
+}
+
+.content_list_problem {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #006699;
+}
+
+.badge {
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    border: 1px solid #333;
+    margin: 0 8px;
+    float: left;
+}
+
+.runbutton, .submitbutton {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    color: #fff;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.runbutton {
+    background-color: #006699;
+}
+
+.runbutton:hover {
+    background-color: #005580;
+}
+
+.submitbutton {
+    background-color: #008000;
+}
+
+.submitbutton:hover {
+    background-color: #006400;
+}
+
+.problem_title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+.editor {
+    width: 100%;
+    height: 300px; /* エディタの高さを調整 */
+    font-size: 16px;
+    font-family: monospace;
+    background-color: #F2F2F2;
+    color: #333;
+    padding: 10px; /* パディングを調整 */
+}
+
+.output, .expect_out, .sample_in, .sample_out {
+    width: 100%;
+    padding: 5px 5px;
+    overflow-x: auto;
+    font-size: 16px;
+    font-family: monospace;
+    background-color: #F2F2F2;
+    color: #333;
+    border: solid 1px #a8a8a8;
+}
+
+.box-title, .problem_list {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.image {
+    width: auto;
+}
+
+.date, .author {
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #888;
+    border: 1px solid #333;
+    margin: 0 8px;
+    text-align: center;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+}
+
+.date {
+    top: 10px;
+}
+
+.author {
+    top: 60px;
+}
+
+    )";
+
+
+    std::string TEMPLATE = R"(
+<!DOCTYPE html>
+<html lang="ja" prefix="og: http://ogp.me/ns#">
+<meta charset="UTF-8">
+
+<head>
+    <title> {____THIS____IS___TITLE___PLACE____} </title>
+
+    <meta property="og:title" content="{____THIS____IS___TITLE___PLACE____}">
+    <meta preperty="og:image" content="https://www.abap34.com/almo_logo.jpg">
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@abap34" />
+
+    <!-- syntax hightlihgt -->
+    {____THIS____IS___SYNTAX___HIGHLIGHT___PLACE____}
+
+    <!-- Pythonのランタイム -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+    <!-- ACした時にブワーって出るアニメーション -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
+
+    <!-- エディタ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
+
+    <!-- Math Jax -->
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <!-- アニメーション関連のやつ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
+
+    <style>
+        {____THIS____IS___THEME___PLACE____}
     </style>
+
 </head>
 
 <body>
@@ -335,7 +498,7 @@ namespace almo {
             let out_id = target_objectid + "_sample_out";
 
             document.getElementById(target_objectid + "_sample_out").innerText = "";
-            document.getElementById(target_objectid + "_sample_out").style.color = "white";
+            document.getElementById(target_objectid + "_sample_out").style.color = "";
             result_bar.innerText = "Running...";
 
 
@@ -398,7 +561,7 @@ namespace almo {
                 expect_out = expect_out.slice(0, -1);
             }
 
-            
+
             let result_bar_id = target_objectid + "_status";
             let judge_type = judge_types[target_objectid];
             if (judge_type == 'equal') {
@@ -428,7 +591,6 @@ namespace almo {
             }
         }
     </script>
-
 
     <div class="date"> Date: {____THIS____IS___DATE___PLACE____} </div>
     <div class="author"> Author: {____THIS____IS___AUTHOR___PLACE____} </div>
@@ -493,7 +655,7 @@ namespace almo {
                 const onCursorMove = (event) => {
                     const cursorX = event.clientX;
 
-                    if (!isMenuOpen && (cursorX <= 30)) { 
+                    if (!isMenuOpen && (cursorX <= 30)) {
                         gsap.to(sidebar, {
                             x: "0",
                             opacity: 1,
@@ -562,6 +724,19 @@ namespace almo {
         std::string head = html_template.substr(0, html_template.find("<!-- ___split___ -->"));
         std::string tail = html_template.substr(html_template.find("<!-- ___split___ -->") + 20);
         return std::make_pair(head, tail);
+    }
+
+    std::string load_theme(std::string theme) {
+        if (theme == "dark") {
+            return DARK_THEME;
+        }
+        else if (theme == "light") {
+            return LIGHT_THEME;
+        }
+        else {
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
+        }
     }
 
     std::string render_h1(nlohmann::json j, std::string content) {
@@ -640,7 +815,7 @@ namespace almo {
         return output;
     }
 
-    std::string render_code_runner(nlohmann::json j, std::string content) {
+    std::string render_code_runner(nlohmann::json j, std::string theme) {
         std::string uuid = j["uuid"];
         std::string title = j["title"];
         std::string sample_in_path = j["sample_in"];
@@ -654,20 +829,37 @@ namespace almo {
             "<h3 class=\"problem_title\"> <div class='badge' id='" + uuid + "_status'>WJ</div>   " + title + " </h2>\n";
 
         std::string editor_div = "<div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
-        std::string ace_editor = ""
+
+        std::string ace_theme;
+        if (theme == "dark") {
+            ace_theme = "ace/theme/monokai";
+        }
+        else if (theme == "light") {
+            ace_theme = "ace/theme/xcode";
+        }
+        else {
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
+        }
+
+
+        std::string ace_editor1 = ""
             "<script>"
             "editor = ace.edit(\"" + uuid + "\"); "
-            "editor.setTheme(\"ace/theme/monokai\");"
+            "editor.setTheme(\"";
+
+        std::string ace_editor2 = "\");"
             "editor.session.setMode(\"ace/mode/python\");"
             "editor.setShowPrintMargin(false);"
+            "editor.setHighlightActiveLine(false);"
             "editor.setOptions({"
-            "  enableBasicAutocompletion: true,"
-            "  enableSnippets: true,"
-            "  enableLiveAutocompletion: true"
+            "    enableBasicAutocompletion: true,"
+            "    enableSnippets: true,"
+            "    enableLiveAutocompletion: true,"
             "});"
-            "editor.setValue(\"\");"
-            "</script>"
-            "<br>";
+            "</script>\n";
+
+        std::string ace_editor = ace_editor1 + ace_theme + ace_editor2;
 
         std::string sample_in = read_file(sample_in_path);
         std::string sample_out = read_file(sample_out_path);
@@ -839,7 +1031,7 @@ namespace almo {
     }
 
     std::string render_table(std::vector<std::string> from_render, int n_row, int n_col, std::vector<std::string> col_names, std::vector<int> col_format) {
-        
+
         std::string output = "<table>";
         output += "<tr>";
         for (int i = 0; i < n_col; i++) {
@@ -862,7 +1054,7 @@ namespace almo {
     }
 
 
-   std::string render_inline_code(nlohmann::json j, std::string content) {
+    std::string render_inline_code(nlohmann::json j, std::string content) {
         std::string output = "<code>" + content + "</code>";
         return output;
     }
@@ -924,6 +1116,27 @@ namespace almo {
     }
 
 
+    std::string load_syntax_highlight(std::string theme) {
+        if (theme == "dark") {
+            std::string out = R"(
+                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/monokai-sublime.min.css">
+                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+                <script>hljs.initHighlightingOnLoad();</script>
+            )";
+            return out;
+        } else if (theme == "light") {
+            std::string out = R"(
+                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/github.min.css">
+                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+                <script>hljs.initHighlightingOnLoad();</script>
+            )";
+            return out;
+        } else {
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
+        }
+    }
+
     void render(nlohmann::json json_ir, nlohmann::json json_meta_data) {
         // クラス名とレンダリング関数の対応map
         std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map;
@@ -954,7 +1167,7 @@ namespace almo {
 
         for (nlohmann::json block : json_ir) {
             if (block["class"] == "CodeRunner") {
-                outputs += render_code_runner(block, "");
+                outputs += render_code_runner(block, json_meta_data["theme"]);
             }
             else {
                 std::string render_str;
@@ -969,10 +1182,17 @@ namespace almo {
         std::string title = json_meta_data["title"];
         std::string date = json_meta_data["date"];
         std::string author = json_meta_data["author"];
+        std::string theme = json_meta_data["theme"];
 
         html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___TITLE___PLACE____\\}"), title);
         html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___DATE___PLACE____\\}"), date);
         html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___AUTHOR___PLACE____\\}"), author);
+        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___THEME___PLACE____\\}"), load_theme(theme));
+
+        std::string syntax_highlight = load_syntax_highlight(theme);
+
+
+        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___SYNTAX___HIGHLIGHT___PLACE____\\}"), syntax_highlight);
 
         std::string output_html = html_template.first + outputs + html_template.second;
 
