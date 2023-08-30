@@ -691,19 +691,20 @@ a {
 )";
 
     std::string read_file(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            std::cerr << "Failed to open file: " << path << std::endl;
-            return "";
-        }
-
-        std::string line;
-        std::string output;
-        while (std::getline(file, line)) {
-            output += line + "\n";
-        }
-        return output;
+    std::ifstream input_file(path);
+    
+    if (!input_file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + path);
     }
+    
+    std::stringstream buffer;
+    buffer << input_file.rdbuf();
+
+    input_file.close();
+    
+    return buffer.str();
+}
+
 
     std::vector<std::string> glob(const std::string& pattern) {
         std::vector<std::string> result;
@@ -820,10 +821,11 @@ a {
         std::string title = j["title"];
         std::string sample_in_path = j["sample_in"];
         std::string sample_out_path = j["sample_out"];
+        std::string source_path = j["source"];
+
         std::vector<std::string> in_files = glob(j["in"]);
         std::vector<std::string> out_files = glob(j["out"]);
         std::string judge = j["judge"];
-
 
         std::string title_h3 =
             "<h3 class=\"problem_title\"> <div class='badge' id='" + uuid + "_status'>WJ</div>   " + title + " </h2>\n";
@@ -842,13 +844,16 @@ a {
             exit(1);
         }
 
+        std::string source = "";
 
-        std::string ace_editor1 = ""
+        if (source_path != "") {
+            source = read_file(source_path);
+        } 
+
+        std::string ace_editor= ""
             "<script>"
             "editor = ace.edit(\"" + uuid + "\"); "
-            "editor.setTheme(\"";
-
-        std::string ace_editor2 = "\");"
+            "editor.setTheme(\"" + ace_theme + "\");"
             "editor.session.setMode(\"ace/mode/python\");"
             "editor.setShowPrintMargin(false);"
             "editor.setHighlightActiveLine(false);"
@@ -857,9 +862,9 @@ a {
             "    enableSnippets: true,"
             "    enableLiveAutocompletion: true,"
             "});"
+            "editor.setValue(`" + source + "`, -1);"
             "</script>\n";
 
-        std::string ace_editor = ace_editor1 + ace_theme + ace_editor2;
 
         std::string sample_in = read_file(sample_in_path);
         std::string sample_out = read_file(sample_out_path);

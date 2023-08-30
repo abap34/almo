@@ -271,23 +271,37 @@ namespace almo {
                 else if (line == ":::code") {
                     idx++;
                     auto block = std::make_shared<AST>(CodeRunner);
-                    for (std::string head : { "title", "sample_in", "sample_out", "in", "out" }) {
+                    for (std::string head : { "title", "sample_in", "sample_out", "in", "out"}) {
                         assert(idx < (int)lines.size());
                         assert(lines[idx].starts_with(head));
                         block->code_runner.emplace_back(head, lines[idx].substr(head.size() + 1));
                         idx++;
                     }
                     assert(idx < (int)lines.size());
+                    bool find_judge = false;
+                    bool find_source = false;
                     if (lines[idx].starts_with("judge=")) {
                         std::string rhs = lines[idx].substr(6);
                         assert(rhs.starts_with("err_") || rhs == "equal");
                         block->code_runner.emplace_back("judge", rhs);
+                        find_judge = true;
+                        idx++;
+                    } 
+                    assert(idx < (int)lines.size());
+                    if (lines[idx].starts_with("source=")) {
+                        std::string source_path = lines[idx].substr(7);
+                        block->code_runner.emplace_back("source", source_path);
+                        find_source = true;
                         idx++;
                     }
-                    else {
+                    assert(idx < (int)lines.size());
+                    assert(lines[idx] == ":::");
+                    if (!find_judge) {
                         block->code_runner.emplace_back("judge", "equal");
                     }
-                    assert(idx < (int)lines.size() && lines[idx].starts_with(":::"));
+                    if (!find_source) {
+                        block->code_runner.emplace_back("source", "");
+                    }
                     asts.emplace_back(block);
                 }
                 else if (line.starts_with("```")) {
