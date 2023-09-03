@@ -802,7 +802,7 @@ a {
     }
 
     std::string render_inline_math(nlohmann::json j, std::string content) {
-        std::string output = "\\[" + content + "\\]";
+        std::string output = "\\(" + content + "\\)";
         return output;
     }
 
