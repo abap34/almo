@@ -1,10 +1,18 @@
 # ALMO
 
+
+![](https://www.abap34.com/almo_logo.jpg)
+
+
 ALMOはC++製の拡張Markdownパーサです。 
 
-ALMOは、WebAseemblyを使ってブラウザ上で完結する実行とジャッジ環境を提供することができます。
+ALMOは、WebAseemblyを使ってブラウザ上で完結する実行とジャッジ環境を提供します。 ([デモページ](https://www.abap34.com/almo.html)
+)
 
-[デモページ](https://www.abap34.com/almo.html)
+![](example/demo.gif)
+
+
+
 
 
 ## 使い方
