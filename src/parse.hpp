@@ -507,6 +507,10 @@ namespace almo {
             all_line_str += '\n';
         }
 
+        std::regex comment = std::regex("<!--[\\s\\S]*?-->");
+
+        all_line_str = std::regex_replace(all_line_str, comment, "");
+
         std::vector<std::string> processed_lines;
 
         // 改行で分割
