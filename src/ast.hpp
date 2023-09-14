@@ -52,5 +52,8 @@ namespace almo {
         std::vector<std::pair<std::string, std::string>> table;
         std::vector<int> col_format;
         std::vector<std::string> col_names;
+
+        // typeがCodeBlockのときのみ使用されます。CodeBlockの情報(言語) を持ちます。
+        std::string language;
     };
 }
