@@ -1,0 +1,582 @@
+R"(<!DOCTYPE html>
+<html lang="ja" prefix="og: http://ogp.me/ns#">
+<meta charset="UTF-8">
+
+<head>
+    <title> {{title}} </title>
+
+    <meta property="og:title" content="{{title}}">
+    <meta preperty="og:image" content="{{ogp_url}}">
+    <meta property="og:description" content="{{description}}">
+    <meta property="og:url" content="{{url}}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="{{site_name}}">
+    <meta property="og:locale" content="ja_JP">
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="{{twitter_site}}" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/github.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
+
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #F7F7F7;
+            color: #333;
+            flex-direction: column;
+            display: flex;
+            width: 95%;
+
+        }
+
+        h1,
+        h2 {
+            color: #323232;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            text-align: left;
+            padding-left: 10px;
+            border-bottom: solid 1px #5b5b5b;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        a {
+            color: #006699;
+        }
+
+        figure {
+            text-align: center;
+        }
+
+        figcaption {
+            text-align: center;
+        }
+
+        pre {
+            padding: 10px;
+            color: #333;
+            border: solid 1px #a8a8a8;
+            overflow-x: auto;
+        }
+
+
+        .date {
+            color: #666;
+            font-size: 14px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .tag {
+            color: #666;
+            font-size: 14px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .content {
+            flex: 1;
+            padding: 0px 40px;
+            margin-left: 0px;
+            margin-right: 10px;
+            margin-top: 0px;
+            margin-bottom: 0px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            overflow: auto;
+            width: 100%;
+        }
+
+
+        @media (max-width: 768px) {
+            .content {
+                width: 100%;
+                padding: 20px;
+            }
+        }
+
+        .sidebar {
+            flex: 3;
+            border-right: 1px solid #eee;
+            height: 100%;
+            width: 10%;
+            padding: 10px 10px;
+            left: 0;
+            overflow: auto;
+            position: fixed;
+            top: 0;
+            width: 220px;
+            z-index: 1000;
+            background-color: #F2F2F2;
+        }
+
+        @media (max-width: 1260px) {
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .links {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 200px;
+            height: 100%;
+            padding: 10px 10px;
+            overflow: auto;
+            background-color: #F2F2F2;
+        }
+
+        @media (max-width: 1260px) {
+            .links {
+                display: none;
+            }
+        }
+
+        #toc {
+            background-color: #f4f4f4;
+            border-radius: 5px;
+            padding: 15px;
+            list-style: none;
+        }
+
+        .toc_title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2a2a2a;
+            border-bottom: solid 1px #161616;
+        }
+
+        #toc a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+            margin: 5px 0;
+            transition: color 0.2s;
+        }
+
+        #toc a:hover {
+            color: #007bff;
+        }
+
+        #toc .active {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 16px;
+        }
+
+        .toc_H2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #006699;
+            font-weight: bold;
+        }
+
+        .toc_H3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #006699;
+        }
+
+        .each_problem_div {
+            margin-bottom: 10px;
+            float: left;
+            width: 100%;
+        }
+
+        .content_list_h1 {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: solid 1px #006699;
+            color: #006699;
+        }
+
+
+        .content_list_h2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #006699;
+        }
+
+        .content_list_problem {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #006699;
+        }
+
+        .badge {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            border: 1px solid #333;
+            margin: 0 8px;
+            float: left;
+        }
+
+        .runbutton,
+        .submitbutton {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #fff;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .runbutton {
+            background-color: #006699;
+        }
+
+        .runbutton:hover {
+            background-color: #005580;
+        }
+
+        .submitbutton {
+            background-color: #008000;
+        }
+
+        .submitbutton:hover {
+            background-color: #006400;
+        }
+
+        .problem_title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .editor {
+            width: 100%;
+            height: 300px;
+            font-size: 16px;
+            font-family: monospace;
+            background-color: #F2F2F2;
+            color: #333;
+            padding: 10px;
+        }
+
+        .output,
+        .expect_out,
+        .sample_in,
+        .sample_out {
+            width: 100%;
+            padding: 5px 5px;
+            overflow-x: auto;
+            font-size: 16px;
+            font-family: monospace;
+            background-color: #F2F2F2;
+            color: #333;
+            border: solid 1px #a8a8a8;
+        }
+
+        .box-title,
+        .problem_list {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #666;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script>
+        all_sample_input = {}
+        all_sample_output = {}
+
+
+        all_input = {}
+        all_output = {}
+
+        judge_types = {}
+        problem_status = {}
+        page_contents = []
+
+        const pyodidePromise = loadPyodide({
+            stdin: stdin_func,
+            stdout: stdout_func,
+        });
+
+
+        function stdin_func() {
+            if (submit_run) {
+                return all_input[target_objectid][judge_idx];
+            } else {
+                return all_sample_input[target_objectid];
+            }
+        }
+
+        function stdout_func(answer) {
+            let out_id = target_objectid + "_sample_out";
+            let expect_out_id = target_objectid + "_expect_out";
+            outputs += answer + "\n";
+        }
+
+        function error_handle(error) {
+            document.getElementById(target_objectid + "_sample_out").innerText = error;
+            document.getElementById(target_objectid + "_sample_out").style.color = "orange";
+            status = "RE";
+        }
+
+        const runCode = async (objectid, require_judge) => {
+            // update global variable
+            target_objectid = objectid;
+            submit_run = require_judge;
+
+            let pyodide = await pyodidePromise;
+
+            let editor = ace.edit(objectid);
+            let code = editor.getValue();
+            let result_bar_id = target_objectid + "_status";
+            let result_bar = document.getElementById(result_bar_id)
+            let each_problem_div = document.getElementById("problem_list_" + target_objectid + "_badge");
+            let out_id = target_objectid + "_sample_out";
+
+            document.getElementById(target_objectid + "_sample_out").innerText = "";
+            document.getElementById(target_objectid + "_sample_out").style.color = "";
+            result_bar.innerText = "Running...";
+
+
+            if (require_judge) {
+                let n_input = all_input[target_objectid].length;
+                for (let i = 0; i < n_input; i++) {
+                    judge_idx = i;
+                    result_bar.innerText = "Running...   " + judge_idx + "/" + (n_input);
+                    try {
+                        outputs = "";
+                        await pyodide.runPythonAsync(code);
+                        let expect_out = all_output[target_objectid][judge_idx];
+                        if (outputs.slice(-1) == "\n") {
+                            outputs = outputs.slice(0, -1);
+                        }
+                        judge(outputs, expect_out);
+                    } catch (error) {
+                        error_handle(error);
+                        result_bar.innerText = "WJ";
+                    }
+
+                    if (status == "TLE" || status == "MLE" || status == "RE" || status == "WA") {
+                        result_bar.style.backgroundColor = "#ffe500";
+                        result_bar.innerText = status + "   " + judge_idx + "/" + (n_input);
+                        each_problem_div.style.backgroundColor = "#ffe500";
+                        each_problem_div.innerText = status;
+                        break;
+                    }
+                }
+
+                if (status == "AC") {
+                    result_bar.style.backgroundColor = "lightgreen";
+                    result_bar.innerText = "AC";
+                    each_problem_div.style.backgroundColor = "lightgreen";
+                    each_problem_div.innerText = "AC";
+                    confetti();
+                } else {
+                    result_bar.style.backgroundColor = "#ffe500";
+                }
+            } else {
+                try {
+                    outputs = "";
+                    await pyodide.runPythonAsync(code);
+                    document.getElementById(target_objectid + "_sample_out").innerText = outputs;
+                    result_bar.innerText = "WJ";
+                } catch (error) {
+                    error_handle(error);
+                    result_bar.innerText = "RE";
+                }
+            }
+        };
+
+        function judge(answer, expect_out) {
+            // trim \n from both
+            if (answer.slice(-1) == "\n") {
+                answer = answer.slice(0, -1);
+            }
+
+            if (expect_out.slice(-1) == "\n") {
+                expect_out = expect_out.slice(0, -1);
+            }
+
+
+            let result_bar_id = target_objectid + "_status";
+            let judge_type = judge_types[target_objectid];
+            if (judge_type == 'equal') {
+                if (answer === expect_out) {
+                    status = "AC";
+                } else {
+                    status = "WA";
+                }
+            } else if (judge_type.includes('err')) {
+                status = "AC";
+                let admissible_absolute_error = parseFloat(judge_type.split('_')[1]);
+                let answer_list = answer.split('\n');
+                let expect_out_list = expect_out.split('\n');
+                for (let i = 0; i < answer_list.length; i++) {
+                    let answer_line = answer_list[i].split(' ');
+                    let expect_out_line = expect_out_list[i].split(' ');
+                    for (let j = 0; j < answer_line.length; j++) {
+                        let answer_out = parseFloat(answer_line[j]);
+                        let expect_out_out = parseFloat(expect_out_line[j]);
+                        if (Math.abs(answer_out - expect_out_out) > admissible_absolute_error) {
+                            status = "WA";
+                            return;
+                        }
+                    }
+                }
+
+            }
+        }
+    </script>
+
+    <div class="sidebar">
+        <ul id="toc"></ul>
+    </div>
+
+
+
+    <div class="content">
+
+        <div style="text-align: center">
+            <img src="{{ogp_url}}">
+        </div>
+
+
+        <h1>{{title}}</h1>
+
+        <br>
+        <div class="date"></div>
+        <br>
+        <div class="tag"></div>
+
+        <script>
+            const tags = "{{tag}}"
+            const date = "{{date}}"
+            document.getElementsByClassName("tag")[0].innerText = tags;
+            document.getElementsByClassName("date")[0].innerText = date;
+        </script>
+
+        {{contents}}
+
+    </div>
+
+    <div class="links">
+        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button"
+            data-show-count="false">Tweet</a>
+        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+        <br>
+        
+        <br>
+
+        <br>
+
+        <p><i class="icon fab fa-twitter"></i><a href="https://twitter.com/{{twitter_id}}">@{{twitter_id}}</a></p>
+        <p><i class="icon fab fa-github"></i><a href="https://github.com/{{github_id}}">@{{github_id}}</a></p>
+        <p><i class="icon fas fa-envelope"></i><a href="mailto:{{mail}}"> {{mail}}</a></p>
+
+        <footer>
+            <p>&copy; {{author}} </p>
+        </footer>
+    </div>
+    </script>
+</body>
+<script>
+
+
+
+    const tocContainer = document.querySelector("#toc");
+    const tocTitle = document.createElement("div");
+    tocTitle.innerHTML = "目次";
+    tocTitle.classList.add("toc_title");
+    tocContainer.appendChild(tocTitle);
+
+
+
+    page_contents.forEach(item => {
+        if (item.type === "H2" || item.type === "H3") {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `<a href="#${item.id}">${item.content}</a>`;
+            listItem.classList.add("toc_" + item.type);
+            tocContainer.appendChild(listItem);
+        }
+    });
+
+    const options = {
+        root: null,
+        rootMargin: "-50% 0px",
+        threshold: 0
+    };
+
+    const observer = new IntersectionObserver(onIntersection, options);
+
+
+    page_contents.forEach(item => {
+        const element = document.getElementById(item.id);
+        if (element) {
+            observer.observe(element);
+        }
+    });
+
+    prev_item = null;
+
+    function onIntersection(entries) {
+        entries.forEach(entry => {
+            const id = entry.target.id;
+            const tocItem = document.querySelector(`#toc a[href="#${id}"]`);
+            if (tocItem) {
+                if (entry.isIntersecting) {
+                    tocItem.classList.add("active");
+                    if (prev_item) {
+                        prev_item.classList.remove("active");
+                    }
+                    prev_item = tocItem;
+                }
+            }
+        });
+    }
+
+</script>
+
+
+</html>
+)"

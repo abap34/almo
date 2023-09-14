@@ -9,701 +9,27 @@
 #include <curl/curl.h>
 #include "json.hpp"
 
-
 namespace almo {
-
-    std::string DARK_THEME = R"(
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #292929;
-            color: #EAEAEA;
-            flex-direction: column;
-        }
-
-        h1 {
-            color: #DAB4FF;
-            text-align: center;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(218, 180, 255, 0.3);
-        }
-
-        h2 {
-            color: #DAB4FF;
-            text-align: center;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(218, 180, 255, 0.3);
-            text-align: left;
-            padding-left: 10px;
-            border-bottom: solid 1px #DAB4FF;
-        }
-
-        p {
-            color: #BFBFBF;
-            margin-bottom: 10px;
-        }
-
-        a {
-            color: #DAB4FF;
-        }
-
-        .sidebar {
-            border-right: 1px solid #eee;
-            height: 100%;
-            width: auto;
-            padding: 10px 10px;
-            left: 0;
-            overflow: auto;
-            position: fixed;
-            top: 0;
-            width: 200px;
-            z-index: 1000;
-            background-color: #3a3a3a;
-        }
-
-
-        .each_problem_div {
-            margin-bottom: 10px;
-            float: left;
-            width: 100%;
-        }
-
-        .content_list_h1 {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            border-bottom: solid 1px #DAB4FF;
-            color: #eddbff;
-        }
-
-        .content_list_h2 {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #DAB4FF;
-        }
-
-        .content_list_problem {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ecdaff;
-        }
-
-        .badge {
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #514f4f;
-            border: 1px solid #fff;
-            margin: 0 8px;
-            float: left;
-        }
-
-
-        .runbutton {
-            display: inline-block;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #007bffa3;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        .runbutton:hover {
-            background-color: #0057b384;
-        }
-
-
-        .submitbutton {
-            display: inline-block;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #22ff0070;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        .submitbutton:hover {
-            background-color: #294928;
-        }
-
-
-        .problem_title {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .editor {
-            width: 100%;
-            height: 300px;
-            font-size: 16px;
-            font-family: monospace;
-            background-color: #514f4f;
-            color: #fff;
-        }
-
-
-        .output {
-            width: 100%;
-            padding: 5px 5px;
-            overflow-x: auto;
-            font-size: 16px;
-            font-family: monospace;
-            background-color: #514f4f;
-            color: #fff;
-        }
-
-        .expect_out,
-        .sample_in,
-        .sample_out {
-            width: 100%;
-            padding: 5px 5px;
-            overflow-x: auto;
-            font-size: 16px;
-            font-family: monospace;
-            background-color: #514f4f;
-            color: #fff;
-        }
-
-        .box-title {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .problem_list {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .image {
-            width: auto;
-        }
-
-        .date {
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #e0e0e0;
-            border: 1px solid #fff;
-            margin: 0 8px;
-            text-align: center;
-            display: inline-block;
-            /* set more left */
-            position: absolute;
-            right: 0;
-            top: 10px;
-        }
-
-        .author {
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #e0e0e0;
-            border: 1px solid #fff;
-            margin: 0 8px;
-            text-align: center;
-            display: inline-block;
-            position: absolute;
-            right: 0;
-            top: 60px;
-        }
-    )";
-
-    std::string LIGHT_THEME = R"(
-        body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #F7F7F7;
-    color: #333;
-    flex-direction: column;
-}
-
-h1, h2 {
-    color: #006699;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-h2 {
-    text-align: left;
-    padding-left: 10px;
-    border-bottom: solid 1px #006699;
-}
-
-p {
-    color: #666;
-    margin-bottom: 10px;
-}
-
-a {
-    color: #006699;
-}
-
-.sidebar {
-    border-right: 1px solid #eee;
-    height: 100%;
-    width: auto;
-    padding: 10px 10px;
-    left: 0;
-    overflow: auto;
-    position: fixed;
-    top: 0;
-    width: 200px;
-    z-index: 1000;
-    background-color: #F2F2F2;
-}
-
-.each_problem_div {
-    margin-bottom: 10px;
-    float: left;
-    width: 100%;
-}
-
-.content_list_h1 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    border-bottom: solid 1px #006699;
-    color: #006699;
-}
-
-.content_list_h2 {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #006699;
-}
-
-.content_list_problem {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #006699;
-}
-
-.badge {
-    padding: 8px 20px;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: bold;
-    color: #666;
-    border: 1px solid #333;
-    margin: 0 8px;
-    float: left;
-}
-
-.runbutton, .submitbutton {
-    display: inline-block;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    color: #fff;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-}
-
-.runbutton {
-    background-color: #006699;
-}
-
-.runbutton:hover {
-    background-color: #005580;
-}
-
-.submitbutton {
-    background-color: #008000;
-}
-
-.submitbutton:hover {
-    background-color: #006400;
-}
-
-.problem_title {
-    font-size: 20px;
-    font-weight: bold;
-    color: #333;
-}
-
-.editor {
-    width: 100%;
-    height: 300px; /* エディタの高さを調整 */
-    font-size: 16px;
-    font-family: monospace;
-    background-color: #F2F2F2;
-    color: #333;
-    padding: 10px; /* パディングを調整 */
-}
-
-.output, .expect_out, .sample_in, .sample_out {
-    width: 100%;
-    padding: 5px 5px;
-    overflow-x: auto;
-    font-size: 16px;
-    font-family: monospace;
-    background-color: #F2F2F2;
-    color: #333;
-    border: solid 1px #a8a8a8;
-}
-
-.box-title, .problem_list {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #666;
-}
-
-.image {
-    width: auto;
-}
-
-.date, .author {
-    padding: 8px 20px;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: bold;
-    color: #888;
-    border: 1px solid #333;
-    margin: 0 8px;
-    text-align: center;
-    display: inline-block;
-    position: absolute;
-    right: 0;
-}
-
-.date {
-    top: 10px;
-}
-
-.author {
-    top: 60px;
-}
-
-    )";
-
-
-    std::string TEMPLATE = R"(
-<!DOCTYPE html>
-<html lang="ja" prefix="og: http://ogp.me/ns#">
-<meta charset="UTF-8">
-
-<head>
-    <title> {____THIS____IS___TITLE___PLACE____} </title>
-
-    <meta property="og:title" content="{____THIS____IS___TITLE___PLACE____}">
-    <meta preperty="og:image" content="https://www.abap34.com/almo_logo.jpg">
-
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:site" content="@abap34" />
-
-    <!-- syntax hightlihgt -->
-    {____THIS____IS___SYNTAX___HIGHLIGHT___PLACE____}
-
-    <!-- Pythonのランタイム -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
-    <!-- ACした時にブワーって出るアニメーション -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
-
-    <!-- エディタ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
-
-    <!-- Math Jax -->
-    <script type="text/javascript" id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
-    <!-- アニメーション関連のやつ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
-
-    <style>
-        {____THIS____IS___THEME___PLACE____}
-    </style>
-
-</head>
-
-<body>
-
-
-    <script>
-        all_sample_input = {}
-        all_sample_output = {}
-
-
-        all_input = {}
-        all_output = {}
-
-        judge_types = {}
-        problem_status = {}
-        page_contents = []
-
-        const pyodidePromise = loadPyodide({
-            stdin: stdin_func,
-            stdout: stdout_func,
-        });
-
-
-        function stdin_func() {
-            if (submit_run) {
-                return all_input[target_objectid][judge_idx];
-            } else {
-                return all_sample_input[target_objectid];
-            }
-        }
-
-        function stdout_func(answer) {
-            let out_id = target_objectid + "_sample_out";
-            let expect_out_id = target_objectid + "_expect_out";
-            outputs += answer + "\n";
-        }
-
-        function error_handle(error) {
-            document.getElementById(target_objectid + "_sample_out").innerText = error;
-            document.getElementById(target_objectid + "_sample_out").style.color = "orange";
-            status = "RE";
-        }
-
-        const runCode = async (objectid, require_judge) => {
-            // update global variable
-            target_objectid = objectid;
-            submit_run = require_judge;
-
-            let pyodide = await pyodidePromise;
-
-            let editor = ace.edit(objectid);
-            let code = editor.getValue();
-            let result_bar_id = target_objectid + "_status";
-            let result_bar = document.getElementById(result_bar_id)
-            let each_problem_div = document.getElementById("problem_list_" + target_objectid + "_badge");
-            let out_id = target_objectid + "_sample_out";
-
-            document.getElementById(target_objectid + "_sample_out").innerText = "";
-            document.getElementById(target_objectid + "_sample_out").style.color = "";
-            result_bar.innerText = "Running...";
-
-
-            if (require_judge) {
-                let n_input = all_input[target_objectid].length;
-                for (let i = 0; i < n_input; i++) {
-                    judge_idx = i;
-                    result_bar.innerText = "Running...   " + judge_idx + "/" + (n_input);
-                    try {
-                        outputs = "";
-                        await pyodide.runPythonAsync(code);
-                        let expect_out = all_output[target_objectid][judge_idx];
-                        if (outputs.slice(-1) == "\n") {
-                            outputs = outputs.slice(0, -1);
-                        }
-                        judge(outputs, expect_out);
-                    } catch (error) {
-                        error_handle(error);
-                        result_bar.innerText = "WJ";
-                    }
-
-                    if (status == "TLE" || status == "MLE" || status == "RE" || status == "WA") {
-                        result_bar.style.backgroundColor = "#ffe500";
-                        result_bar.innerText = status + "   " + judge_idx + "/" + (n_input);
-                        each_problem_div.style.backgroundColor = "#ffe500";
-                        each_problem_div.innerText = status;
-                        break;
-                    }
-                }
-
-                if (status == "AC") {
-                    result_bar.style.backgroundColor = "lightgreen";
-                    result_bar.innerText = "AC";
-                    each_problem_div.style.backgroundColor = "lightgreen";
-                    each_problem_div.innerText = "AC";
-                    confetti();
-                } else {
-                    result_bar.style.backgroundColor = "#ffe500";
-                }
-            } else {
-                try {
-                    outputs = "";
-                    await pyodide.runPythonAsync(code);
-                    document.getElementById(target_objectid + "_sample_out").innerText = outputs;
-                    result_bar.innerText = "WJ";
-                } catch (error) {
-                    error_handle(error);
-                    result_bar.innerText = "RE";
-                }
-            }
-        };
-
-        function judge(answer, expect_out) {
-            // trim \n from both
-            if (answer.slice(-1) == "\n") {
-                answer = answer.slice(0, -1);
-            }
-
-            if (expect_out.slice(-1) == "\n") {
-                expect_out = expect_out.slice(0, -1);
-            }
-
-
-            let result_bar_id = target_objectid + "_status";
-            let judge_type = judge_types[target_objectid];
-            if (judge_type == 'equal') {
-                if (answer === expect_out) {
-                    status = "AC";
-                } else {
-                    status = "WA";
-                }
-            } else if (judge_type.includes('err')) {
-                status = "AC";
-                let admissible_absolute_error = parseFloat(judge_type.split('_')[1]);
-                let answer_list = answer.split('\n');
-                let expect_out_list = expect_out.split('\n');
-                for (let i = 0; i < answer_list.length; i++) {
-                    let answer_line = answer_list[i].split(' ');
-                    let expect_out_line = expect_out_list[i].split(' ');
-                    for (let j = 0; j < answer_line.length; j++) {
-                        let answer_out = parseFloat(answer_line[j]);
-                        let expect_out_out = parseFloat(expect_out_line[j]);
-                        if (Math.abs(answer_out - expect_out_out) > admissible_absolute_error) {
-                            status = "WA";
-                            return;
-                        }
-                    }
-                }
-
-            }
-        }
-    </script>
-
-    <div class="date"> Date: {____THIS____IS___DATE___PLACE____} </div>
-    <div class="author"> Author: {____THIS____IS___AUTHOR___PLACE____} </div>
-
-    <!-- ___split___ -->
-
-    <div class="sidebar">
-        <div id="content_list">
-            <script>
-                for (var i = 0; i < page_contents.length; i++) {
-                    let content = page_contents[i];
-                    if (content.type == "Problem") {
-                        let li = document.createElement("div");
-                        li.setAttribute("class", "content_list_problem");
-                        li.setAttribute("id", "problem_list_" + content.id);
-                        li.innerHTML = content.title;
-
-
-                        let badge = document.createElement("span");
-                        badge.setAttribute("class", "badge");
-                        badge.setAttribute("id", "problem_list_" + content.id + "_badge");
-                        badge.innerText = "WJ";
-                        badge.style.fontSize = "12px";
-                        badge.style.padding = "5px 10px";
-                        badge.style.position = "relative";
-
-                        let each_problem_div = document.createElement("div");
-                        each_problem_div.setAttribute("id", "problem_list_" + content.id + "_div");
-                        each_problem_div.setAttribute("class", "each_problem_div");
-
-                        each_problem_div.appendChild(badge);
-                        each_problem_div.appendChild(li);
-
-                        document.getElementById("content_list").appendChild(each_problem_div);
-                    } else if (content.type == "H1") {
-                        let li = document.createElement("div");
-                        li.setAttribute("class", "content_list_h1");
-                        li.innerHTML = content.content
-                        document.getElementById("content_list").appendChild(li);
-                    } else if (content.type == "H2") {
-                        let li = document.createElement("div");
-                        li.setAttribute("class", "content_list_h2");
-                        li.innerHTML = content.content
-                        document.getElementById("content_list").appendChild(li);
-                    }
-                }
-
-
-
-
-                const sidebar = document.querySelector(".sidebar");
-
-                let isMenuOpen = false;
-
-                gsap.to(sidebar, {
-                    x: "-200",
-                    opacity: 0,
-                    duration: 0,
-                    ease: "power1.out"
-                })
-
-                const onCursorMove = (event) => {
-                    const cursorX = event.clientX;
-
-                    if (!isMenuOpen && (cursorX <= 30)) {
-                        gsap.to(sidebar, {
-                            x: "0",
-                            opacity: 1,
-                            duration: 1,
-                            ease: "power1.out"
-                        });
-                        isMenuOpen = true;
-                    }
-
-                    if (isMenuOpen && cursorX > 30) {
-                        gsap.to(sidebar, {
-                            x: "-200",
-                            opacity: 0,
-                            duration: 1,
-                            ease: "power1.out"
-                        });
-                        isMenuOpen = false;
-                    }
-                };
-
-                window.addEventListener("mousemove", onCursorMove);
-            </script>
-        </div>
-    </div>
-    </script>
-    </div>
-
-</body>
-
-
-
-</html>
-)";
-
+    std::string LIGHT_THEME = 
+        #include "light.html"
+    ;
+    std::string DARK_THEME = 
+        #include "dark.html"
+    ;
     std::string read_file(const std::string& path) {
-    std::ifstream input_file(path);
-    
-    if (!input_file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + path);
-    }
-    
-    std::stringstream buffer;
-    buffer << input_file.rdbuf();
+        std::ifstream input_file(path);
 
-    input_file.close();
-    
-    return buffer.str();
-}
+        if (!input_file.is_open()) {
+            throw std::runtime_error("Failed to open file: " + path);
+        }
+
+        std::stringstream buffer;
+        buffer << input_file.rdbuf();
+
+        input_file.close();
+
+        return buffer.str();
+    }
 
 
     std::vector<std::string> glob(const std::string& pattern) {
@@ -720,70 +46,100 @@ a {
         return result;
     }
 
-    std::pair<std::string, std::string> load_html_template() {
-        std::string html_template = TEMPLATE;
-        std::string head = html_template.substr(0, html_template.find("<!-- ___split___ -->"));
-        std::string tail = html_template.substr(html_template.find("<!-- ___split___ -->") + 20);
-        return std::make_pair(head, tail);
-    }
-
-    std::string load_theme(std::string theme) {
-        if (theme == "dark") {
-            return DARK_THEME;
-        }
-        else if (theme == "light") {
-            return LIGHT_THEME;
+    std::string load_html_template(std::string theme) {
+        std::string html_template;
+        if (theme == "light") {
+            html_template = LIGHT_THEME;
         }
         else {
-            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            html_template = DARK_THEME;
+        }
+        return html_template;
+    }
+
+    std::string replace_template(std::string html_template, nlohmann::json json_meta_data, std::string contents) {
+        std::string output_html = html_template;
+        // get all key
+        std::vector<std::string> keys;
+        for (auto it = json_meta_data.begin(); it != json_meta_data.end(); ++it) {
+            keys.push_back(it.key());
+        }
+
+        for (std::string key : keys) {
+            std::string replace_key = "\\{\\{" + key + "\\}\\}";
+            std::string replace_value = json_meta_data[key];
+            output_html = std::regex_replace(output_html, std::regex(replace_key), replace_value);
+        }
+
+        std::string syntax_theme;
+        if (json_meta_data["theme"] == "dark") {
+            syntax_theme = "monokai-sublime.min";
+        } else if (json_meta_data["theme"] == "light") {
+            syntax_theme = "github.min";
+        } else {
+            std::cerr << "Invalid theme: " << json_meta_data["theme"] << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
+
+        output_html = std::regex_replace(output_html, std::regex("\\{\\{syntax_theme\\}\\}"), syntax_theme);
+        output_html = std::regex_replace(output_html, std::regex("\\{\\{contents\\}\\}"), contents);
+
+        std::cout << output_html << std::endl;
+        return output_html;
+    }
+
+
+    std::string build_page_content_script(std::string type, std::string id, std::string content) {
+        std::string script = "<script>"
+            "page_contents.push({ "
+            "    \"type\":\"" + type + "\", "
+            "    \"id\":\"" + id + "\", "
+            "    \"content\":\"" + content + "\" "
+            "})"
+            "</script> \n";
+        return script;
     }
 
     std::string render_h1(nlohmann::json j, std::string content) {
         std::string uuid = j["uuid"];
-        std::string add_page_content = "<script>"
-            "page_contents.push({ "
-            "    \"type\":\"H1\", "
-            "    \"id\":\"" + uuid + "\", "
-            "    \"content\":\"" + content + "\" "
-            "})"
-            "</script> \n";
-        std::string output = "<h1>" + content + "</h1>";
+        std::string add_page_content = build_page_content_script("H1", uuid, content);
+        std::string output = "<h1 id=\"" + uuid + "\">" + content + "</h1>";
         return add_page_content + output;
     }
 
     std::string render_h2(nlohmann::json j, std::string content) {
         std::string uuid = j["uuid"];
-        std::string add_page_content = "<script>"
-            "page_contents.push({ "
-            "    \"type\":\"H2\", "
-            "    \"id\":\"" + uuid + "\", "
-            "    \"content\":\"" + content + "\" "
-            "})"
-            "</script> \n";
-        std::string output = "<h2>" + content + "</h2>";
+        std::string add_page_content = build_page_content_script("H2", uuid, content);
+        std::string output = "<h2 id=\"" + uuid + "\">" + content + "</h2>";
         return add_page_content + output;
     }
 
     std::string render_h3(nlohmann::json j, std::string content) {
-        std::string output = "<h3>" + content + "</h3>";
-        return output;
+        std::string uuid = j["uuid"];
+        std::string add_page_content = build_page_content_script("H3", uuid, content);
+        std::string output = "<h3 id=\"" + uuid + "\">" + content + "</h3>";
+        return add_page_content + output;
     }
 
     std::string render_h4(nlohmann::json j, std::string content) {
-        std::string output = "<h4>" + content + "</h4>";
-        return output;
+        std::string uuid = j["uuid"];
+        std::string add_page_content = build_page_content_script("H4", uuid, content);
+        std::string output = "<h4 id=\"" + uuid + "\">" + content + "</h4>";
+        return add_page_content + output;
     }
 
     std::string render_h5(nlohmann::json j, std::string content) {
-        std::string output = "<h5>" + content + "</h5>";
-        return output;
+        std::string uuid = j["uuid"];
+        std::string add_page_content = build_page_content_script("H5", uuid, content);
+        std::string output = "<h5 id=\"" + uuid + "\">" + content + "</h5>";
+        return add_page_content + output;
     }
 
     std::string render_h6(nlohmann::json j, std::string content) {
-        std::string output = "<h6>" + content + "</h6>";
-        return output;
+        std::string uuid = j["uuid"];
+        std::string add_page_content = build_page_content_script("H6", uuid, content);
+        std::string output = "<h6 id=\"" + uuid + "\">" + content + "</h6>";
+        return add_page_content + output;
     }
 
     std::string render_strong(nlohmann::json j, std::string content) {
@@ -848,9 +204,9 @@ a {
 
         if (source_path != "") {
             source = read_file(source_path);
-        } 
+        }
 
-        std::string ace_editor= ""
+        std::string ace_editor = ""
             "<script>"
             "editor = ace.edit(\"" + uuid + "\"); "
             "editor.setTheme(\"" + ace_theme + "\");"
@@ -1012,9 +368,9 @@ a {
 
         std::string base64_image = base64_encode(image_data);
 
-        // Generate the HTML tag with Base64-encoded image data
-        std::string output = "<img src=\"data:image/png;base64," + base64_image + "\" alt=\"" + content + "\" width=\"50%\" class=\"center\">";
-        return output;
+        std::string output = "<img src=\"data:image/png;base64," + base64_image + "\">\n";
+        std::string figcaption = "<figcaption>" + content + "</figcaption>";
+        return "<figure>" + output + figcaption + "</figure>";
     }
 
 
@@ -1121,28 +477,8 @@ a {
     }
 
 
-    std::string load_syntax_highlight(std::string theme) {
-        if (theme == "dark") {
-            std::string out = R"(
-                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/monokai-sublime.min.css">
-                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
-                <script>hljs.initHighlightingOnLoad();</script>
-            )";
-            return out;
-        } else if (theme == "light") {
-            std::string out = R"(
-                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/github.min.css">
-                <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
-                <script>hljs.initHighlightingOnLoad();</script>
-            )";
-            return out;
-        } else {
-            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
-            exit(1);
-        }
-    }
 
-    void render(nlohmann::json json_ir, nlohmann::json json_meta_data) {
+    void render(nlohmann::json json_ir, nlohmann::json json_meta_data, std::string output_path) {
         // クラス名とレンダリング関数の対応map
         std::map<std::string, std::function<std::string(nlohmann::json, std::string)>> render_map;
         render_map["H1"] = render_h1;
@@ -1168,40 +504,33 @@ a {
         render_map["InlineCodeBlock"] = render_inline_code;
 
 
-        std::string outputs;
+        std::string contents;
+
+        std::string theme = json_meta_data["theme"];
 
         for (nlohmann::json block : json_ir) {
             if (block["class"] == "CodeRunner") {
-                outputs += render_code_runner(block, json_meta_data["theme"]);
+                contents += render_code_runner(block, theme);
             }
             else {
                 std::string render_str;
                 render_str = build_block(block, render_map);
-                outputs += render_str + "\n";
+                contents += render_str + "\n";
             }
 
         }
 
-        std::pair<std::string, std::string> html_template = load_html_template();
+        std::string html_template = load_html_template(theme);
 
-        std::string title = json_meta_data["title"];
-        std::string date = json_meta_data["date"];
-        std::string author = json_meta_data["author"];
-        std::string theme = json_meta_data["theme"];
+        std::vector<std::string> keys;
 
-        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___TITLE___PLACE____\\}"), title);
-        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___DATE___PLACE____\\}"), date);
-        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___AUTHOR___PLACE____\\}"), author);
-        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___THEME___PLACE____\\}"), load_theme(theme));
+        std::string output_html;
 
-        std::string syntax_highlight = load_syntax_highlight(theme);
+        output_html = replace_template(html_template, json_meta_data, contents);
 
-
-        html_template.first = std::regex_replace(html_template.first, std::regex("\\{____THIS____IS___SYNTAX___HIGHLIGHT___PLACE____\\}"), syntax_highlight);
-
-        std::string output_html = html_template.first + outputs + html_template.second;
-
-        std::cout << output_html << std::endl;
+        std::ofstream output_file(output_path);
+        output_file << output_html;
+        output_file.close();
     }
 
 }
