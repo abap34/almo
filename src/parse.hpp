@@ -305,8 +305,10 @@ namespace almo {
                     asts.emplace_back(block);
                 }
                 else if (line.starts_with("```")) {
+                    std::string language = line.substr(3);
                     idx++;
                     auto block = std::make_shared<AST>(CodeBlock);
+                    block->language = language;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "```") break;
                         block->childs.emplace_back(std::make_shared<AST>(PlainText, lines[idx]));

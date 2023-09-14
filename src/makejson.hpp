@@ -40,6 +40,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
             codes += child->content;
             codes += '\n';
         }
+        cur_json["language"] = ptr->language;
         nlohmann::json sub;
         sub["class"] = "PlainText";
         sub["content"] = codes;
