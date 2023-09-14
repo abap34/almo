@@ -2,9 +2,12 @@
 title: ALMO デモページ
 date: 2023-08-10
 author: abap34
+twitter_id: abap34
+github_id: abap34
+mail: abap0002@gmail.com
+tag: ["ALMO", "Python", "Markdown", "Pyodide", "WebAssembly"]
+author: abap34
 ---
-
-# ALMO デモページ
 
 ## はじめに
 
@@ -85,7 +88,7 @@ def hello():
 
 ![マンドリル](https://imagingsolution.net/wordpress/wp-content/uploads/2011/03/Mandrill.png)
 
-<div style="text-align: center;">マンドリル</div>
+
 
 
 
