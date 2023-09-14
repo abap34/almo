@@ -312,7 +312,6 @@ namespace almo {
                         block->childs.emplace_back(std::make_shared<AST>(PlainText, lines[idx]));
                         idx++;
                     }
-                    assert(lines[idx] == "```");
                     asts.emplace_back(block);
                 }
                 else if (line == "$$") {
@@ -483,7 +482,6 @@ namespace almo {
         std::ifstream file(path);
 
         if (!file) {
-            std::cerr << "Error: Unable to open file: " << path << std::endl;
             return lines;
         }
 
@@ -503,44 +501,45 @@ namespace almo {
         std::vector<std::string> lines = almo::read_md(path);
         
         std::string all_line_str;
-
+        
         for (std::string line : lines) {
             all_line_str += line;
             all_line_str += '\n';
         }
 
-        std::regex comment = std::regex("([\\s\\S]*)<!--([\\s\\S]*)-->([\\s\\S]*)");
-        std::smatch match;
-
-        while (std::regex_search(all_line_str, match, comment)) {
-            all_line_str = std::regex_replace(all_line_str, comment, match[1].str() + match[3].str());
-        }
-
         std::vector<std::string> processed_lines;
 
+        // 改行で分割
         std::string current_line = "";
         for (char c : all_line_str) {
             if (c == '\n') {    
                 processed_lines.push_back(current_line);
                 current_line = "";
-                
             }
             else {
                 current_line += c;
             }
         }
+        
+        // 最後の一行
+        if (current_line != "") {
+            processed_lines.push_back(current_line);
+        }
+        
         std::vector<std::pair<std::string, std::string>> meta_data;
         int meta_data_end = 0;
+        
         if(!processed_lines.empty() && processed_lines[0] == "---") {
             int index = 1;
             while(index < (int)processed_lines.size() && processed_lines[index] != "---") {
-                std::string key = std::regex_replace(processed_lines[index], std::regex("(.*):(.*)"), "$1");
-                std::string data = std::regex_replace(processed_lines[index], std::regex("(.*):(.*)"), "$2");
+                std::string key = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$1");
+                std::string data = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$2");
                 meta_data.emplace_back(key, data);
                 index++;
             }
             meta_data_end = index + 1;
         }
+
         return {meta_data, BlockParser::processer({processed_lines.begin() + meta_data_end, processed_lines.end()})};
     }
 }
