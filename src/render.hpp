@@ -51,8 +51,11 @@ namespace almo {
         if (theme == "light") {
             html_template = LIGHT_THEME;
         }
-        else {
+        else if (theme == "dark") {
             html_template = DARK_THEME;
+        } else {
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
         }
         return html_template;
     }
@@ -84,7 +87,6 @@ namespace almo {
         output_html = std::regex_replace(output_html, std::regex("\\{\\{syntax_theme\\}\\}"), syntax_theme);
         output_html = std::regex_replace(output_html, std::regex("\\{\\{contents\\}\\}"), contents);
 
-        std::cout << output_html << std::endl;
         return output_html;
     }
 
@@ -168,7 +170,8 @@ namespace almo {
     }
 
     std::string render_code_block(nlohmann::json j, std::string content) {
-        std::string output = "<pre><code>" + content + "</code></pre>";
+        std::string language = j["language"];
+        std::string output = "<pre><code class=\"" + language + "\">" + content + "</code></pre>";
         return output;
     }
 
@@ -517,7 +520,6 @@ namespace almo {
                 render_str = build_block(block, render_map);
                 contents += render_str + "\n";
             }
-
         }
 
         std::string html_template = load_html_template(theme);
