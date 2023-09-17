@@ -210,12 +210,6 @@ R"(<!DOCTYPE html>
             color: #006699;
         }
 
-        .each_problem_div {
-            margin-bottom: 10px;
-            float: left;
-            width: 100%;
-        }
-
         .content_list_h1 {
             font-size: 20px;
             font-weight: bold;
@@ -370,7 +364,6 @@ R"(<!DOCTYPE html>
             let code = editor.getValue();
             let result_bar_id = target_objectid + "_status";
             let result_bar = document.getElementById(result_bar_id)
-            let each_problem_div = document.getElementById("problem_list_" + target_objectid + "_badge");
             let out_id = target_objectid + "_sample_out";
 
             document.getElementById(target_objectid + "_sample_out").innerText = "";
@@ -399,8 +392,6 @@ R"(<!DOCTYPE html>
                     if (status == "TLE" || status == "MLE" || status == "RE" || status == "WA") {
                         result_bar.style.backgroundColor = "#ffe500";
                         result_bar.innerText = status + "   " + judge_idx + "/" + (n_input);
-                        each_problem_div.style.backgroundColor = "#ffe500";
-                        each_problem_div.innerText = status;
                         break;
                     }
                 }
@@ -408,8 +399,6 @@ R"(<!DOCTYPE html>
                 if (status == "AC") {
                     result_bar.style.backgroundColor = "lightgreen";
                     result_bar.innerText = "AC";
-                    each_problem_div.style.backgroundColor = "lightgreen";
-                    each_problem_div.innerText = "AC";
                     confetti();
                 } else {
                     result_bar.style.backgroundColor = "#ffe500";
