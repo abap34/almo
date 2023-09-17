@@ -16,7 +16,7 @@ namespace almo {
         H5, // <h5>
         H6, // <h6>
         Block, // ブロック
-        CodeRunner, // プログラムの実行環境を作る独自記法
+        Judge, // プログラムの実行環境を作る独自記法
         CodeBlock, // コードブロック
         MathBlock, // 数式ブロック
         InlineMath, // インラインの数式ブロック
@@ -45,8 +45,8 @@ namespace almo {
         std::string content; // typeがPlainTextのときのみ使用されます。PlainTextのテキストの中身が格納されます。
         std::vector<node_ptr> childs; // 構文木の子ノードを保持します。
 
-        // typeがCodeRunnerのときのみ使用されます。CodeRunnerの情報を持ちます。
-        std::vector<std::pair<std::string, std::string>> code_runner;
+        // typeがJudgeのときのみ使用されます。judgeの情報を持ちます。
+        std::vector<std::pair<std::string, std::string>> judge;
 
         // typeがTableのときのみ使用されます。Tableの情報を持ちます。
         std::vector<std::pair<std::string, std::string>> table;

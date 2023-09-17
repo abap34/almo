@@ -175,7 +175,7 @@ namespace almo {
         return output;
     }
 
-    std::string render_code_runner(nlohmann::json j, std::string theme) {
+    std::string render_judge(nlohmann::json j, std::string theme) {
         std::string uuid = j["uuid"];
         std::string title = j["title"];
         std::string sample_in_path = j["sample_in"];
@@ -496,7 +496,7 @@ namespace almo {
         render_map["InlineMath"] = render_inline_math;
         render_map["MathBlock"] = render_math_block;
         render_map["CodeBlock"] = render_code_block;
-        render_map["CodeRunner"] = render_code_runner;
+        render_map["Judge"] = render_judge;
         render_map["PlainText"] = render_plain_text;
         render_map["Block"] = render_block;
         render_map["NewLine"] = render_newline;
@@ -513,7 +513,7 @@ namespace almo {
 
         for (nlohmann::json block : json_ir) {
             if (block["class"] == "CodeRunner") {
-                contents += render_code_runner(block, theme);
+                contents += render_judge(block, theme);
             }
             else {
                 std::string render_str;
