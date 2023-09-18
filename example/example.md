@@ -5,8 +5,12 @@ author: abap34
 twitter_id: abap34
 github_id: abap34
 mail: abap0002@gmail.com
+ogp_url: https://www.abap34.com/almo_logo.jpg
 tag: ["ALMO", "Python", "Markdown", "Pyodide", "WebAssembly"]
 author: abap34
+url: abap34.com
+site_name: abap34.com
+twitter_site: abap34
 ---
 
 ## はじめに
@@ -29,7 +33,7 @@ ALMOの拡張構文の最大の特徴、そして売りは、**実行・ジャ�
 でできます。
 
 
-:::code
+:::judge
 title=Hello ALMO!
 sample_in=example/helloalmo/in/sample.txt
 sample_out=example/helloalmo/out/sample.txt
@@ -63,8 +67,8 @@ ALMOは**全部入り**のHTMLファイルを出力するパーサです。
 
 上のブロックは
 
-```
-:::code
+```text
+:::judge
 title=Hello ALMO!
 sample_in=example/helloalmo/in/sample.txt
 sample_out=example/helloalmo/out/sample.txt
@@ -75,12 +79,50 @@ out=example/helloalmo/out/*.txt
 
 と書くだけで作られ、そして全ての出入力ファイルがHTMLファイルに埋め込まれて、自動でジャッジが構築されます。
 
-普通のコードブロックも作れます、もちろん
+普通のコードブロックも作れます、
 
-```
+```python
 def hello():
     print("Hello ALMO!")
+
+if __name__ == "__main__":
+    hello()
 ```
+
+ジャッジなしで、実行可能なコードブロックも書けます！
+
+
+
+:::code
+_='_=%r;print(_%%_)';print(_%_)
+:::
+
+
+さらに、主要なPythonのライブラリも読み込めます。
+
+```
+:::loadlib
+numpy
+scipy
+:::
+```
+
+と書くと、
+
+:::loadlib
+numpy
+scipy
+:::
+
+
+:::code
+import numpy as np
+import scipy as sp
+
+print(np.array([1,2,3]))
+print(sp.linalg.det(np.array([[1,2],[3,4]])))
+:::
+
 
 
 (他にも、たとえインターネット上のファイルでも、画像は自動でBase64に変換され、HTMLファイルに埋め込まれます。)
@@ -89,25 +131,20 @@ def hello():
 ![マンドリル](https://imagingsolution.net/wordpress/wp-content/uploads/2011/03/Mandrill.png)
 
 
-
-
-
 ## インストール方法・使い方
 
 ALMOは、Homebrewを使ってインストールすることができます。
 
-```
+```bash
 brew tap abap34/homebrew-almo
 brew install almo
 ```
 
 インストールが完了したら、MarkdownファイルをALMOに渡してみましょう。
 
+```bash
+almo example/example.md -o example.html
 ```
-almo example/example.md > index.html
-```
-
-結果は標準出力に吐かれるので、適宜リダイレクトしてください。
 
 全部入りのHTMLファイルなので、そのまま置くだけで動作します。
 
