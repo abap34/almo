@@ -268,7 +268,7 @@ namespace almo {
                     block->childs.emplace_back(inline_parser.processer(line.substr(7)));
                     asts.emplace_back(block);
                 }
-                else if (line == ":::code") {
+                else if (line == ":::judge") {
                     idx++;
                     auto block = std::make_shared<AST>(Judge);
                     for (std::string head : { "title", "sample_in", "sample_out", "in", "out"}) {
@@ -304,8 +304,38 @@ namespace almo {
                     }
                     asts.emplace_back(block);
                 }
+                else if (line == ":::code") {
+                    idx++;
+                    auto block = std::make_shared<AST>(ExecutableCodeBlock);
+                    assert(idx < (int)lines.size());
+                    std::string code;
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") break;
+                        code += lines[idx] + "\n";
+                        idx++;
+                    }
+                    block->code = code;
+                    asts.emplace_back(block);
+                }
+                else if (line == ":::loadlib") {
+                    idx++;
+                    auto block = std::make_shared<AST>(LoadLib);
+                    assert(idx < (int)lines.size());
+                    std::vector<std::string> libs;
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") break;
+                        libs.emplace_back(lines[idx]);
+                        idx++;
+                    }
+                    block->libs = libs;
+                    asts.emplace_back(block);
+                }
                 else if (line.starts_with("```")) {
-                    std::string language = line.substr(3);
+                    // check lin length > 3
+                    std::string language;
+                    if (line.size() > 3) {
+                        std::string language = line.substr(3);
+                    }
                     idx++;
                     auto block = std::make_shared<AST>(CodeBlock);
                     block->language = language;

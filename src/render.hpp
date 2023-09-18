@@ -16,6 +16,14 @@ namespace almo {
     std::string DARK_THEME = 
         #include "dark.html"
     ;
+
+    std::string RUNNER = 
+        #include "runner.js"
+    ;
+
+    std::string SIDEBAR_BULDER = 
+        #include "sidebar.js"
+    ;
     std::string read_file(const std::string& path) {
         std::ifstream input_file(path);
 
@@ -57,6 +65,30 @@ namespace almo {
             std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
+
+        // find </html> and put runner.js before it
+        std::string runner = RUNNER;
+        std::string sidebar_builder = SIDEBAR_BULDER;
+        std::string::size_type pos = html_template.find("</head>");
+
+        if (pos != std::string::npos) {
+            html_template.insert(pos, runner);
+        }
+        else {
+            std::cerr << "Invalid html template" << std::endl;
+            exit(1);
+        }
+
+        pos = html_template.find("</html>");
+
+        if (pos != std::string::npos) {
+            html_template.insert(pos, sidebar_builder);
+        }
+        else {
+            std::cerr << "Invalid html template" << std::endl;
+            exit(1);
+        }
+
         return html_template;
     }
 
@@ -286,7 +318,63 @@ namespace almo {
 
         return output;
     }
+    
+    std::string render_executable_codeblock(nlohmann::json j, std::string theme){
+        std::string uuid = j["uuid"];
+        std::string code = j["code"];
 
+
+        std::string ace_theme;
+        if (theme == "dark") {
+            ace_theme = "ace/theme/monokai";
+        }
+        else if (theme == "light") {
+            ace_theme = "ace/theme/xcode";
+        }
+        else {
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
+        }
+        
+        std::string editor_div = "<div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
+
+        std::string ace_editor = ""
+            "<script>"
+            "editor = ace.edit(\"" + uuid + "\"); "
+            "editor.setTheme(\"" + ace_theme + "\");"
+            "editor.session.setMode(\"ace/mode/python\");"
+            "editor.setShowPrintMargin(false);"
+            "editor.setHighlightActiveLine(false);"
+            "editor.setOptions({"
+            "    enableBasicAutocompletion: true,"
+            "    enableSnippets: true,"
+            "    enableLiveAutocompletion: true,"
+            "});"
+            "editor.setValue(`" + code + "`, -1);"
+            "</script>\n";
+
+        std::string out_are = "<pre class=\"sample_out\" id=\"" + uuid + "_out\"></pre>\n";
+        
+        std::string run_button =
+            "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
+
+        std::string output = editor_div + ace_editor + out_are + run_button;
+        
+        return output;
+    }   
+
+    std::string render_load_libs(nlohmann::json j, std::string content) {
+        std::vector<std::string> libs = j["libs"];
+        for (std::string lib : libs) {
+            std::string output = "<script> use_libs.push(\"" + lib + "\"); </script>";
+            content += output;
+        }
+        return content;
+    }
+
+
+
+ 
     std::string render_plain_text(nlohmann::json j, std::string content) {
         std::string output = content;
         return output;
@@ -497,6 +585,8 @@ namespace almo {
         render_map["MathBlock"] = render_math_block;
         render_map["CodeBlock"] = render_code_block;
         render_map["Judge"] = render_judge;
+        render_map["ExecutableCodeBlock"] = render_executable_codeblock;
+        render_map["LoadLib"] = render_load_libs;
         render_map["PlainText"] = render_plain_text;
         render_map["Block"] = render_block;
         render_map["NewLine"] = render_newline;
@@ -512,8 +602,10 @@ namespace almo {
         std::string theme = json_meta_data["theme"];
 
         for (nlohmann::json block : json_ir) {
-            if (block["class"] == "CodeRunner") {
+            if (block["class"] == "Judge") {
                 contents += render_judge(block, theme);
+            } else if (block["class"] == "ExecutableCodeBlock") {
+                contents += render_executable_codeblock(block, theme);
             }
             else {
                 std::string render_str;

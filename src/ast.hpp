@@ -17,6 +17,8 @@ namespace almo {
         H6, // <h6>
         Block, // ブロック
         Judge, // プログラムの実行環境を作る独自記法
+        ExecutableCodeBlock, // 実行可能なコードブロック
+        LoadLib, // ライブラリの読み込み
         CodeBlock, // コードブロック
         MathBlock, // 数式ブロック
         InlineMath, // インラインの数式ブロック
@@ -47,6 +49,12 @@ namespace almo {
 
         // typeがJudgeのときのみ使用されます。judgeの情報を持ちます。
         std::vector<std::pair<std::string, std::string>> judge;
+
+        // typeがExecutableCodeBlockのときのみ使用されます。ExecutableCodeBlockの情報を持ちます。
+        std::string code;
+
+        // typeがLoadLibのときのみ使用されます。読み込むライブラリの名前を持ちます。
+        std::vector<std::string> libs;
 
         // typeがTableのときのみ使用されます。Tableの情報を持ちます。
         std::vector<std::pair<std::string, std::string>> table;

@@ -33,6 +33,14 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr) {
             cur_json[property] = name;
         }
     }
+    else if (ptr->type == ExecutableCodeBlock){
+        cur_json["class"] = "ExecutableCodeBlock";
+        cur_json["code"] = ptr->code;
+    }
+    else if (ptr->type == LoadLib) {
+        cur_json["class"] = "LoadLib";
+        cur_json["libs"] = ptr->libs;
+    }
     else if (ptr->type == CodeBlock) {
         cur_json["class"] = "CodeBlock";
         std::string codes = "";
