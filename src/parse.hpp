@@ -331,11 +331,7 @@ namespace almo {
                     asts.emplace_back(block);
                 }
                 else if (line.starts_with("```")) {
-                    // check lin length > 3
-                    std::string language;
-                    if (line.size() > 3) {
-                        std::string language = line.substr(3);
-                    }
+                    std::string language = line.substr(3);
                     idx++;
                     auto block = std::make_shared<AST>(CodeBlock);
                     block->language = language;
