@@ -336,7 +336,7 @@ namespace almo {
             exit(1);
         }
         
-        std::string editor_div = "<div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
+        std::string editor_div = "<br> \n <div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
 
         std::string ace_editor = ""
             "<script>"
@@ -360,7 +360,7 @@ namespace almo {
         std::string run_button =
             "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
 
-        std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
+        std::string output = editor_div + ace_editor + run_button + out_area + plot_area;
         
         return output;
     }   
