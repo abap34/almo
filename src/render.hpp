@@ -353,12 +353,14 @@ namespace almo {
             "editor.setValue(`" + code + "`, -1);"
             "</script>\n";
 
-        std::string out_are = "<pre class=\"sample_out\" id=\"" + uuid + "_out\"></pre>\n";
+        std::string out_area = "<pre class=\"sample_out\" id=\"" + uuid + "_out\"></pre>\n";
+
+        std::string plot_area = "<div class=\"plot\" id=\"" + uuid + "_plot\"></div>\n";
         
         std::string run_button =
             "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
 
-        std::string output = editor_div + ace_editor + out_are + run_button;
+        std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
         
         return output;
     }   

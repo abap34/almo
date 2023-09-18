@@ -142,6 +142,7 @@ const runBlock = async (objectid) => {
     let editor = ace.edit(objectid);
     let code = editor.getValue();
     let out_area = document.getElementById(objectid + "_out");
+    document.pyodideMplTarget  = document.getElementById(objectid + "_plot");
     out_area.innerText = "Running...";
     for (let i = 0; i < use_libs.length; i++) {
         let lib = use_libs[i];
