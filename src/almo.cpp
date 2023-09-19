@@ -24,8 +24,10 @@ int main(int argc, char *argv[]){
                 theme = argv[i + 1];
             }
             else if (argv[i][1] == 'd'){
-                std::cout << json_meta_data.dump(4) << std::endl;
-                std::cout << json_ir.dump(4) << std::endl;
+                nlohmann::json all_data;
+                all_data["meta_data"] = json_meta_data;
+                all_data["ir"] = json_ir;
+                std::cout << all_data.dump(4) << std::endl;
                 return 0;
             }
             else if (argv[i][1] == 'h'){

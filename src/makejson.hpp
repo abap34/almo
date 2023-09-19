@@ -6,20 +6,20 @@
 
 namespace almo {
 
-struct UUID_gen{
-    std::string operator()(){
+struct UUID_gen {
+    std::string operator()() {
         static int uuid = 0;
         return std::to_string(uuid++);
     }
 }uuid;
 
-nlohmann::json dp_on_AST(AST::node_ptr ptr){
+nlohmann::json dp_on_AST(AST::node_ptr ptr) {
     nlohmann::json cur_json;
-    if (ptr->type == PlainText){
+    if (ptr->type == PlainText) {
         cur_json["class"] = "PlainText";
         cur_json["content"] = ptr->content;
     }
-    else if (ptr->type == NewLine){
+    else if (ptr->type == NewLine) {
         cur_json["class"] = "NewLine";
         cur_json["content"] = "";
     }
@@ -27,16 +27,24 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         cur_json["class"] = "Url";
         cur_json["content"] = ptr->content;
     }
-    else if (ptr->type == CodeRunner){
-        cur_json["class"] = "CodeRunner";
-        for (auto [property, name] : ptr->code_runner){
+    else if (ptr->type == Judge) {
+        cur_json["class"] = "Judge";
+        for (auto [property, name] : ptr->judge) {
             cur_json[property] = name;
         }
     }
-    else if (ptr->type == CodeBlock){
+    else if (ptr->type == ExecutableCodeBlock){
+        cur_json["class"] = "ExecutableCodeBlock";
+        cur_json["code"] = ptr->code;
+    }
+    else if (ptr->type == LoadLib) {
+        cur_json["class"] = "LoadLib";
+        cur_json["libs"] = ptr->libs;
+    }
+    else if (ptr->type == CodeBlock) {
         cur_json["class"] = "CodeBlock";
         std::string codes = "";
-        for (AST::node_ptr child : ptr->childs){
+        for (AST::node_ptr child : ptr->childs) {
             codes += child->content;
             codes += '\n';
         }
@@ -47,10 +55,10 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         sub["uuid"] = uuid();
         cur_json["content"].push_back(sub);
     }
-    else if (ptr->type == MathBlock){
+    else if (ptr->type == MathBlock) {
         cur_json["class"] = "MathBlock";
         std::string codes = "";
-        for (AST::node_ptr child : ptr->childs){
+        for (AST::node_ptr child : ptr->childs) {
             codes += child->content;
             codes += '\n';
         }
@@ -60,19 +68,19 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         sub["uuid"] = uuid();
         cur_json["content"].push_back(sub);
     }
-    else if (ptr->type == Table){
+    else if (ptr->type == Table) {
         cur_json["class"] = "Table";
-        for (AST::node_ptr child : ptr->childs){
+        for (AST::node_ptr child : ptr->childs) {
             cur_json["content"].push_back(dp_on_AST(child));
         }
 
-        for (auto [property, name] : ptr->table){
+        for (auto [property, name] : ptr->table) {
             cur_json[property] = name;
         }
 
         cur_json["col_format"] = ptr->col_format;
         cur_json["col_names"] = ptr->col_names;
-   
+
     }
     else {
         if (ptr->type == H1) cur_json["class"] = "H1";
@@ -92,7 +100,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
         if (ptr->type == InlineImage)    cur_json["class"] = "InlineImage";
         if (ptr->type == InlineCodeBlock)cur_json["class"] = "InlineCodeBlock";
 
-        for (AST::node_ptr child : ptr->childs){
+        for (AST::node_ptr child : ptr->childs) {
             cur_json["content"].push_back(dp_on_AST(child));
         }
     }
@@ -102,7 +110,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr){
 
 nlohmann::json make_meta_data_json(std::vector<std::pair<std::string, std::string>> meta_data) {
     nlohmann::json output_json;
-    for(auto [key, data]: meta_data) {
+    for (auto [key, data] : meta_data) {
         output_json[key] = data;
     }
     return output_json;
@@ -110,10 +118,10 @@ nlohmann::json make_meta_data_json(std::vector<std::pair<std::string, std::strin
 
 nlohmann::json make_json(std::vector<AST::node_ptr> ast) {
     nlohmann::json output_json;
-    for (AST::node_ptr ptr : ast){
+    for (AST::node_ptr ptr : ast) {
         output_json.push_back(dp_on_AST(ptr));
     }
-    
+
     return output_json;
 }
 } // namespace almo

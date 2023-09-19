@@ -226,7 +226,7 @@ namespace almo {
         // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
         // 使用例:
         //    BlockParser::processer(lines);
-        static std::vector<AST::node_ptr> processer( std::vector<std::string> lines) {
+        static std::vector<AST::node_ptr> processer(std::vector<std::string> lines) {
             std::vector<AST::node_ptr> asts;
             InlineParser inline_parser;
             int idx = 0;
@@ -268,13 +268,13 @@ namespace almo {
                     block->childs.emplace_back(inline_parser.processer(line.substr(7)));
                     asts.emplace_back(block);
                 }
-                else if (line == ":::code") {
+                else if (line == ":::judge") {
                     idx++;
-                    auto block = std::make_shared<AST>(CodeRunner);
+                    auto block = std::make_shared<AST>(Judge);
                     for (std::string head : { "title", "sample_in", "sample_out", "in", "out"}) {
                         assert(idx < (int)lines.size());
                         assert(lines[idx].starts_with(head));
-                        block->code_runner.emplace_back(head, lines[idx].substr(head.size() + 1));
+                        block->judge.emplace_back(head, lines[idx].substr(head.size() + 1));
                         idx++;
                     }
                     assert(idx < (int)lines.size());
@@ -283,25 +283,51 @@ namespace almo {
                     if (lines[idx].starts_with("judge=")) {
                         std::string rhs = lines[idx].substr(6);
                         assert(rhs.starts_with("err_") || rhs == "equal");
-                        block->code_runner.emplace_back("judge", rhs);
+                        block->judge.emplace_back("judge", rhs);
                         find_judge = true;
                         idx++;
-                    } 
+                    }
                     assert(idx < (int)lines.size());
                     if (lines[idx].starts_with("source=")) {
                         std::string source_path = lines[idx].substr(7);
-                        block->code_runner.emplace_back("source", source_path);
+                        block->judge.emplace_back("source", source_path);
                         find_source = true;
                         idx++;
                     }
                     assert(idx < (int)lines.size());
                     assert(lines[idx] == ":::");
                     if (!find_judge) {
-                        block->code_runner.emplace_back("judge", "equal");
+                        block->judge.emplace_back("judge", "equal");
                     }
                     if (!find_source) {
-                        block->code_runner.emplace_back("source", "");
+                        block->judge.emplace_back("source", "");
                     }
+                    asts.emplace_back(block);
+                }
+                else if (line == ":::code") {
+                    idx++;
+                    auto block = std::make_shared<AST>(ExecutableCodeBlock);
+                    assert(idx < (int)lines.size());
+                    std::string code;
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") break;
+                        code += lines[idx] + "\n";
+                        idx++;
+                    }
+                    block->code = code;
+                    asts.emplace_back(block);
+                }
+                else if (line == ":::loadlib") {
+                    idx++;
+                    auto block = std::make_shared<AST>(LoadLib);
+                    assert(idx < (int)lines.size());
+                    std::vector<std::string> libs;
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") break;
+                        libs.emplace_back(lines[idx]);
+                        idx++;
+                    }
+                    block->libs = libs;
                     asts.emplace_back(block);
                 }
                 else if (line.starts_with("```")) {
@@ -329,14 +355,14 @@ namespace almo {
                 else if (line.starts_with("- ")) {
                     // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
                     // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    auto list_parser = [&](auto &&self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
+                    auto list_parser = [&](auto&& self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
                         auto block = std::make_shared<AST>(ListBlock);
                         assert(lines[line_id].substr(cur, 2) == "- ");
                         AST::node_ptr now = nullptr;
                         std::string content = "";
                         while (true) {
                             if (line_id == (int)(lines.size())) break;
-                            if(is_header(lines[line_id])) break;
+                            if (is_header(lines[line_id])) break;
                             else if (lines[line_id].starts_with(":::")) break;
                             else if (lines[line_id].starts_with("```")) break;
                             else if (lines[line_id].starts_with("$$")) break;
@@ -344,17 +370,17 @@ namespace almo {
                             else {
                                 std::string list_header = "- ";
                                 bool is_upper = false;
-                                for(int i = 0; i < cur; i += 2) {
-                                    if(lines[line_id].starts_with(list_header)) {
+                                for (int i = 0; i < cur; i += 2) {
+                                    if (lines[line_id].starts_with(list_header)) {
                                         assert(now != nullptr);
                                         is_upper = true;
                                         break;
                                     }
                                     list_header = "  " + list_header;
                                 }
-                                if(is_upper) break;
-                                if(lines[line_id].starts_with(list_header)) {
-                                    if(now != nullptr) {
+                                if (is_upper) break;
+                                if (lines[line_id].starts_with(list_header)) {
+                                    if (now != nullptr) {
                                         now->childs.insert(now->childs.begin(), inline_parser.processer(content));
                                         block->childs.emplace_back(now);
                                         content.clear();
@@ -378,7 +404,7 @@ namespace almo {
                         now->childs.insert(now->childs.begin(), inline_parser.processer(content));
                         block->childs.emplace_back(now);
                         return std::make_pair(line_id, block);
-                    };
+                        };
                     auto [next, list_ast] = list_parser(list_parser, idx);
                     idx = next;
                     asts.emplace_back(list_ast);
@@ -464,13 +490,13 @@ namespace almo {
             return asts;
         }
 
-        private:
+    private:
         // headerブロックであるか判定
-        static bool is_header(const std::string &s) {
+        static bool is_header(const std::string& s) {
             std::string header = "";
-            for(int i = 1; i <= 6; i++) {
+            for (int i = 1; i <= 6; i++) {
                 header += '#';
-                if(s.starts_with(header + " ")) return true;
+                if (s.starts_with(header + " ")) return true;
             }
             return false;
         }
@@ -501,9 +527,9 @@ namespace almo {
     //     parse_md_file("example.md");
     std::pair<std::vector<std::pair<std::string, std::string>>, std::vector<AST::node_ptr>> parse_md_file(std::string path) {
         std::vector<std::string> lines = almo::read_md(path);
-        
+
         std::string all_line_str;
-        
+
         for (std::string line : lines) {
             all_line_str += line;
             all_line_str += '\n';
@@ -518,7 +544,7 @@ namespace almo {
         // 改行で分割
         std::string current_line = "";
         for (char c : all_line_str) {
-            if (c == '\n') {    
+            if (c == '\n') {
                 processed_lines.push_back(current_line);
                 current_line = "";
             }
@@ -526,18 +552,18 @@ namespace almo {
                 current_line += c;
             }
         }
-        
+
         // 最後の一行
         if (current_line != "") {
             processed_lines.push_back(current_line);
         }
-        
+
         std::vector<std::pair<std::string, std::string>> meta_data;
         int meta_data_end = 0;
-        
-        if(!processed_lines.empty() && processed_lines[0] == "---") {
+
+        if (!processed_lines.empty() && processed_lines[0] == "---") {
             int index = 1;
-            while(index < (int)processed_lines.size() && processed_lines[index] != "---") {
+            while (index < (int)processed_lines.size() && processed_lines[index] != "---") {
                 std::string key = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$1");
                 std::string data = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$2");
                 meta_data.emplace_back(key, data);
@@ -546,6 +572,6 @@ namespace almo {
             meta_data_end = index + 1;
         }
 
-        return {meta_data, BlockParser::processer({processed_lines.begin() + meta_data_end, processed_lines.end()})};
+        return { meta_data, BlockParser::processer({processed_lines.begin() + meta_data_end, processed_lines.end()}) };
     }
 }
