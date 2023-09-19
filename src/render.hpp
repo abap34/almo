@@ -252,7 +252,11 @@ namespace almo {
             "    enableBasicAutocompletion: true,"
             "    enableSnippets: true,"
             "    enableLiveAutocompletion: true,"
+            "    minLines: 25, "
+            "    maxLines: 25, "
+            "    fontSize: \"14px\""
             "});"
+            "editor.renderer.setScrollMargin(10, 10);"
             "editor.setValue(`" + source + "`, -1);"
             "</script>\n";
 
@@ -323,6 +327,13 @@ namespace almo {
         std::string uuid = j["uuid"];
         std::string code = j["code"];
 
+        int n_line = 0;
+
+        for (char c : code) {
+            if (c == '\n') {
+                n_line++;
+            }
+        }
 
         std::string ace_theme;
         if (theme == "dark") {
@@ -349,7 +360,11 @@ namespace almo {
             "    enableBasicAutocompletion: true,"
             "    enableSnippets: true,"
             "    enableLiveAutocompletion: true,"
+            "    minLines: " + std::to_string(n_line + 1) + ", "
+            "    maxLines: " + std::to_string(n_line + 1) + ", "
+            "    fontSize: \"14px\""
             "});"
+            "editor.renderer.setScrollMargin(10, 10);"
             "editor.setValue(`" + code + "`, -1);"
             "</script>\n";
 
