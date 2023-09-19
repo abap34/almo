@@ -138,17 +138,20 @@ function judge(answer, expect_out) {
 
 // ExecutableCodeblockのコードを実行する
 const runBlock = async (objectid) => {
+    let out_area = document.getElementById(objectid + "_out");
+    out_area.style.color = "";
+
     let pyodide = await pyodidePromise;
     let editor = ace.edit(objectid);
     let code = editor.getValue();
-    let out_area = document.getElementById(objectid + "_out");
     document.pyodideMplTarget  = document.getElementById(objectid + "_plot");
-    out_area.innerText = "Running...";
+    out_area.innerText = "Loading libraries...";
     for (let i = 0; i < use_libs.length; i++) {
         let lib = use_libs[i];
         await pyodide.loadPackage(lib);
     }
-    out_area.style.color = "";
+    out_area.innerText = "Running...";
+
     outputs = "";
     try {
         await pyodide.runPythonAsync(code);
