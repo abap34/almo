@@ -3,13 +3,12 @@
 #include "render.hpp"
 #include <iostream>
 #include <fstream>
+#include <string>
 
 int main(int argc, char *argv[]){
     auto [meta_data, asts] = almo::parse_md_file(argv[1]);
     nlohmann::json json_meta_data = almo::make_meta_data_json(meta_data);
     nlohmann::json json_ir = almo::make_json(asts);
-
-    std::vector<std::string> args = {"-o", "-t", "-d", "-h"};
 
     // default
     std::string theme = "light";
@@ -17,6 +16,11 @@ int main(int argc, char *argv[]){
 
     for (int i = 2; i < argc; i++){
         if (argv[i][0] == '-'){
+            if (strlen(argv[i]) > 3){
+                std::cerr << "Unkown command line arguments is passed." << std::endl;
+                std::cerr << "Please check the option by `almo -h`" << std::endl;
+                exit(1);
+            }
             if (argv[i][1] == 'o'){
                 out_path = argv[i + 1];
             }
@@ -42,6 +46,11 @@ int main(int argc, char *argv[]){
                 std::cout << "  -d : show debug info" << std::endl;
                 std::cout << "  -h : show this help" << std::endl;
                 return 0;
+            }
+            else {
+                std::cerr << "Unkown command line arguments is passed." << std::endl;
+                std::cerr << "Please check the option by `almo -h`" << std::endl;
+                exit(1);
             }
         }
     }
