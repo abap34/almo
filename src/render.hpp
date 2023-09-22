@@ -11,14 +11,18 @@
 
 namespace almo {
     std::string LIGHT_THEME = 
-        #include "light.html"
+        #include "light.css"
     ;
     std::string DARK_THEME = 
-        #include "dark.html"
+        #include "dark.css"
     ;
 
     std::string RUNNER = 
         #include "runner.js"
+    ;
+
+    std::string TEMPLATE = 
+        #include "template.html"
     ;
 
     std::string SIDEBAR_BULDER = 
@@ -55,12 +59,13 @@ namespace almo {
     }
 
     std::string load_html_template(std::string theme) {
-        std::string html_template;
+        std::string result;
         if (theme == "light") {
-            html_template = LIGHT_THEME;
+            // replace {{style}} in TEMPLATE
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), LIGHT_THEME);
         }
         else if (theme == "dark") {
-            html_template = DARK_THEME;
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), DARK_THEME);
         } else {
             std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
@@ -69,27 +74,27 @@ namespace almo {
         // find </html> and put runner.js before it
         std::string runner = RUNNER;
         std::string sidebar_builder = SIDEBAR_BULDER;
-        std::string::size_type pos = html_template.find("</head>");
+        std::string::size_type pos = result.find("</head>");
 
         if (pos != std::string::npos) {
-            html_template.insert(pos, runner);
+            result.insert(pos, runner);
         }
         else {
             std::cerr << "Invalid html template" << std::endl;
             exit(1);
         }
 
-        pos = html_template.find("</html>");
+        pos = result.find("</html>");
 
         if (pos != std::string::npos) {
-            html_template.insert(pos, sidebar_builder);
+            result.insert(pos, sidebar_builder);
         }
         else {
             std::cerr << "Invalid html template" << std::endl;
             exit(1);
         }
 
-        return html_template;
+        return result;
     }
 
     std::string replace_template(std::string html_template, nlohmann::json json_meta_data, std::string contents) {
