@@ -13,6 +13,7 @@ int main(int argc, char *argv[]){
     // default
     std::string theme = "light";
     std::string out_path = "index.html";
+    bool debug = false;
 
     for (int i = 2; i < argc; i++){
         if (argv[i][0] == '-'){
@@ -28,11 +29,7 @@ int main(int argc, char *argv[]){
                 theme = argv[i + 1];
             }
             else if (argv[i][1] == 'd'){
-                nlohmann::json all_data;
-                all_data["meta_data"] = json_meta_data;
-                all_data["ir"] = json_ir;
-                std::cout << all_data.dump(4) << std::endl;
-                return 0;
+                debug = true;
             }
             else if (argv[i][1] == 'h'){
                 if (argc > 3){
@@ -56,6 +53,15 @@ int main(int argc, char *argv[]){
     }
 
     json_meta_data["theme"] = theme;
+    json_meta_data["out_path"] = out_path;
+
+    if (debug) {
+        nlohmann::json all_data;
+        all_data["meta"] = json_meta_data;
+        all_data["ir"] = json_ir;
+        std::cout << all_data.dump(4) << std::endl;
+    }
+
     almo::render(json_ir, json_meta_data, out_path);
     return 0;
 }
