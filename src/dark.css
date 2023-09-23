@@ -1,0 +1,279 @@
+R"(
+    body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #333;
+    color: #F7F7F7;
+    flex-direction: column;
+    display: flex;
+    width: 95%;
+}
+
+h1,
+h2 {
+    color: #F7F7F7;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h2 {
+    text-align: left;
+    padding-left: 10px;
+    border-bottom: solid 1px #5b5b5b;
+}
+
+p {
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+a {
+    color: #dcddfe;
+}
+
+figure {
+    text-align: center;
+}
+
+figcaption {
+    text-align: center;
+}
+
+pre {
+    padding: 10px;
+    color: #F7F7F7;
+    border: solid 1px #a8a8a8;
+    overflow-x: auto;
+}
+
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.date {
+    color: #ccc;
+    font-size: 14px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.tag {
+    color: #ccc;
+    font-size: 14px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.content {
+    flex: 1;
+    padding: 40px 40px;
+    margin-left: 0px;
+    margin-right: 10px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    background-color: #444;
+    border-radius: 5px;
+    overflow: auto;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .content {
+        width: 100%;
+        padding: 20px;
+    }
+}
+
+.sidebar {
+    flex: 3;
+    border-right: 1px solid #eee;
+    height: 100%;
+    width: 10%;
+    padding: 10px 10px;
+    left: 0;
+    overflow: auto;
+    position: fixed;
+    top: 0;
+    width: 220px;
+    z-index: 1000;
+    background-color: #333;
+}
+
+@media (max-width: 1260px) {
+    .sidebar {
+        display: none;
+    }
+}
+
+.links {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 200px;
+    height: 100%;
+    padding: 10px 10px;
+    overflow: auto;
+    background-color: #333;
+}
+
+@media (max-width: 1260px) {
+    .links {
+        display: none;
+    }
+}
+
+#toc {
+    background-color: #444;
+    border-radius: 5px;
+    padding: 15px;
+    list-style: none;
+}
+
+.toc_title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #F7F7F7;
+    border-bottom: solid 1px #161616;
+}
+
+#toc a {
+    text-decoration: none;
+    color: #ccc;
+    display: block;
+    margin: 5px 0;
+    transition: color 0.2s;
+}
+
+#toc a:hover {
+    color: #007bff;
+}
+
+#toc .active {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 16px;
+}
+
+.toc_H2 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #006699;
+    font-weight: bold;
+}
+
+.toc_H3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #006699;
+}
+
+.content_list_h1 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: solid 1px #006699;
+    color: #006699;
+}
+
+.content_list_h2 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #006699;
+}
+
+.content_list_problem {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #006699;
+}
+
+.badge {
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ccc;
+    /* ダークテーマのテキスト色 */
+    border: 1px solid #333;
+    margin: 0 8px;
+    float: left;
+}
+
+.runbutton,
+.submitbutton {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    color: #fff;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.runbutton {
+    background-color: #006699;
+}
+
+.runbutton:hover {
+    background-color: #005580;
+}
+
+.submitbutton {
+    background-color: #008000;
+}
+
+.submitbutton:hover {
+    background-color: #006400;
+}
+
+.problem_title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #F7F7F7;
+}
+
+
+.editor {
+    width: 100%;
+    font-size: 16px;
+    font-family: monospace;
+    background-color: #444;
+    color: #F7F7F7;
+    border: solid 1px #a8a8a8;
+}
+
+
+.output,
+.expect_out,
+.sample_in,
+.sample_out {
+    width: 100%;
+    padding: 5px 5px;
+    overflow-x: auto;
+    font-size: 16px;
+    font-family: monospace;
+    background-color: #444;
+    color: #F7F7F7;
+    border: solid 1px #a8a8a8;
+}
+
+.box-title,
+.problem_list {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #ccc;
+}
+
+)"
