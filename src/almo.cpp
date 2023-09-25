@@ -46,6 +46,7 @@ int main(int argc, char *argv[]){
                 std::cout << "options:" << std::endl;
                 std::cout << "  -o [output file] : output file name" << std::endl;
                 std::cout << "  -t [theme] : theme name" << std::endl;
+                std::cout << "  -c [custom css path] : custom style pass" << std::endl;
                 std::cout << "  -d : show debug info" << std::endl;
                 std::cout << "  -h : show this help" << std::endl;
                 return 0;
