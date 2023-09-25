@@ -96,6 +96,7 @@ nlohmann::json dp_on_AST(AST::node_ptr ptr) {
         if (ptr->type == InlineMath)     cur_json["class"] = "InlineMath";
         if (ptr->type == ListBlock)      cur_json["class"] = "ListBlock";
         if (ptr->type == Item)           cur_json["class"] = "Item";
+        if (ptr->type == EnumerateBlock) cur_json["class"] = "EnumerateBlock";
         if (ptr->type == InlineUrl)      cur_json["class"] = "InlineUrl";
         if (ptr->type == InlineImage)    cur_json["class"] = "InlineImage";
         if (ptr->type == InlineCodeBlock)cur_json["class"] = "InlineCodeBlock";
