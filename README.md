@@ -1,18 +1,104 @@
 # ALMO
 
 
-![](https://www.abap34.com/almo_logo.jpg)
+<p align="center">
+<img src="https://www.abap34.com/almo_logo.png" width="300px">
+</p>
 
 
 ALMOはC++製の拡張Markdownパーサです。 
 
-ALMOは、WebAseemblyを使ってブラウザ上で完結する実行とジャッジ環境を提供します。 ([デモページ](https://www.abap34.com/almo.html)
-)
+ALMOは、WebAseemblyを使ってブラウザ上で完結するサーバ不要の実行およびジャッジ環境を提供します。 
 
 ![](example/demo.gif)
 
 
+## 機能
 
+ALMOは、拡張Markdownパーサです。
+
+ALMOの拡張構文は、
+
+- 競技プログラミング
+- 科学技術計算
+- データ分析
+
+などに関する記事を作成するために設計されています。
+
+### 実行可能コードブロック
+
+ALMOは、実行可能なコードブロックを提供します。
+
+```
+:::code
+# このコードは自分自身を出力します！　
+
+# 実行して確かめよう
+
+_='_=%r;print(_%%_)';print(_%_)
+:::
+```
+
+という記法は、ALMOによって変換されて、以下のようなエディタと実行を提供します。
+
+![](example/demo_code.gif)
+
+### matplotlib によるグラフ描画
+
+実行可能コードブロックでは、Pythonの主要なライブラリを利用できます。
+
+```
+:::loadlib
+numpy
+matplotlib
+:::
+```
+
+などとすることで、 `numpy`, `matplotlib` を利用できるようになります。
+
+さらに、`matploblib` によるグラフ描画も可能です。
+
+ソースコード内で、　
+
+```python
+import matplotlib
+matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
+```
+
+とすると、通常のように `plt.show()` するだけで出力欄にインタラクティブなプロットを表示できます。
+
+![](example/demo_plot.gif)
+
+### ジャッジシステム
+
+競技プログラミングなどで用いられるジャッジシステムも提供します。
+
+```
+:::judge
+title=Hello ALMO!　　　                        
+sample_in=example/helloalmo/in/sample.txt     
+sample_out=example/helloalmo/out/sample.txt  
+in=example/helloalmo/in/*.txt                 
+out=example/helloalmo/out/*.txt               
+:::
+```
+
+という記法によって、
+
+- サンプル入力は `example/helloalmo/in/sample.txt` 
+- サンプル出力は `example/helloalmo/out/sample.txt`
+- 入力ファイルは `example/helloalmo/in/*.txt`
+- 出力ファイルは `example/helloalmo/out/*.txt`
+
+と対応したジャッジシステムを自動で構築します。
+
+![](example/demo_judge.gif)
+
+
+
+これらは全て[デモページ](https://www.abap34.com/almo.html)で試すことができます。
+
+詳しい記法は[ドキュメント](https://www.abap34.com/almo_document.html)を参照してください。
 
 
 ## 使い方
@@ -23,87 +109,33 @@ ALMOは、WebAseemblyを使ってブラウザ上で完結する実行とジャ�
 
 以下は全て省略可能です。
 
-
-- `-o <output file>`: 出力ファイル名を指定します。デフォルトは`index.html`です。 
-- `-t <theme>` : テーマを指定します。デフォルトは`light`です。`light`または`dark`を指定できます。
+- `-o <output file>`: 出力ファイル名を指定します。デフォルトはマークダウンのファイル名の拡張子を`.html`にしたものです。
+- `-t <theme>` : テーマを指定します。デフォルトは`light`です。`light`または`dark`を指定できます。 
+- `-c` : ユーザ定義のCSSファイルを指定します。デフォルトでは `-t` で指定されたテーマのデフォルト仕様である
+[dark.css](https://github.com/abap34/ALMO/blob/main/src/dark.css) または [light.css](https://github.com/abap34/ALMO/blob/main/src/light.css) が使用されます。 
 - `-d` : デバッグモードにします。デフォルトはオフです。　パースされた結果がJSON形式で標準出力に出力されます。
 - `-h` : ヘルプを表示します。
 
+
 ## インストール方法
+
+macOS (Apple Silicon) では、 Homebrew を使ってビルド済みのバイナリをインストールできます。
 
 ```bash
 brew tap abap34/homebrew-almo
 brew install almo
 ```
 
-## 使える記法
+それ以外の環境では、 `src/almo.cpp` を以下のコンパイルしてください。
 
-- H1, H2, H3, H4, H5, H6
-```
-# H1
-## H2
-### H3
-#### H4
-##### H5
-###### H6
-```
-- コードブロック
-~~~
-```language
-Code Block. Hightlight.jsによってシンタックスハイライトが入ります
+```bash
+git clone https://github.com/abap34/ALMO
+cd ALMO
+g++ -std=c++20 -lcurl -o almo src/almo.cpp
 ```
 
-`Inline CodeBlock`
-~~~
+`curl` が必要です。
 
-- 数式
-```
-# 複数行
-$$
-f(x) = x^2
-$$
+## ドキュメント
 
-# インライン
-$f(x) = x^2$
-```
-
-- 打ち消し、強調、イタリック
-```
-~~overline~~, **strong**, *italic*
-```
-
-- リンク、画像
-```
-[name](url)
-![name](image)
-```
-
-- リスト
-```
-- list1
-- list2
- - list2-1
- - list2-2
-- list3
-```
-
-- 表
-```
-| col1 | col2 | col3 |
-| :--- | ---: | :---: |
-|  value1 | value2 | value3 |
-```
-
-- 実行可能コードブロック
-
-~~~
-:::code
-title=Hello ALMO!　　　                        # タイトル
-sample_in=example/helloalmo/in/sample.txt     # サンプル入力
-sample_out=example/helloalmo/out/sample.txt   # サンプル出力
-in=example/helloalmo/in/*.txt                 # 入力
-out=example/helloalmo/out/*.txt               # 出力
-judge=equal                                   # ジャッジの方法。デフォルトは`equal`で省略可能. `err_{rate}`と書くと絶対誤差が`rate`以下の場合許容される。
-source=example/helloalmo/src/sample.py        # このコードがデフォルトで入力された状態で表示される。
-:::
-~~~
+[https://www.abap34.com/almo_document.html](https://www.abap34.com/almo_document.html)
