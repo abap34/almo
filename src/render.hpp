@@ -66,16 +66,16 @@ namespace almo {
         }
         else if (theme == "dark") {
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), DARK_THEME);
+        } else {
+            std::cerr << "Error in loading html template. Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            exit(1);
         }
 
         if (custom_css_path != "") {
             std::string custom_css = read_file(custom_css_path);
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), custom_css);
         }
-        else {
-            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
-            exit(1);
-        }
+        
 
         // find </html> and put runner.js before it
         std::string runner = RUNNER;
