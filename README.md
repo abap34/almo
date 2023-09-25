@@ -108,7 +108,7 @@ out=example/helloalmo/out/*.txt
 
 以下は全て省略可能です。
 
-- `-o <output file>`: 出力ファイル名を指定します。デフォルトはマークダウンのファイル名の拡張子を`.html`にしたものです。
+- `-o <output file>`: 出力ファイル名を指定します。デフォルトは第一引数の入力ファイル名の拡張子を`.html`にしたものです。
 - `-t <theme>` : テーマを指定します。デフォルトは`light`です。`light`または`dark`を指定できます。 
 - `-c` : ユーザ定義のCSSファイルを指定します。デフォルトでは `-t` で指定されたテーマのデフォルト仕様である
 [dark.css](https://github.com/abap34/ALMO/blob/main/src/dark.css) または [light.css](https://github.com/abap34/ALMO/blob/main/src/light.css) が使用されます。 
