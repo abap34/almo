@@ -13,7 +13,10 @@ int main(int argc, char *argv[]){
     // default
     std::string theme = "light";
     std::string out_path = "index.html";
+    std::string custom_css_path = "";
+
     bool debug = false;
+    
 
     for (int i = 2; i < argc; i++){
         if (argv[i][0] == '-'){
@@ -27,6 +30,9 @@ int main(int argc, char *argv[]){
             }
             else if (argv[i][1] == 't'){
                 theme = argv[i + 1];
+            }
+            else if (argv[i][1] == 'c'){
+                custom_css_path = argv[i + 1];
             }
             else if (argv[i][1] == 'd'){
                 debug = true;
@@ -54,6 +60,7 @@ int main(int argc, char *argv[]){
 
     json_meta_data["theme"] = theme;
     json_meta_data["out_path"] = out_path;
+    json_meta_data["custom_css_path"] = custom_css_path;
 
     if (debug) {
         nlohmann::json all_data;
