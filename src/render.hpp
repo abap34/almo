@@ -492,10 +492,13 @@ namespace almo {
         return output;
     }
 
-
-
     std::string render_list_block(nlohmann::json j, std::string content) {
         std::string output = "<ul>" + content + "</ul>";
+        return output;
+    }
+
+    std::string render_enumerate_block(nlohmann::json j, std::string content) {
+        std::string output = "<ol>" + content + "</ol>";
         return output;
     }
 
@@ -615,6 +618,7 @@ namespace almo {
         render_map["InlineUrl"] = render_inline_url;
         render_map["InlineImage"] = render_inline_image;
         render_map["ListBlock"] = render_list_block;
+        render_map["EnumerateBlock"] = render_enumerate_block;
         render_map["Item"] = render_item;
         render_map["InlineCodeBlock"] = render_inline_code;
 

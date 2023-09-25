@@ -55,6 +55,20 @@ img {
     height: auto;
 }
 
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    border: 1px solid #fff;
+    margin: 0 auto;
+}
+
+th,
+td {
+    border: 1px solid #fff;
+    padding: 5px 10px;
+}
+
 .date {
     color: #ccc;
     font-size: 14px;

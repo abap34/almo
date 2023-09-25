@@ -33,6 +33,7 @@ namespace almo {
         InfoBlock, // infoブロック
         NewLine, // 改行
         ListBlock, // 箇条書きのブロック
+        EnumerateBlock, // 番号付き箇条書きのブロック
         Item, // 箇条書きの要素
         Table, // テーブル
     };
