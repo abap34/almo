@@ -218,6 +218,7 @@ namespace almo {
         const std::regex overline_html_regex = std::regex("(.*)<__overline>(.*)</__overline>(.*)");
         const std::regex strong_html_regex = std::regex("(.*)<__strong>(.*)</__strong>(.*)");
         const std::regex italic_html_regex = std::regex("(.*)<__i>(.*)</__i>(.*)");
+
     };
 
     // md全体をパースするための関数をメンバーに持つ構造体です。
@@ -408,6 +409,67 @@ namespace almo {
                     auto [next, list_ast] = list_parser(list_parser, idx);
                     idx = next;
                     asts.emplace_back(list_ast);
+                }
+                else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
+                    // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
+                    // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
+                    auto enumerate_parser = [&](auto&& self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
+                        auto block = std::make_shared<AST>(EnumerateBlock);
+                        assert(std::regex_match(lines[line_id].substr(cur), std::regex("([ \\t]*)\\d+\\. (.*)")));
+                        AST::node_ptr now = nullptr;
+                        std::string content = "";
+                        while (true) {
+                            if (line_id == (int)(lines.size())) break;
+                            if (is_header(lines[line_id])) break;
+                            else if (lines[line_id].starts_with(":::")) break;
+                            else if (lines[line_id].starts_with("```")) break;
+                            else if (lines[line_id].starts_with("$$")) break;
+                            else if (lines[line_id] == "") break;
+                            else {
+                                int head_size = 0;
+                                std::string SPACE3 = "   ";
+                                std::string enumerate_header =  "\\d+\\. (.*)";
+                                bool is_upper = false;
+                                for (int i = 0; i < cur; i += 3) {
+                                    if (std::regex_match(lines[line_id], std::regex(enumerate_header))) {
+                                        assert(now != nullptr);
+                                        is_upper = true;
+                                        break;
+                                    }
+                                    enumerate_header = SPACE3 + enumerate_header;
+                                    head_size += 3;
+                                }
+                                if (is_upper) break;
+                                if (std::regex_match(lines[line_id], std::regex(enumerate_header))) {
+                                    if (now != nullptr) {
+                                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
+                                        block->childs.emplace_back(now);
+                                        content.clear();
+                                    }
+                                    now = std::make_shared<AST>(Item);
+                                    content = lines[line_id].substr(head_size + 3) ;
+                                }
+                                else if (std::regex_match(lines[line_id], std::regex(SPACE3 + enumerate_header))) {
+                                    assert(now != nullptr);
+                                    auto [next_line, item_ptr] = self(self, line_id, cur + 3);
+                                    line_id = next_line - 1;
+                                    now->childs.emplace_back(item_ptr);
+                                }
+                                else {
+                                    assert(now != nullptr);
+                                    // 先頭のスペース + "1. " の部分
+                                    content += " " + lines[line_id].substr(head_size + 3);
+                                }
+                                line_id++;
+                            }
+                        }
+                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
+                        block->childs.emplace_back(now);
+                        return std::make_pair(line_id, block);
+                        };
+                    auto [next, enumerate_ast] = enumerate_parser(enumerate_parser, idx);
+                    idx = next;
+                    asts.emplace_back(enumerate_ast);
                 }
                 else if (line == "") {
                     auto block = std::make_shared<AST>(NewLine);
