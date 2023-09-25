@@ -44,10 +44,9 @@ namespace almo {
                     int id_url = memo.size();
                     int id_str = id_url + 1;
                     std::string format = "$1<__image=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__image>$4";
-                    memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
-                    memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
-
-                    s = std::regex_replace(s, url_regex, format);
+                    memo.emplace_back(std::regex_replace(s, image_regex, "$3"));
+                    memo.emplace_back(std::regex_replace(s, image_regex, "$2"));
+                    s = std::regex_replace(s, image_regex, format);
                 }
                 else if (std::regex_match(s, url_regex)) {
                     auto& memo = map[InlineUrl];
