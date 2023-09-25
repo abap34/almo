@@ -427,7 +427,7 @@ namespace almo {
                             else {
                                 int head_size = 0;
                                 std::string SPACE3 = "   ";
-                                std::string enumerate_header =  "\\d+\\. (.*)";
+                                std::string enumerate_header = "\\d+\\. (.*)";
                                 bool is_upper = false;
                                 for (int i = 0; i < cur; i += 3) {
                                     if (std::regex_match(lines[line_id], std::regex(enumerate_header))) {
@@ -446,7 +446,7 @@ namespace almo {
                                         content.clear();
                                     }
                                     now = std::make_shared<AST>(Item);
-                                    content = lines[line_id].substr(head_size + 3) ;
+                                    content = lines[line_id].substr(head_size + 3);
                                 }
                                 else if (std::regex_match(lines[line_id], std::regex(SPACE3 + enumerate_header))) {
                                     assert(now != nullptr);
@@ -470,8 +470,34 @@ namespace almo {
                     idx = next;
                     asts.emplace_back(enumerate_ast);
                 }
+                else if (line.starts_with(">")) {
+                    // 空行がくるか末端に来るまで読み続ける
+                    auto block = std::make_shared<AST>(Quote);
+                    std::string content = line.substr(1);
+                    if (idx == (int)(lines.size())) {
+                        block->childs.emplace_back(inline_parser.processer(content));
+                    }
+                    else {
+                        while (true) {
+                            if (idx == (int)(lines.size())) break;
+                            if (lines[idx] == "") break;
+                            if (is_header(lines[idx])) break;
+                            if (lines[idx].starts_with(":::")) break;
+                            if (lines[idx].starts_with("```")) break;
+                            if (lines[idx].starts_with("$$")) break;
+                            block->childs.emplace_back(inline_parser.processer(lines[idx]));
+                            idx++;
+                        }
+                    }
+                    asts.emplace_back(block);
+                }
                 else if (line == "") {
                     auto block = std::make_shared<AST>(NewLine);
+                    asts.emplace_back(block);
+                }
+                // 水平線
+                else if ((line == "---") || (line == "___") || (line == "***")) {
+                    auto block = std::make_shared<AST>(HorizontalLine);
                     asts.emplace_back(block);
                 }
                 else if (std::regex_match(line, std::regex("(\\|[^\\|]+).+\\|"))) {
