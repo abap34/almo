@@ -67,7 +67,7 @@ namespace almo {
         else if (theme == "dark") {
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), DARK_THEME);
         } else {
-            std::cerr << "Error in loading html template. Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
+            std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
 
@@ -545,6 +545,17 @@ namespace almo {
     }
 
 
+    std::string render_quote(nlohmann::json j, std::string content) {
+        std::string output = "<blockquote>" + content + "</blockquote>";
+        return output;
+    }
+
+    std::string render_horizonal_line(nlohmann::json j, std::string content) {
+        std::string output = "<hr>";
+        return output;
+    }
+
+
     bool haschild(nlohmann::json j) {
         return !(j["class"] == "PlainText" || j["class"] == "NewLine" || j["class"] == "Url");
     }
@@ -629,7 +640,8 @@ namespace almo {
         render_map["EnumerateBlock"] = render_enumerate_block;
         render_map["Item"] = render_item;
         render_map["InlineCodeBlock"] = render_inline_code;
-
+        render_map["Quote"] = render_quote;
+        render_map["HorizontalLine"] = render_horizonal_line;
 
         std::string contents;
 

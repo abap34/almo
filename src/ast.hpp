@@ -36,6 +36,8 @@ namespace almo {
         EnumerateBlock, // 番号付き箇条書きのブロック
         Item, // 箇条書きの要素
         Table, // テーブル
+        HorizontalLine, // 水平線
+        Quote // 引用
     };
 
     // 構文木のノードを表す構造体

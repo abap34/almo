@@ -12,7 +12,14 @@ int main(int argc, char *argv[]){
 
     // default
     std::string theme = "light";
-    std::string out_path = "index.html";
+    std::string out_path = argv[1];
+    int dot_pos = out_path.rfind(".");
+    if (dot_pos == std::string::npos){
+        std::cerr << "error: input file name is not valid." << std::endl;
+        return 1;
+    }
+    out_path = out_path.substr(0, dot_pos) + ".html";
+
     std::string custom_css_path = "";
 
     bool debug = false;
@@ -46,6 +53,7 @@ int main(int argc, char *argv[]){
                 std::cout << "options:" << std::endl;
                 std::cout << "  -o [output file] : output file name" << std::endl;
                 std::cout << "  -t [theme] : theme name" << std::endl;
+                std::cout << "  -c [custom css path] : custom style pass" << std::endl;
                 std::cout << "  -d : show debug info" << std::endl;
                 std::cout << "  -h : show this help" << std::endl;
                 return 0;
