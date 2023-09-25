@@ -10,24 +10,24 @@
 #include "json.hpp"
 
 namespace almo {
-    std::string LIGHT_THEME = 
-        #include "light.css"
-    ;
-    std::string DARK_THEME = 
-        #include "dark.css"
-    ;
+    std::string LIGHT_THEME =
+#include "light.css"
+        ;
+    std::string DARK_THEME =
+#include "dark.css"
+        ;
 
-    std::string RUNNER = 
-        #include "runner.js"
-    ;
+    std::string RUNNER =
+#include "runner.js"
+        ;
 
-    std::string TEMPLATE = 
-        #include "template.html"
-    ;
+    std::string TEMPLATE =
+#include "template.html"
+        ;
 
-    std::string SIDEBAR_BULDER = 
-        #include "sidebar.js"
-    ;
+    std::string SIDEBAR_BULDER =
+#include "sidebar.js"
+        ;
     std::string read_file(const std::string& path) {
         std::ifstream input_file(path);
 
@@ -58,7 +58,7 @@ namespace almo {
         return result;
     }
 
-    std::string load_html_template(std::string theme) {
+    std::string load_html_template(std::string theme, std::string custom_css_path) {
         std::string result;
         if (theme == "light") {
             // replace {{style}} in TEMPLATE
@@ -66,7 +66,13 @@ namespace almo {
         }
         else if (theme == "dark") {
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), DARK_THEME);
-        } else {
+        }
+
+        if (custom_css_path != "") {
+            std::string custom_css = read_file(custom_css_path);
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), custom_css);
+        }
+        else {
             std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
@@ -114,9 +120,11 @@ namespace almo {
         std::string syntax_theme;
         if (json_meta_data["theme"] == "dark") {
             syntax_theme = "monokai-sublime.min";
-        } else if (json_meta_data["theme"] == "light") {
+        }
+        else if (json_meta_data["theme"] == "light") {
             syntax_theme = "github.min";
-        } else {
+        }
+        else {
             std::cerr << "Invalid theme: " << json_meta_data["theme"] << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
@@ -327,8 +335,8 @@ namespace almo {
 
         return output;
     }
-    
-    std::string render_executable_codeblock(nlohmann::json j, std::string theme){
+
+    std::string render_executable_codeblock(nlohmann::json j, std::string theme) {
         std::string uuid = j["uuid"];
         std::string code = j["code"];
 
@@ -351,7 +359,7 @@ namespace almo {
             std::cerr << "Invalid theme: " << theme << ", available themes are 'dark' and 'light'" << std::endl;
             exit(1);
         }
-        
+
         std::string editor_div = "<br> \n <div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
 
         std::string ace_editor = ""
@@ -376,14 +384,14 @@ namespace almo {
         std::string out_area = "<pre class=\"sample_out\" id=\"" + uuid + "_out\"></pre>\n";
 
         std::string plot_area = "<div class=\"plot\" id=\"" + uuid + "_plot\"></div>\n";
-        
+
         std::string run_button =
             "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
 
         std::string output = editor_div + ace_editor + run_button + out_area + plot_area;
-        
+
         return output;
-    }   
+    }
 
     std::string render_load_libs(nlohmann::json j, std::string content) {
         std::vector<std::string> libs = j["libs"];
@@ -396,7 +404,7 @@ namespace almo {
 
 
 
- 
+
     std::string render_plain_text(nlohmann::json j, std::string content) {
         std::string output = content;
         return output;
@@ -630,7 +638,8 @@ namespace almo {
         for (nlohmann::json block : json_ir) {
             if (block["class"] == "Judge") {
                 contents += render_judge(block, theme);
-            } else if (block["class"] == "ExecutableCodeBlock") {
+            }
+            else if (block["class"] == "ExecutableCodeBlock") {
                 contents += render_executable_codeblock(block, theme);
             }
             else {
@@ -640,7 +649,7 @@ namespace almo {
             }
         }
 
-        std::string html_template = load_html_template(theme);
+        std::string html_template = load_html_template(theme, json_meta_data["custom_css_path"]);
 
         std::vector<std::string> keys;
 
