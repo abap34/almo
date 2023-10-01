@@ -6,7 +6,6 @@
 #include <functional>
 #include <sstream> 
 #include <glob.h>
-#include <curl/curl.h>
 #include "json.hpp"
 
 namespace almo {
