@@ -403,8 +403,6 @@ namespace almo {
     }
 
 
-
-
     std::string render_plain_text(nlohmann::json j, std::string content) {
         std::string output = content;
         return output;
@@ -425,71 +423,9 @@ namespace almo {
         return real_size;
     }
 
-    std::string download_image(const std::string& url) {
-        CURL* curl = curl_easy_init();
-        if (!curl) {
-            return "";
-        }
-
-        std::string response;
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-        CURLcode res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-
-        if (res != CURLE_OK) {
-            return "";
-        }
-
-        return response;
-    }
-
-    std::string base64_encode(const std::string& input) {
-        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        std::string output;
-        size_t in_len = input.length();
-        size_t i = 0;
-
-        while (i < in_len) {
-            uint32_t octet_a = i < in_len ? (unsigned char)input[i++] : 0;
-            uint32_t octet_b = i < in_len ? (unsigned char)input[i++] : 0;
-            uint32_t octet_c = i < in_len ? (unsigned char)input[i++] : 0;
-
-            uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
-
-            output += base64_chars[(triple >> 18) & 0x3F];
-            output += base64_chars[(triple >> 12) & 0x3F];
-            output += base64_chars[(triple >> 6) & 0x3F];
-            output += base64_chars[triple & 0x3F];
-        }
-
-        return output;
-    }
-
 
     std::string render_inline_image(const std::string& url, const std::string& content) {
-        std::string image_data;
-        if (url.find("http://") == 0 || url.find("https://") == 0) {
-            image_data = download_image(url);
-            if (image_data.empty()) {
-                return "";
-            }
-        }
-        else {
-            std::ifstream image_stream(url, std::ios::binary);
-            if (!image_stream) {
-                return "";
-            }
-            std::ostringstream oss;
-            oss << image_stream.rdbuf();
-            image_data = oss.str();
-        }
-
-        std::string base64_image = base64_encode(image_data);
-
-        std::string output = "<img src=\"data:image/png;base64," + base64_image + "\">\n";
+        std::string output = "<img src=\" " + url + " \" alt=\" " + content + " \" >";
         std::string figcaption = "<figcaption>" + content + "</figcaption>";
         return "<figure>" + output + figcaption + "</figure>";
     }
