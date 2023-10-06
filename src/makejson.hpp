@@ -5,14 +5,6 @@
 #include"json.hpp"
 
 namespace almo {
-
-struct UUID_gen {
-    std::string operator()() {
-        static int uuid = 0;
-        return std::to_string(uuid++);
-    }
-}uuid;
-
 nlohmann::json dp_on_AST(AST::node_ptr ptr) {
     nlohmann::json cur_json;
     if (ptr->type == PlainText) {
