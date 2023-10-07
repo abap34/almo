@@ -65,7 +65,23 @@ class NotFoundFileError : public std::exception {
 public:
     NotFoundFileError(std::string message) : message(message) {}
     const char* what() const noexcept override {
-        return message.c_str();
+        std::string error = "ファイルが存在しません  \n" + message;
+        char* result = new char[error.length() + 1];
+        strcpy(result, error.c_str());
+        return result;
+    }
+};
+
+// コマンドライン引数が間違っている時のエラー
+class InvalidCommandLineArgumentsError : public std::exception {
+    std::string message;
+public:
+    InvalidCommandLineArgumentsError(std::string message) : message(message) {}
+    const char* what() const noexcept override {
+        std::string error = "不正なコマンドライン引数  \n" + message;
+        char* result = new char[error.length() + 1];
+        strcpy(result, error.c_str());
+        return result;
     }
 };
 
