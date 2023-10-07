@@ -554,6 +554,7 @@ namespace almo {
     class ListBlock : public NonLeafNode {
         std::string uuid;
     public:
+        ListBlock(std::string uuid) : uuid(uuid) { }
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<ul>" + join(childs_html) + "</ul>";
         }
@@ -665,62 +666,4 @@ namespace almo {
             json["uuid"] = uuid;
         }
     };
-    // // 構文木の属性を表すenum
-    // enum Type {
-    //     H1, // <h1> done
-    //     H2, // <h2> done
-    //     H3, // <h3> done
-    //     H4, // <h4> done
-    //     H5, // <h5> done
-    //     H6, // <h6> done
-    //     Block, // ブロック  done
-    //     Judge, // プログラムの実行環境を作る独自記法 done
-    //     ExecutableCodeBlock, // 実行可能なコードブロック done
-    //     LoadLib, // ライブラリの読み込み done
-    //     CodeBlock, // コードブロック done
-    //     MathBlock, // 数式ブロック done
-    //     InlineMath, // インラインの数式ブロック done
-    //     InlineOverline, // インラインの打消し done
-    //     InlineStrong, // インラインの強調 done
-    //     InlineItalic, // イタリック done
-    //     InlineUrl, // インラインのurl done
-    //     InlineImage, // インラインの画像 done
-    //     InlineCodeBlock, // インラインのコードブロック done
-    //     PlainText, // 生のテキスト     done.
-    //     NewLine, // 改行 done
-    //     ListBlock, // 箇条書きのブロック done 
-    //     EnumerateBlock, // 番号付き箇条書きのブロック done
-    //     Item, // 箇条書きの要素 done
-    //     Table, // テーブル done
-    //     HorizontalLine, // 水平線
-    //     Quote // 引用 done
-    // };
-
-    // // 構文木のノードを表す構造体
-    // // 各ノードにはTypeが付いており、それによってそのノードの役割を判定することができる。
-    // struct AST {
-    //     using node_ptr = std::shared_ptr<AST>;
-    //     AST() = default;
-    //     AST(Type type, std::string content = "") : type(type), content(content) { }
-    //     Type type;
-    //     std::string content; // typeがPlainTextのときのみ使用されます。PlainTextのテキストの中身が格納されます。
-    //     std::vector<node_ptr> childs; // 構文木の子ノードを保持します。
-
-    //     // typeがJudgeのときのみ使用されます。judgeの情報を持ちます。
-    //     std::vector<std::pair<std::string, std::string>> judge;
-
-    //     // typeがExecutableCodeBlockのときのみ使用されます。ExecutableCodeBlockの情報を持ちます。
-    //     std::string code;
-
-    //     // typeがLoadLibのときのみ使用されます。読み込むライブラリの名前を持ちます。
-    //     std::vector<std::string> libs;
-
-    //     // typeがTableのときのみ使用されます。Tableの情報を持ちます。
-    //     std::vector<std::pair<std::string, std::string>> table;
-    //     std::vector<int> col_format;
-    //     std::vector<std::string> col_names;
-
-    //     // typeがCodeBlockのときのみ使用されます。CodeBlockの情報(言語) を持ちます。
-    //     std::string language;
-    // };
 }
