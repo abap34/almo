@@ -11,9 +11,9 @@
 namespace almo {
     // to_html, to_config するためにグローバルな設定が保存されるグローバル変数.
     // 格納されるもの:
-    // - editor_theme: Ace Editorのテ   ーマ
+    // - editor_theme: Ace Editorのテーマ
     // - syntax_theme: Highlight.jsのテーマ
-    std::map<std::string, std::string> global_config;
+    std::map<std::string, std::string> meta_data;
 
     // 各ノードに対して一意なIDを生成する用の関数オブジェクト. 呼ぶと前に呼ばれた時の値 + 1 が返る.
     struct UUID_gen {
@@ -36,6 +36,19 @@ namespace almo {
         virtual bool is_leaf() const = 0;
     };
 
+
+    // 葉ノード。このノードは、htmlをゼロから生成する.
+    class LeafNode : public ASTNode {
+    public:
+        bool is_leaf() const override {
+            return true;
+        }
+
+        // 構文木をhtmlに変換する. 葉ノードなので子は持たないため、引数なしで呼ばれる.
+        virtual std::string to_html() const = 0;
+    };
+
+
     // 葉ノードでないノード。このノードは、プロパティを持たず、子から伝播してきた `child_html` に変換を施し親に渡す.
     class NonLeafNode : public ASTNode {
     public:
@@ -48,17 +61,35 @@ namespace almo {
 
         // 構文木をhtmlに変換する。子ノードが存在するので、それぞれを html に変換したものの vector が渡される.
         virtual std::string to_html(std::vector<std::string> childs_html) const = 0;
-    };
 
-    // 葉ノード。このノードは、htmlをゼロから生成する.
-    class LeafNode : public ASTNode {
-    public:
-        bool is_leaf() const override {
-            return true;
+        // 部分木を html に変換する.
+        std::string render () const {
+            std::vector<std::string> childs_html;
+            for (auto child : childs) {
+                if (child->is_leaf()) {
+                    childs_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                }
+                else {
+                    childs_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render());
+                }
+            }
+            return to_html(childs_html);
         }
 
-        // 構文木をhtmlに変換する. 葉ノードなので子は持たないため、引数なしで呼ばれる.
-        virtual std::string to_html() const = 0;
+        // 部分木を json に変換する.
+        nlohmann::json to_json() const {
+            nlohmann::json json;
+            add_json(json);
+            for (auto child : childs) {
+                if (child->is_leaf()) {
+                    json["childs"].push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                }
+                else {
+                    json["childs"].push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->to_json());
+                }
+            }
+            return json;
+        }
     };
 
     // H1~6 に対応する構文木のノード
@@ -87,7 +118,8 @@ namespace almo {
 
 
     // 複数のブロックをまとめるために使う構文木のノード. これ自体には意味はないことに注意。
-    // 例えば一行分 parseしたとき、 `Block` を頂点する木としてパース結果が帰ってくる。 
+    // 例えば一行分 parseしたとき、 `Block` を根とする木としてパース結果が帰ってくる。
+    // Block のみ `render` というメソッドを持ち、 部分木を html に変換したものをそのまま返す。
     class Block : public NonLeafNode {
         std::string uuid;
     public:
@@ -324,11 +356,11 @@ namespace almo {
             std::string editor_div = "<div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
 
             // ace editor の設定をする.
-            // テーマは global_config から取得する.
+            // テーマは meta_data から取得する.
             std::string ace_editor = ""
                 "<script>"
                 "editor = ace.edit(\"" + uuid + "\"); "
-                "editor.setTheme(\"" + global_config["editor_theme"] + "\");"
+                "editor.setTheme(\"" + meta_data["editor_theme"] + "\");"
                 "editor.session.setMode(\"ace/mode/python\");"
                 "editor.setShowPrintMargin(false);"
                 "editor.setHighlightActiveLine(false);"
@@ -441,7 +473,7 @@ namespace almo {
             std::string ace_editor = ""
                 "<script>"
                 "editor = ace.edit(\"" + uuid + "\"); "
-                "editor.setTheme(\"" + global_config["editor_theme"] + "\");"
+                "editor.setTheme(\"" + meta_data["editor_theme"] + "\");"
                 "editor.session.setMode(\"ace/mode/python\");"
                 "editor.setShowPrintMargin(false);"
                 "editor.setHighlightActiveLine(false);"
