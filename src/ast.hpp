@@ -45,6 +45,7 @@ namespace almo {
 
         // このノードの子ノード.
         std::vector<std::shared_ptr<ASTNode>> childs = {};
+
         // 構文木をhtmlに変換する。子ノードが存在するので、それぞれを html に変換したものの vector が渡される.
         virtual std::string to_html(std::vector<std::string> childs_html) const = 0;
     };
@@ -114,6 +115,7 @@ namespace almo {
         std::string content;
     public:
         RawText(std::string content, std::string uuid) : content(content), uuid(uuid) { }
+
         std::string to_html() const override {
             return content;
         }
@@ -175,6 +177,7 @@ namespace almo {
     public:
         InlineOverline(std::string uuid) : uuid(uuid) { }
         std::string to_html(std::vector<std::string> childs_html) const override {
+
             return "<span class=\"overline\"> <s>" + join(childs_html) + "</s> </span>";
         }
         void add_json(nlohmann::json& json) const override {
@@ -189,6 +192,7 @@ namespace almo {
         std::string uuid;
     public:
         InlineStrong(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"strong\"> <strong>" + join(childs_html) + "</strong> </span>";
         }
@@ -203,6 +207,7 @@ namespace almo {
         std::string uuid;
     public:
         InlineItalic(std::string uuid) :uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"italic\"> <i>" + join(childs_html) + "</i> </span>";
         }
@@ -217,6 +222,7 @@ namespace almo {
         std::string uuid;
     public:
         PlainText(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<div class=\"plain-text\">" + join(childs_html) + "</span>";
         }
@@ -260,6 +266,7 @@ namespace almo {
         std::string code;
     public:
         InlineCodeBlock(std::string code, std::string uuid) : code(code), uuid(uuid) { }
+
         std::string to_html() const override {
             return "<span class=\"inline-code\"> <code>" + code + "</code> </span>";
         }
@@ -298,17 +305,18 @@ namespace almo {
         // 出力ファイルを表す glob パターン
         std::string out_files_glob;
     public:
-        Judge(std::string title, std::string sample_in_path, std::string sample_out_path, std::string in_files_glob, std::string out_files_glob, std::string judge_type, std::string source, std::string uuid) : title(title), sample_in_path(sample_in_path), sample_out_path(sample_out_path), in_files_glob(in_files_glob), out_files_glob(out_files_glob),  judge_type(judge_type), source(source), uuid(uuid) {
+        Judge(std::string title, std::string sample_in_path, std::string sample_out_path, std::string in_files_glob, std::string out_files_glob, std::string judge_type, std::string source, std::string uuid) : title(title), sample_in_path(sample_in_path), sample_out_path(sample_out_path), in_files_glob(in_files_glob), out_files_glob(out_files_glob), judge_type(judge_type), source(source), uuid(uuid) {
             // ジャッジが`err_{rate}` または `equal` 以外の場合はエラーを出す.
             if (judge_type.substr(0, 4) != "err_" && judge_type != "equal") {
                 throw ParseError("Invalid judge type. Expected `err_{rate}` or `equal`, but `" + judge_type + "` is given.");
             }
         }
+
         std::string to_html() const override {
 
 
             // タイトルを作る
-            std::string title =
+            std::string title_h3 =
                 "<h3 class=\"problem_title\"> <div class='badge' id='" + uuid + "_status'>WJ</div>   " + title + " </h2>\n";
 
             // ここから ace editor を作る.
@@ -337,8 +345,8 @@ namespace almo {
                 "</script>\n";
 
             // サンプル入力を読み込む.
-            std::string sample_in = read_file(sample_in_path);
-            std::string sample_out = read_file(sample_out_path);
+            std::string sample_in = join(read_file(sample_in_path));
+            std::string sample_out = join(read_file(sample_out_path));
 
             // サンプル入力と出力を表示する用の div を作る.
             std::string sample_in_area =
@@ -374,12 +382,12 @@ namespace almo {
 
 
             for (std::string in_file : in_files) {
-                std::string input = read_file(in_file);
+                std::string input = join(read_file(in_file));
                 define_data += "\n all_input[\"" + uuid + "\"].push(`" + input + "`)";
             }
 
-            for (std::string in_file : out_files) {
-                std::string output = read_file(in_file);
+            for (std::string out_file : out_files) {
+                std::string output = join(read_file(out_file));
                 define_data += "\n all_output[\"" + uuid + "\"].push(`" + output + "`)";
             }
 
@@ -399,7 +407,7 @@ namespace almo {
                 "</script>\n";
 
 
-            std::string output = title + editor_div + ace_editor + sample_in_area + sample_out_area + expect_out_area + define_data + test_run_button + submit_button + judge_code;
+            std::string output = title_h3 + editor_div + ace_editor + sample_in_area + sample_out_area + expect_out_area + define_data + test_run_button + submit_button + judge_code;
 
             return output;
         }
@@ -424,6 +432,7 @@ namespace almo {
         std::string code;
     public:
         ExecutableCodeBlock(std::string code, std::string uuid) : code(code), uuid(uuid) { }
+
         std::string to_html() const override {
             // コード全体を表示するために、何行のコードかを調べておく
             int n_line = std::count(code.begin(), code.end(), '\n');
@@ -519,6 +528,7 @@ namespace almo {
 
     public:
         InlineImage(std::string url, std::string caption, std::string uuid) : url(url), caption(caption), uuid(uuid) { }
+        
         //　<figure> タグを使うことで キャプションなどをつける。
         std::string to_html() const override {
             std::string output = "<img src=\" " + url + " \" >";
@@ -540,6 +550,8 @@ namespace almo {
         std::string uuid;
 
     public:
+        NewLine(std::string uuid) : uuid(uuid) { }
+
         std::string to_html() const override {
             return "<br>";
         }
@@ -555,6 +567,7 @@ namespace almo {
         std::string uuid;
     public:
         ListBlock(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<ul>" + join(childs_html) + "</ul>";
         }
@@ -569,6 +582,8 @@ namespace almo {
     class EnumerateBlock : public NonLeafNode {
         std::string uuid;
     public:
+        EnumerateBlock(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<ol>" + join(childs_html) + "</ol>";
         }
@@ -583,6 +598,8 @@ namespace almo {
     class Item : public NonLeafNode {
         std::string uuid;
     public:
+        Item(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<li>" + join(childs_html) + "</li>";
         }
@@ -604,6 +621,8 @@ namespace almo {
         std::vector<int> col_format;
         std::vector<std::string> col_names;
     public:
+        Table(int n_row, int n_col, std::vector<int> col_format, std::vector<std::string> col_names, std::string uuid) : n_row(n_row), n_col(n_col), col_format(col_format), col_names(col_names), uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             std::string output = "<table>\n";
             output += "<thead>\n";
@@ -642,6 +661,8 @@ namespace almo {
     class HorizontalLine : public LeafNode {
         std::string uuid;
     public:
+        HorizontalLine(std::string uuid) : uuid(uuid) { }
+
         std::string to_html() const override {
             return "<hr>";
         }
@@ -657,6 +678,8 @@ namespace almo {
     class Quote : public NonLeafNode {
         std::string uuid;
     public:
+        Quote(std::string uuid) : uuid(uuid) { }
+
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<blockquote>" + join(childs_html) + "</blockquote>";
         }
