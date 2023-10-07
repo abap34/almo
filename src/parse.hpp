@@ -25,7 +25,7 @@ namespace almo {
         //    最終的にhtmlを生成するためにこの関数ではパースしてできる構文木を作ります。
 
         std::map<std::string, std::vector<std::string>> map;
-        Block processer(std::string s) {
+        std::shared_ptr<Block> processer(std::string s) {
             Block root = Block(uuid());
             map.clear();
             while (1) {
@@ -33,14 +33,14 @@ namespace almo {
                     auto& memo = map["inline_code_block"];
                     int id = memo.size();
                     std::string format = "$1<__code>" + std::to_string(id) + "</__code>$3";
-                    memo.emplace_back(std::regex_replace(s, code_block_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, code_block_regex, "$2"));
                     s = std::regex_replace(s, code_block_regex, format);
                 }
                 else if (std::regex_match(s, math_regex)) {
                     auto& memo = map["inline_math"];
                     int id = memo.size();
                     std::string format = "$1<__math>" + std::to_string(id) + "</__math>$3";
-                    memo.emplace_back(std::regex_replace(s, math_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, math_regex, "$2"));
                     s = std::regex_replace(s, math_regex, format);
                 }
                 else if (std::regex_match(s, image_regex)) {
@@ -48,8 +48,8 @@ namespace almo {
                     int id_url = memo.size();
                     int id_str = id_url + 1;
                     std::string format = "$1<__image=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__image>$4";
-                    memo.emplace_back(std::regex_replace(s, image_regex, "$3"));
-                    memo.emplace_back(std::regex_replace(s, image_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, image_regex, "$3"));
+                    memo.push_back(std::regex_replace(s, image_regex, "$2"));
                     s = std::regex_replace(s, image_regex, format);
                 }
                 else if (std::regex_match(s, url_regex)) {
@@ -57,8 +57,8 @@ namespace almo {
                     int id_url = memo.size();
                     int id_str = id_url + 1;
                     std::string format = "$1<__url=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__url>$4";
-                    memo.emplace_back(std::regex_replace(s, url_regex, "$3"));
-                    memo.emplace_back(std::regex_replace(s, url_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, url_regex, "$3"));
+                    memo.push_back(std::regex_replace(s, url_regex, "$2"));
 
                     s = std::regex_replace(s, url_regex, format);
                 }
@@ -66,31 +66,31 @@ namespace almo {
                     auto& memo = map["overline"];
                     int id = memo.size();
                     std::string format = "$1<__overline>" + std::to_string(id) + "</__overline>$3";
-                    memo.emplace_back(std::regex_replace(s, overline_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, overline_regex, "$2"));
                     s = std::regex_replace(s, overline_regex, format);
                 }
                 else if (std::regex_match(s, strong_regex)) {
                     auto& memo = map["strong"];
                     int id = memo.size();
                     std::string format = "$1<__strong>" + std::to_string(id) + "</__strong>$3";
-                    memo.emplace_back(std::regex_replace(s, strong_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, strong_regex, "$2"));
                     s = std::regex_replace(s, strong_regex, format);
                 }
                 else if (std::regex_match(s, italic_regex)) {
                     auto& memo = map["italic"];
                     int id = memo.size();
                     std::string format = "$1<__i>" + std::to_string(id) + "</__i>$3";
-                    memo.emplace_back(std::regex_replace(s, italic_regex, "$2"));
+                    memo.push_back(std::regex_replace(s, italic_regex, "$2"));
                     s = std::regex_replace(s, italic_regex, format);
                 }
                 else break;
             }
-            root.childs.emplace_back(dfs(s));
-            return root;
+            root.childs.push_back(std::make_shared<Block>(dfs(s)));
+            return std::make_shared<Block>(root);
         }
 
     private:
-        std::shared_ptr<ASTNode> dfs(std::string s) {
+        Block dfs(std::string s) {
             Block root = Block(uuid());
             if (std::regex_match(s, italic_html_regex)) {
                 InlineItalic node = InlineItalic(uuid());
@@ -99,10 +99,10 @@ namespace almo {
                 std::string content = map["italic"][id];
                 std::string after = std::regex_replace(s, italic_html_regex, "$3");
                 
-                root.childs.emplace_back(dfs(before));
-                node.childs.emplace_back(dfs(content));
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                node.childs.push_back(std::make_shared<Block>(dfs(content)));
+                root.childs.push_back(std::make_shared<InlineItalic>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
             }
             else if (std::regex_match(s, strong_html_regex)) {
                 InlineStrong node = InlineStrong(uuid());
@@ -111,10 +111,10 @@ namespace almo {
                 std::string content = map["strong"][id];
                 std::string after = std::regex_replace(s, strong_html_regex, "$3");
                 
-                root.childs.emplace_back(dfs(before));
-                node.childs.emplace_back(dfs(content));
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                node.childs.push_back(std::make_shared<Block>(dfs(content)));
+                root.childs.push_back(std::make_shared<InlineStrong>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
             }
             else if (std::regex_match(s, overline_html_regex)) {
                 InlineOverline node = InlineOverline(uuid());
@@ -123,10 +123,10 @@ namespace almo {
                 std::string content = map["overline"][id];
                 std::string after = std::regex_replace(s, overline_html_regex, "$3");
                 
-                root.childs.emplace_back(dfs(before));
-                node.childs.emplace_back(dfs(content));
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                node.childs.push_back(std::make_shared<Block>(dfs(content)));
+                root.childs.push_back(std::make_shared<InlineOverline>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
             }
             else if (std::regex_match(s, url_html_regex)) {
                 int id_url = std::stoi(std::regex_replace(s, url_html_regex, "$2"));
@@ -139,10 +139,10 @@ namespace almo {
 
                 InlineUrl node = InlineUrl(url, alt, uuid());
                 
-                root.childs.emplace_back(dfs(before));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
                 // Url は Leaf なので、子要素を持たないからそのまま追加する。
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<InlineUrl>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
 
             }
             else if (std::regex_match(s, image_html_regex)) {
@@ -155,10 +155,9 @@ namespace almo {
                 std::string caption = map["inline_image"][id_str];
                 InlineImage node = InlineImage(url, caption, uuid());
 
-                root.childs.emplace_back(dfs(before));
-                // Image は Leaf なので、子要素を持たないからそのまま追加する。
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                root.childs.push_back(std::make_shared<InlineImage>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
             }
             else if (std::regex_match(s, math_html_regex)) {
                 int id = std::stoi(std::regex_replace(s, math_html_regex, "$2"));
@@ -170,9 +169,9 @@ namespace almo {
 
                 InlineMath node = InlineMath(expression, uuid());
 
-                root.childs.emplace_back(dfs(before));
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                root.childs.push_back(std::make_shared<InlineMath>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
             }
             else if (std::regex_match(s, code_block_html_regex)) {
                 int id = std::stoi(std::regex_replace(s, code_block_html_regex, "$2"));
@@ -182,17 +181,17 @@ namespace almo {
 
                 InlineCodeBlock node = InlineCodeBlock(code, uuid());
 
-                root.childs.emplace_back(dfs(before));
-                root.childs.emplace_back(node);
-                root.childs.emplace_back(dfs(after));
+                root.childs.push_back(std::make_shared<Block>(dfs(before)));
+                root.childs.push_back(std::make_shared<InlineCodeBlock>(node));
+                root.childs.push_back(std::make_shared<Block>(dfs(after)));
 
             }
             else {
                 std::string text = "";
                 RawText node = RawText(s, uuid());
-                root.childs.emplace_back(node);
+                root.childs.push_back(std::make_shared<RawText>(node));
             }
-            return std::make_shared<Block>(root);
+            return root;
         }
 
         const std::regex code_block_regex = std::regex("(.*)\\`(.*)\\`(.*)");
@@ -218,41 +217,41 @@ namespace almo {
         // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
         // 使用例:
         //    BlockParser::processer(lines);
-        static Block processer(std::vector<std::string> lines) {
-            InlineParser inline_parser;
+        Block processer(std::vector<std::string> lines) {
+            InlineParser inline_parser = InlineParser();
             Block root = Block(uuid());
             int idx = 0;
             while (idx < (int)lines.size()) {
                 std::string line = lines[idx];
                 if (line.starts_with("# ")) {
                     Header node = Header(1, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(2)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(2)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line.starts_with("## ")) {
                     Header node = Header(2, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(3)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(3)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line.starts_with("### ")) {
                     Header node = Header(3, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(4)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(4)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line.starts_with("#### ")) {
                     Header node = Header(4, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(5)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(5)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line.starts_with("##### ")) {
                     Header node = Header(5, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(6)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(6)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line.starts_with("###### ")) {
                     Header node = Header(6, uuid());
-                    node.childs.emplace_back(inline_parser.processer(line.substr(6)));
-                    root.childs.emplace_back(node);
+                    node.childs.push_back(inline_parser.processer(line.substr(6)));
+                    root.childs.push_back(std::make_shared<Header>(node));
                 }
                 else if (line == ":::judge") {
                     idx++;
@@ -279,7 +278,12 @@ namespace almo {
                     // 必須の引数が揃っているかチェック. なければ SyntaxError を投げる
                     for (std::string arg : required_args) {
                         if (judge_info.find(arg) == judge_info.end()) {
-                            throw SyntaxError(":::judge の引数 " + arg + " がありません. 引数を追加してください.", idx);
+                            // title がある場合
+                            if (judge_info.find("title") != judge_info.end()) {
+                                throw SyntaxError("問題" + judge_info["title"] + "の引数 " + arg + " がありません. 引数を追加してください.");
+                            } else {
+                                throw SyntaxError("問題タイトルがありません. 引数を追加してください.");
+                            }
                         }
                     }
 
@@ -301,7 +305,7 @@ namespace almo {
                         uuid()
                     );
 
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<Judge>(node));
                 }
                 else if (line == ":::code") {
                     idx++;
@@ -313,7 +317,7 @@ namespace almo {
                         idx++;
                     }
                     ExecutableCodeBlock node = ExecutableCodeBlock(code, uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<ExecutableCodeBlock>(node));
                 }
                 else if (line == ":::loadlib") {
                     idx++;
@@ -321,11 +325,11 @@ namespace almo {
                     std::vector<std::string> libs;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == ":::") break;
-                        libs.emplace_back(lines[idx]);
+                        libs.push_back(lines[idx]);
                         idx++;
                     }
                     LoadLib node = LoadLib(libs, uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<LoadLib>(node));
                 }
                 else if (line.starts_with("```")) {
                     std::string language = line.substr(3);
@@ -338,7 +342,7 @@ namespace almo {
                     }
 
                     CodeBlock node = CodeBlock(code, language, uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<CodeBlock>(node));
                 }
                 else if (line == "$$") {
                     idx++;
@@ -350,7 +354,7 @@ namespace almo {
                     }
                     
                     MathBlock node = MathBlock(expression, uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<MathBlock>(node));
                 }
                 else if (line.starts_with("- ")) {
                     // まずは今の行(リストの先頭)のテキストを取り出す。
@@ -417,18 +421,18 @@ namespace almo {
                         if (lines[idx + 1].starts_with(current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.emplace_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(line));
                             // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.emplace_back(item);
+                            scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
 
                             // ネストは発生していないので、現在着目しているスコープは変化しない。
                         } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.emplace_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(line));
                             // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.emplace_back(item);
+                            scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
 
                             // ネストが発生しているので、現在着目しているスコープを変更する。
@@ -436,7 +440,7 @@ namespace almo {
                             ListBlock new_node = ListBlock(uuid());
                             
                             // 今のスコープの子ノードにして、
-                            scopes.top().childs.emplace_back(new_node);
+                            scopes.top().childs.push_back(std::make_shared<ListBlock>(new_node));
 
                             // 新しいスコープに変更する。
                             scopes.push(new_node);
@@ -449,9 +453,9 @@ namespace almo {
                                 if (lines[idx + 1].starts_with(current_prefix)) {
                                     // 継続終了. 収集してきたテキストを追加。
                                     Item item = Item(uuid());
-                                    item.childs.emplace_back(inline_parser.processer(line));
+                                    item.childs.push_back(inline_parser.processer(line));
                                     // 現在のスタックのトップにある ListBlock に Item を追加する。
-                                    scopes.top().childs.emplace_back(item);
+                                    scopes.top().childs.push_back(std::make_shared<Item>(item));
                                     std::string text = "";
 
                                     // i 個数分上のスコープのリストになる
@@ -469,7 +473,7 @@ namespace almo {
                             idx++;
                         }
                     }
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<ListBlock>(node));
                 }
                 else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
  
@@ -511,24 +515,24 @@ namespace almo {
                         if (lines[idx + 1].starts_with(current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.emplace_back(inline_parser.processer(line));
-                            // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.emplace_back(item);
+                            item.childs.push_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
+                            scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
 
                             // ネストは発生していないので、現在着目しているスコープは変化しない。
                         } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.emplace_back(inline_parser.processer(line));
-                            // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.emplace_back(item);
+                            item.childs.push_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
+                            scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
 
                             // ネストが発生しているので、現在着目しているスコープを変更する。
-                            // 新しく ListBlock を作成して、 現在着目しているスコープに積む。
-                            ListBlock new_node = ListBlock(uuid());
-                            scopes.top().childs.emplace_back(new_node);
+                            // 新しく EnumerateBlock を作成して、 現在着目しているスコープに積む。
+                            EnumerateBlock new_node = EnumerateBlock(uuid());
+                            scopes.top().childs.push_back(std::make_shared<Item>(item));
                             scopes.push(new_node);
                         }  else if ((int)scopes.size() > 1) {
                             // インデントを削除していく. 1つのインデントは 3文字なので、3文字ずつ削除していく。
@@ -538,9 +542,9 @@ namespace almo {
                                 if (lines[idx + 1].starts_with(current_prefix)) {
                                     // 継続終了. 収集してきたテキストを追加。
                                     Item item = Item(uuid());
-                                    item.childs.emplace_back(inline_parser.processer(line));
-                                    // 現在のスタックのトップにある ListBlock に Item を追加する。
-                                    scopes.top().childs.emplace_back(item);
+                                    item.childs.push_back(inline_parser.processer(line));
+                                    // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
+                                    scopes.top().childs.push_back(std::make_shared<Item>(item));
                                     std::string text = "";
 
                                     // i 個数分上のスコープのリストになる
@@ -558,7 +562,7 @@ namespace almo {
                             idx++;
                         }
                     }
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<EnumerateBlock>(node));
                 }
                 else if (line.starts_with(">")) {
                     // 空行がくるか末端に来るまで読み続ける
@@ -567,21 +571,22 @@ namespace almo {
                     std::vector<std::string> quote_contents;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "") break;
-                        quote_contents.emplace_back(lines[idx]);
+                        quote_contents.push_back(lines[idx]);
                         idx++;
                     }
 
                     // 引用の中身もパース
-                    node.childs.emplace_back((quote_contents));
+                    BlockParser parser = BlockParser();
+                    node.childs.push_back(std::make_shared<Block>(parser.processer(quote_contents)));
                 }
                 else if (line == "") {
                     NewLine node = NewLine(uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<NewLine>(node));
                 }
                 // 水平線
                 else if ((line == "---") || (line == "___") || (line == "***")) {
                     HorizontalLine node = HorizontalLine(uuid());
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<HorizontalLine>(node));
                 }
                 else if (std::regex_match(line, std::regex("(\\|[^\\|]+).+\\|"))) {
                     const std::regex each_col_regex = std::regex("\\|[^\\|]+");
@@ -643,13 +648,13 @@ namespace almo {
                     Table node =  Table(n_row, n_col, col_format, col_names, uuid()); 
                     
                     for (int i = 0; i < (int)table.size(); i++) {
-                        node.childs.emplace_back(inline_parser.processer(table[i]));
+                        node.childs.push_back(inline_parser.processer(table[i]));
                     }
 
-                    root.childs.emplace_back(node);
+                    root.childs.push_back(std::make_shared<Table>(node));
                 }
                 else {
-                    root.childs.emplace_back(inline_parser.processer(line));
+                    root.childs.push_back(inline_parser.processer(line));
                 }
                 idx++;
             }
@@ -657,76 +662,30 @@ namespace almo {
         }
     };
 
-    // mdファイルのパスを入力として与えて、mdファイルの中身を行ごとに分割したstd::vector<std::string>を返します。
-    // 仕様例:
-    //    read_md("example.md");
-    std::vector<std::string> read_md(const std::string& path) {
-        std::vector<std::string> lines;
-        std::ifstream file(path);
-
-        if (!file) {
-            return lines;
-        }
-
-        std::string line;
-        while (std::getline(file, line)) {
-            lines.push_back(line);
-        }
-
-        file.close();
-        return lines;
-    }
-
-    // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果（構文木のリスト）を返します。
-    // 使用例:
-    //     parse_md_file("example.md");
-    std::pair<std::vector<std::pair<std::string, std::string>>, std::vector<AST::node_ptr>> parse_md_file(std::string path) {
-        std::vector<std::string> lines = almo::read_md(path);
-
-        std::string all_line_str;
-
-        for (std::string line : lines) {
-            all_line_str += line;
-            all_line_str += '\n';
-        }
-
-        std::regex comment = std::regex("<!--[\\s\\S]*?-->");
-
-        all_line_str = std::regex_replace(all_line_str, comment, "");
-
-        std::vector<std::string> processed_lines;
-
-        // 改行で分割
-        std::string current_line = "";
-        for (char c : all_line_str) {
-            if (c == '\n') {
-                processed_lines.push_back(current_line);
-                current_line = "";
-            }
-            else {
-                current_line += c;
-            }
-        }
-
-        // 最後の一行
-        if (current_line != "") {
-            processed_lines.push_back(current_line);
-        }
+    
+    // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果を返す。
+    // 返り値は、
+    // メタデータ (std::map<std::string, std::string>) と
+    // 抽象構文木の根 (Block) のペア
+    std::pair<std::vector<std::pair<std::string, std::string>>, Block> parse_md_file(std::string path) {
+        std::vector<std::string> lines = read_file(path);
 
         std::vector<std::pair<std::string, std::string>> meta_data;
         int meta_data_end = 0;
 
-        if (!processed_lines.empty() && processed_lines[0] == "---") {
+        if (!lines.empty() && lines[0] == "---") {
             int index = 1;
-            while (index < (int)processed_lines.size() && processed_lines[index] != "---") {
-                std::string key = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$1");
-                std::string data = std::regex_replace(processed_lines[index], std::regex("(.*):\\s(.*)"), "$2");
+            while (index < (int)lines.size() && lines[index] != "---") {
+                std::string key = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$1");
+                std::string data = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$2");
                 meta_data.emplace_back(key, data);
                 index++;
             }
             meta_data_end = index + 1;
         }
 
-        return { meta_data, BlockParser::processer({processed_lines.begin() + meta_data_end, processed_lines.end()}) };
+        Block ast = BlockParser().processer(lines);
+
+        return { meta_data,  ast};
     }
 }
