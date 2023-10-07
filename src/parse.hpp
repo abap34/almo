@@ -667,7 +667,7 @@ namespace almo {
     // 返り値は、
     // メタデータ (std::map<std::string, std::string>) と
     // 抽象構文木の根 (Block) のペア
-    std::pair<std::vector<std::pair<std::string, std::string>>, Block> parse_md_file(std::string path) {
+    std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
         std::vector<std::string> lines = read_file(path);
 
         std::vector<std::pair<std::string, std::string>> meta_data;
@@ -684,8 +684,36 @@ namespace almo {
             meta_data_end = index + 1;
         }
 
-        Block ast = BlockParser().processer(lines);
+        // メタデータ以降の行を取り出し
+        std::vector<std::string> md_lines;
+        for (int i = meta_data_end; i < (int)lines.size(); i++) {
+            md_lines.push_back(lines[i]);
+        }
 
-        return { meta_data,  ast};
+        // パース
+        BlockParser parser = BlockParser();
+        Block ast = parser.processer(md_lines);
+
+        // meta_data を std::map に変換する
+        std::map<std::string, std::string> meta_data_map;
+
+        // デフォルト値を設定
+        meta_data_map["title"] = "";
+        meta_data_map["date"] = "";
+        meta_data_map["author"] = "";
+        meta_data_map["twitter_id"] = "";
+        meta_data_map["github_id"] = "";
+        meta_data_map["mail"] = "";
+        meta_data_map["ogp_url"] = "https://www.abap34.com/almo_logo.jpg";
+        meta_data_map["tag"] = "";
+        meta_data_map["url"] = "";
+        meta_data_map["site_name"] = "";
+        meta_data_map["twitter_site"] = "";
+
+        for (auto [key, data] : meta_data) {
+            meta_data_map[key] = data;
+        }
+
+        return { meta_data_map,  ast};
     }
 }
