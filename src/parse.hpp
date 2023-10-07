@@ -10,20 +10,9 @@
 #include "ast.hpp"
 
 namespace almo {
-
     struct InlineParser;
     struct BlockParser;
-
-    // インラインのmd記法をパースします
-    // 使用例:
-    //   InlineParser inline_parser;
-    //   inline_parser.processer(s);
     struct InlineParser {
-        // mdの1行を入力しインラインのmd記法をパースしてその行の構文木の根ノードを返します。
-        // パースの例:
-        //    "**a**b$c$" をhtml表記にすると"<strong>a</strong>b\[c\]"です。
-        //    最終的にhtmlを生成するためにこの関数ではパースしてできる構文木を作ります。
-
         std::map<std::string, std::vector<std::string>> map;
         std::shared_ptr<Block> processer(std::string s) {
             Block root = Block(uuid());
@@ -213,15 +202,12 @@ namespace almo {
 
     // md全体をパースするための関数をメンバーに持つ構造体です。
     struct BlockParser {
-        // md全体を入力として与え、それをパースした構文木の列を返す関数です。
-        // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
-        // 使用例:
-        //    BlockParser::processer(lines);
         Block processer(std::vector<std::string> lines) {
             InlineParser inline_parser = InlineParser();
             Block root = Block(uuid());
             int idx = 0;
             while (idx < (int)lines.size()) {
+                std::cout << idx << ": " << lines[idx] << std::endl; 
                 std::string line = lines[idx];
                 if (line.starts_with("# ")) {
                     Header node = Header(1, uuid());
@@ -408,7 +394,6 @@ namespace almo {
 
                     // 今集めているテキスト
                     std::string text = "";
-
                     while (true) {
                         // 現在の行のテキストを取る。
                         text += lines[idx].substr(current_prefix.size());
@@ -421,18 +406,19 @@ namespace almo {
                         if (lines[idx + 1].starts_with(current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.push_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある ListBlock に Item を追加する。
                             scopes.top().childs.push_back(std::make_shared<Item>(item));
+                            
                             std::string text = "";
 
-                            // ネストは発生していないので、現在着目しているスコープは変化しない。
                         } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.push_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある ListBlock に Item を追加する。
                             scopes.top().childs.push_back(std::make_shared<Item>(item));
+
                             std::string text = "";
 
                             // ネストが発生しているので、現在着目しているスコープを変更する。
@@ -453,9 +439,10 @@ namespace almo {
                                 if (lines[idx + 1].starts_with(current_prefix)) {
                                     // 継続終了. 収集してきたテキストを追加。
                                     Item item = Item(uuid());
-                                    item.childs.push_back(inline_parser.processer(line));
+                                    item.childs.push_back(inline_parser.processer(text));
                                     // 現在のスタックのトップにある ListBlock に Item を追加する。
                                     scopes.top().childs.push_back(std::make_shared<Item>(item));
+
                                     std::string text = "";
 
                                     // i 個数分上のスコープのリストになる
@@ -469,11 +456,15 @@ namespace almo {
                             std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
                             std::cerr << "リストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
                             std::cerr << "リストの継続を意図している場合、インデントとしてスペース2個を使っているか確認してください。" << std::endl;
-                        } else {
-                            idx++;
-                        }
+                        } 
+                        idx++;
                     }
-                    root.childs.push_back(std::make_shared<ListBlock>(node));
+                    // stack のいちばん底 == トップのスコープなのでこれを追加
+                    // 残りの要素が 1 になるまで pop する
+                    while ((int)scopes.size() > 1) {
+                        scopes.pop();
+                    }
+                    root.childs.push_back(std::make_shared<ListBlock>(scopes.top()));
                 }
                 else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
  
@@ -483,7 +474,7 @@ namespace almo {
                     EnumerateBlock node = EnumerateBlock(uuid());
                     scopes.push(node);
 
-                    std::string current_prefix = "\\d+\\. (.*)";
+                    std::string current_match = "\\d+\\. (.*)";
                     // こっちはスペース3個であることに注意！！！
                     std::string INDENT = "   ";
 
@@ -512,19 +503,19 @@ namespace almo {
 
                         // 条件 3
                         // current_prefix から始まる場合
-                        if (lines[idx + 1].starts_with(current_prefix)) {
+                        if (std::regex_match(lines[idx + 1], std::regex(current_match))) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.push_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
                             scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
 
                             // ネストは発生していないので、現在着目しているスコープは変化しない。
-                        } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
+                        } else if (std::regex_match(lines[idx + 1], std::regex(INDENT + current_match))) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
-                            item.childs.push_back(inline_parser.processer(line));
+                            item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
                             scopes.top().childs.push_back(std::make_shared<Item>(item));
                             std::string text = "";
@@ -538,11 +529,11 @@ namespace almo {
                             // インデントを削除していく. 1つのインデントは 3文字なので、3文字ずつ削除していく。
                             for (int i = 1; i < (int)scopes.size(); i++)
                             {
-                                current_prefix = current_prefix.substr(3);
-                                if (lines[idx + 1].starts_with(current_prefix)) {
+                                current_match = current_match.substr(3);
+                                if (std::regex_match(lines[idx + 1], std::regex(current_match))) {
                                     // 継続終了. 収集してきたテキストを追加。
                                     Item item = Item(uuid());
-                                    item.childs.push_back(inline_parser.processer(line));
+                                    item.childs.push_back(inline_parser.processer(text));
                                     // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
                                     scopes.top().childs.push_back(std::make_shared<Item>(item));
                                     std::string text = "";
@@ -557,27 +548,32 @@ namespace almo {
                             // 番号付きリストの定義っぽいのにインデントがあっていないということなので、警告を出してやる
                             std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
                             std::cerr << "番号付きリストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
-                            std::cerr << "番号付きリストの継続を意図している場合、インデントとしてスペース2個を使っているか確認してください。" << std::endl;
-                        } else {
-                            idx++;
-                        }
+                            std::cerr << "番号付きリストの継続を意図している場合、インデントとしてスペース3個を使っているか確認してください。" << std::endl;
+                        } 
+                        idx++;
                     }
                     root.childs.push_back(std::make_shared<EnumerateBlock>(node));
+                    
                 }
                 else if (line.starts_with(">")) {
-                    // 空行がくるか末端に来るまで読み続ける
+                    // > で始まる限り読み続ける
                     Quote node = Quote(uuid());
                     
                     std::vector<std::string> quote_contents;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "") break;
-                        quote_contents.push_back(lines[idx]);
+                        if (lines[idx].starts_with("> ")) {
+                            quote_contents.push_back(lines[idx].substr(2));
+                        } else {
+                            break;
+                        }
                         idx++;
                     }
 
                     // 引用の中身もパース
                     BlockParser parser = BlockParser();
                     node.childs.push_back(std::make_shared<Block>(parser.processer(quote_contents)));
+                    root.childs.push_back(std::make_shared<Quote>(node));
                 }
                 else if (line == "") {
                     NewLine node = NewLine(uuid());
