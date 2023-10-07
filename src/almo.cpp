@@ -7,8 +7,6 @@
 #include "utils.hpp"
 
 int main(int argc, char *argv[]){
-    auto [meta_data, ast] = almo::parse_md_file(argv[1]);
-    
     // コマンドライン引数のデフォルト値を設定
     std::string theme = "light";
     std::string css_setting = "light";
@@ -79,6 +77,10 @@ int main(int argc, char *argv[]){
         editor_theme = "ace/theme/monokai";
         syntax_theme = "monokai-sublime.min";
     }
+
+
+    // パース
+    auto [meta_data, ast] = almo::parse_md_file(argv[1]);
 
     if (debug) {
         nlohmann::json ast_json = ast.to_json();
