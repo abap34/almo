@@ -5,6 +5,7 @@
 #include <iostream>
 #include <regex>
 #include <map>
+#include <stack>
 
 #include "ast.hpp"
 
@@ -22,25 +23,28 @@ namespace almo {
         // パースの例:
         //    "**a**b$c$" をhtml表記にすると"<strong>a</strong>b\[c\]"です。
         //    最終的にhtmlを生成するためにこの関数ではパースしてできる構文木を作ります。
-        AST::node_ptr processer(std::string s) {
+
+        std::map<std::string, std::vector<std::string>> map;
+        Block processer(std::string s) {
+            Block root = Block(uuid());
             map.clear();
             while (1) {
                 if (std::regex_match(s, code_block_regex)) {
-                    auto& memo = map[InlineCodeBlock];
+                    auto& memo = map["inline_code_block"];
                     int id = memo.size();
                     std::string format = "$1<__code>" + std::to_string(id) + "</__code>$3";
                     memo.emplace_back(std::regex_replace(s, code_block_regex, "$2"));
                     s = std::regex_replace(s, code_block_regex, format);
                 }
                 else if (std::regex_match(s, math_regex)) {
-                    auto& memo = map[InlineMath];
+                    auto& memo = map["inline_math"];
                     int id = memo.size();
                     std::string format = "$1<__math>" + std::to_string(id) + "</__math>$3";
                     memo.emplace_back(std::regex_replace(s, math_regex, "$2"));
                     s = std::regex_replace(s, math_regex, format);
                 }
                 else if (std::regex_match(s, image_regex)) {
-                    auto& memo = map[InlineImage];
+                    auto& memo = map["inline_image"];
                     int id_url = memo.size();
                     int id_str = id_url + 1;
                     std::string format = "$1<__image=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__image>$4";
@@ -49,7 +53,7 @@ namespace almo {
                     s = std::regex_replace(s, image_regex, format);
                 }
                 else if (std::regex_match(s, url_regex)) {
-                    auto& memo = map[InlineUrl];
+                    auto& memo = map["inline_url"];
                     int id_url = memo.size();
                     int id_str = id_url + 1;
                     std::string format = "$1<__url=" + std::to_string(id_url) + ">" + std::to_string(id_str) + "</__url>$4";
@@ -59,21 +63,21 @@ namespace almo {
                     s = std::regex_replace(s, url_regex, format);
                 }
                 else if (std::regex_match(s, overline_regex)) {
-                    auto& memo = map[InlineOverline];
+                    auto& memo = map["overline"];
                     int id = memo.size();
                     std::string format = "$1<__overline>" + std::to_string(id) + "</__overline>$3";
                     memo.emplace_back(std::regex_replace(s, overline_regex, "$2"));
                     s = std::regex_replace(s, overline_regex, format);
                 }
                 else if (std::regex_match(s, strong_regex)) {
-                    auto& memo = map[InlineStrong];
+                    auto& memo = map["strong"];
                     int id = memo.size();
                     std::string format = "$1<__strong>" + std::to_string(id) + "</__strong>$3";
                     memo.emplace_back(std::regex_replace(s, strong_regex, "$2"));
                     s = std::regex_replace(s, strong_regex, format);
                 }
                 else if (std::regex_match(s, italic_regex)) {
-                    auto& memo = map[InlineItalic];
+                    auto& memo = map["italic"];
                     int id = memo.size();
                     std::string format = "$1<__i>" + std::to_string(id) + "</__i>$3";
                     memo.emplace_back(std::regex_replace(s, italic_regex, "$2"));
@@ -81,128 +85,116 @@ namespace almo {
                 }
                 else break;
             }
-            auto node = std::make_shared<AST>();
-            node->type = Block;
-            node->childs = dfs(s);
-            return node;
+            root.childs.emplace_back(dfs(s));
+            return root;
         }
 
     private:
-        // パースの内部で呼ばれるdfsです。
-        // processer以外で呼ばれることはないです
-        std::vector<AST::node_ptr> dfs(std::string s) {
-            std::vector<AST::node_ptr> nodes;
+        std::shared_ptr<ASTNode> dfs(std::string s) {
+            Block root = Block(uuid());
             if (std::regex_match(s, italic_html_regex)) {
-                auto node = std::make_shared<AST>();
-                node->type = InlineItalic;
+                InlineItalic node = InlineItalic(uuid());
                 int id = std::stoi(std::regex_replace(s, italic_html_regex, "$2"));
-                auto s1 = std::regex_replace(s, italic_html_regex, "$1");
-                auto s2 = map[InlineItalic][id];
-                auto s3 = std::regex_replace(s, italic_html_regex, "$3");
-                auto d1 = dfs(s1);
-                node->childs = dfs(s2);
-                auto d3 = dfs(s3);
-
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d3.begin(), d3.end());
+                std::string before = std::regex_replace(s, italic_html_regex, "$1");
+                std::string content = map["italic"][id];
+                std::string after = std::regex_replace(s, italic_html_regex, "$3");
+                
+                root.childs.emplace_back(dfs(before));
+                node.childs.emplace_back(dfs(content));
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
             }
             else if (std::regex_match(s, strong_html_regex)) {
-                auto node = std::make_shared<AST>();
-                node->type = InlineStrong;
+                InlineStrong node = InlineStrong(uuid());
                 int id = std::stoi(std::regex_replace(s, strong_html_regex, "$2"));
-                auto s1 = std::regex_replace(s, strong_html_regex, "$1");
-                auto s2 = map[InlineStrong][id];
-                auto s3 = std::regex_replace(s, strong_html_regex, "$3");
-                auto d1 = dfs(s1);
-                node->childs = dfs(s2);
-                auto d3 = dfs(s3);
-
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d3.begin(), d3.end());
+                std::string before = std::regex_replace(s, strong_html_regex, "$1");
+                std::string content = map["strong"][id];
+                std::string after = std::regex_replace(s, strong_html_regex, "$3");
+                
+                root.childs.emplace_back(dfs(before));
+                node.childs.emplace_back(dfs(content));
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
             }
             else if (std::regex_match(s, overline_html_regex)) {
-                auto node = std::make_shared<AST>();
-                node->type = InlineOverline;
+                InlineOverline node = InlineOverline(uuid());
                 int id = std::stoi(std::regex_replace(s, overline_html_regex, "$2"));
-                auto s1 = std::regex_replace(s, overline_html_regex, "$1");
-                auto s2 = map[InlineOverline][id];
-                auto s3 = std::regex_replace(s, overline_html_regex, "$3");
-                auto d1 = dfs(s1);
-                node->childs = dfs(s2);
-                auto d3 = dfs(s3);
-
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d3.begin(), d3.end());
+                std::string before = std::regex_replace(s, overline_html_regex, "$1");
+                std::string content = map["overline"][id];
+                std::string after = std::regex_replace(s, overline_html_regex, "$3");
+                
+                root.childs.emplace_back(dfs(before));
+                node.childs.emplace_back(dfs(content));
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
             }
             else if (std::regex_match(s, url_html_regex)) {
-                auto node = std::make_shared<AST>(InlineUrl);
                 int id_url = std::stoi(std::regex_replace(s, url_html_regex, "$2"));
                 int id_str = std::stoi(std::regex_replace(s, url_html_regex, "$3"));
-                auto s1 = std::regex_replace(s, url_html_regex, "$1");
-                auto s4 = std::regex_replace(s, url_html_regex, "$4");
-                auto d1 = dfs(s1);
-                node->childs.emplace_back(std::make_shared<AST>(Url, map[InlineUrl][id_url]));
-                node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineUrl][id_str]));
-                auto d4 = dfs(s4);
+                std::string before = std::regex_replace(s, url_html_regex, "$1");
+                std::string after = std::regex_replace(s, url_html_regex, "$4");
+                
+                std::string url = map["inline_url"][id_url];
+                std::string alt = map["inline_url"][id_str];
 
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d4.begin(), d4.end());
+                InlineUrl node = InlineUrl(url, alt, uuid());
+                
+                root.childs.emplace_back(dfs(before));
+                // Url は Leaf なので、子要素を持たないからそのまま追加する。
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
+
             }
             else if (std::regex_match(s, image_html_regex)) {
-                auto node = std::make_shared<AST>(InlineImage);
                 int id_url = std::stoi(std::regex_replace(s, image_html_regex, "$2"));
                 int id_str = std::stoi(std::regex_replace(s, image_html_regex, "$3"));
-                auto s1 = std::regex_replace(s, image_html_regex, "$1");
-                auto s4 = std::regex_replace(s, image_html_regex, "$4");
-                auto d1 = dfs(s1);
-                node->childs.emplace_back(std::make_shared<AST>(Url, map[InlineImage][id_url]));
-                node->childs.emplace_back(std::make_shared<AST>(PlainText, map[InlineImage][id_str]));
-                auto d4 = dfs(s4);
+                std::string before = std::regex_replace(s, image_html_regex, "$1");
+                std::string after = std::regex_replace(s, image_html_regex, "$4");
+                
+                std::string url = map["inline_image"][id_url];
+                std::string caption = map["inline_image"][id_str];
+                InlineImage node = InlineImage(url, caption, uuid());
 
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d4.begin(), d4.end());
+                root.childs.emplace_back(dfs(before));
+                // Image は Leaf なので、子要素を持たないからそのまま追加する。
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
             }
             else if (std::regex_match(s, math_html_regex)) {
-                auto node = std::make_shared<AST>();
-                node->type = InlineMath;
                 int id = std::stoi(std::regex_replace(s, math_html_regex, "$2"));
-                auto s1 = std::regex_replace(s, math_html_regex, "$1");
-                auto s2 = map[InlineMath][id];
-                auto s3 = std::regex_replace(s, math_html_regex, "$3");
-                auto d1 = dfs(s1);
-                node->childs.emplace_back(std::make_shared<AST>(PlainText, s2));
-                auto d3 = dfs(s3);
 
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d3.begin(), d3.end());
+                auto before = std::regex_replace(s, math_html_regex, "$1");
+                auto after = std::regex_replace(s, math_html_regex, "$3");
+
+                std::string expression = map["inline_math"][id];
+
+                InlineMath node = InlineMath(expression, uuid());
+
+                root.childs.emplace_back(dfs(before));
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
             }
             else if (std::regex_match(s, code_block_html_regex)) {
-                auto node = std::make_shared<AST>();
-                node->type = InlineCodeBlock;
                 int id = std::stoi(std::regex_replace(s, code_block_html_regex, "$2"));
-                auto s1 = std::regex_replace(s, code_block_html_regex, "$1");
-                auto s2 = map[InlineCodeBlock][id];
-                auto s3 = std::regex_replace(s, code_block_html_regex, "$3");
-                auto d1 = dfs(s1);
-                node->childs.emplace_back(std::make_shared<AST>(PlainText, s2));
-                auto d3 = dfs(s3);
-                nodes.insert(nodes.end(), d1.begin(), d1.end());
-                nodes.emplace_back(node);
-                nodes.insert(nodes.end(), d3.begin(), d3.end());
+                std::string before = std::regex_replace(s, code_block_html_regex, "$1");
+                std::string after = std::regex_replace(s, code_block_html_regex, "$3");
+                std::string code = map["inline_code_block"][id];
+
+                InlineCodeBlock node = InlineCodeBlock(code, uuid());
+
+                root.childs.emplace_back(dfs(before));
+                root.childs.emplace_back(node);
+                root.childs.emplace_back(dfs(after));
+
             }
             else {
-                nodes.emplace_back(std::make_shared<AST>(PlainText, s));
+                std::string text = "";
+                RawText node = RawText(s, uuid());
+                root.childs.emplace_back(node);
             }
-            return nodes;
+            return std::make_shared<Block>(root);
         }
 
-        std::map<Type, std::vector<std::string>> map;
         const std::regex code_block_regex = std::regex("(.*)\\`(.*)\\`(.*)");
         const std::regex math_regex = std::regex("(.*)\\$(.*)\\$(.*)");
         const std::regex image_regex = std::regex("(.*)\\!\\[(.*)\\]\\((.*)\\)(.*)");
@@ -226,87 +218,93 @@ namespace almo {
         // mdは始め、行ごとに分割されて入力として与えます。その後関数内でパースし意味のブロック毎に構文木を作ります。
         // 使用例:
         //    BlockParser::processer(lines);
-        static std::vector<AST::node_ptr> processer(std::vector<std::string> lines) {
-            std::vector<AST::node_ptr> asts;
+        static Block processer(std::vector<std::string> lines) {
             InlineParser inline_parser;
+            Block root = Block(uuid());
             int idx = 0;
             while (idx < (int)lines.size()) {
                 std::string line = lines[idx];
                 if (line.starts_with("# ")) {
-                    auto block = std::make_shared<AST>(H1);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(2)));
-                    asts.emplace_back(block);
+                    Header node = Header(1, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(2)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("## ")) {
-                    auto block = std::make_shared<AST>(H2);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(3)));
-                    asts.emplace_back(block);
+                    Header node = Header(2, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(3)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("### ")) {
-                    auto block = std::make_shared<AST>(H3);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(4)));
-                    asts.emplace_back(block);
+                    Header node = Header(3, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(4)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("#### ")) {
-                    auto block = std::make_shared<AST>(H4);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(5)));
-                    asts.emplace_back(block);
+                    Header node = Header(4, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(5)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("##### ")) {
-                    auto block = std::make_shared<AST>(H5);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(6)));
-                    asts.emplace_back(block);
+                    Header node = Header(5, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(6)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("###### ")) {
-                    auto block = std::make_shared<AST>(H6);
-                    auto plain_block = std::make_shared<AST>();
-                    block->childs.emplace_back(inline_parser.processer(line.substr(7)));
-                    asts.emplace_back(block);
+                    Header node = Header(6, uuid());
+                    node.childs.emplace_back(inline_parser.processer(line.substr(6)));
+                    root.childs.emplace_back(node);
                 }
                 else if (line == ":::judge") {
                     idx++;
-                    auto block = std::make_shared<AST>(Judge);
-                    for (std::string head : { "title", "sample_in", "sample_out", "in", "out"}) {
-                        assert(idx < (int)lines.size());
-                        assert(lines[idx].starts_with(head));
-                        block->judge.emplace_back(head, lines[idx].substr(head.size() + 1));
+                    std::map<std::string, std::string> judge_info;
+                    
+                    // Judge の設定のうち、必ず必要なもの
+                    std::vector<std::string> required_args = { "title", "sample_in", "sample_out", "in", "out" };
+
+                    // Judge の設定のうち、オプションのものとそのデフォルト値
+                    std::map<std::string, std::string> optional_args = {
+                        { "judge", "equal" },
+                        { "source", "" }
+                    };
+
+                    // 1行ずつ読み込み、judge_info に情報を追加していく
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") break;
+                        std::string key = lines[idx].substr(0, lines[idx].find("="));
+                        std::string value = lines[idx].substr(lines[idx].find("=") + 1);
+                        judge_info[key] = value;
                         idx++;
                     }
-                    assert(idx < (int)lines.size());
-                    bool find_judge = false;
-                    bool find_source = false;
-                    if (lines[idx].starts_with("judge=")) {
-                        std::string rhs = lines[idx].substr(6);
-                        assert(rhs.starts_with("err_") || rhs == "equal");
-                        block->judge.emplace_back("judge", rhs);
-                        find_judge = true;
-                        idx++;
+
+                    // 必須の引数が揃っているかチェック. なければ SyntaxError を投げる
+                    for (std::string arg : required_args) {
+                        if (judge_info.find(arg) == judge_info.end()) {
+                            throw SyntaxError(":::judge の引数 " + arg + " がありません. 引数を追加してください.", idx);
+                        }
                     }
-                    assert(idx < (int)lines.size());
-                    if (lines[idx].starts_with("source=")) {
-                        std::string source_path = lines[idx].substr(7);
-                        block->judge.emplace_back("source", source_path);
-                        find_source = true;
-                        idx++;
+
+                    // オプションの引数が揃っているかチェック. なければデフォルト値を入れる
+                    for (auto [arg, default_value] : optional_args) {
+                        if (judge_info.find(arg) == judge_info.end()) {
+                            judge_info[arg] = default_value;
+                        }
                     }
-                    assert(idx < (int)lines.size());
-                    assert(lines[idx] == ":::");
-                    if (!find_judge) {
-                        block->judge.emplace_back("judge", "equal");
-                    }
-                    if (!find_source) {
-                        block->judge.emplace_back("source", "");
-                    }
-                    asts.emplace_back(block);
+
+                    Judge node = Judge(
+                        judge_info["title"],
+                        judge_info["sample_in"],
+                        judge_info["sample_out"],
+                        judge_info["in"],
+                        judge_info["out"],
+                        judge_info["judge"],
+                        judge_info["source"],
+                        uuid()
+                    );
+
+                    root.childs.emplace_back(node);
                 }
                 else if (line == ":::code") {
                     idx++;
-                    auto block = std::make_shared<AST>(ExecutableCodeBlock);
                     assert(idx < (int)lines.size());
                     std::string code;
                     while (idx < (int)lines.size()) {
@@ -314,12 +312,11 @@ namespace almo {
                         code += lines[idx] + "\n";
                         idx++;
                     }
-                    block->code = code;
-                    asts.emplace_back(block);
+                    ExecutableCodeBlock node = ExecutableCodeBlock(code, uuid());
+                    root.childs.emplace_back(node);
                 }
                 else if (line == ":::loadlib") {
                     idx++;
-                    auto block = std::make_shared<AST>(LoadLib);
                     assert(idx < (int)lines.size());
                     std::vector<std::string> libs;
                     while (idx < (int)lines.size()) {
@@ -327,178 +324,264 @@ namespace almo {
                         libs.emplace_back(lines[idx]);
                         idx++;
                     }
-                    block->libs = libs;
-                    asts.emplace_back(block);
+                    LoadLib node = LoadLib(libs, uuid());
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("```")) {
                     std::string language = line.substr(3);
                     idx++;
-                    auto block = std::make_shared<AST>(CodeBlock);
-                    block->language = language;
+                    std::string code;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "```") break;
-                        block->childs.emplace_back(std::make_shared<AST>(PlainText, lines[idx]));
+                        code += lines[idx] + "\n";
                         idx++;
                     }
-                    asts.emplace_back(block);
+
+                    CodeBlock node = CodeBlock(code, language, uuid());
+                    root.childs.emplace_back(node);
                 }
                 else if (line == "$$") {
                     idx++;
-                    auto block = std::make_shared<AST>(MathBlock);
+                    std::string expression;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "$$") break;
-                        block->childs.emplace_back(std::make_shared<AST>(PlainText, lines[idx]));
+                        expression += lines[idx] + "\n";
                         idx++;
                     }
-                    asts.emplace_back(block);
+                    
+                    MathBlock node = MathBlock(expression, uuid());
+                    root.childs.emplace_back(node);
                 }
                 else if (line.starts_with("- ")) {
-                    // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
-                    // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    auto list_parser = [&](auto&& self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
-                        auto block = std::make_shared<AST>(ListBlock);
-                        assert(lines[line_id].substr(cur, 2) == "- ");
-                        AST::node_ptr now = nullptr;
-                        std::string content = "";
-                        while (true) {
-                            if (line_id == (int)(lines.size())) break;
-                            if (is_header(lines[line_id])) break;
-                            else if (lines[line_id].starts_with(":::")) break;
-                            else if (lines[line_id].starts_with("```")) break;
-                            else if (lines[line_id].starts_with("$$")) break;
-                            else if (lines[line_id] == "") break;
-                            else {
-                                std::string list_header = "- ";
-                                bool is_upper = false;
-                                for (int i = 0; i < cur; i += 2) {
-                                    if (lines[line_id].starts_with(list_header)) {
-                                        assert(now != nullptr);
-                                        is_upper = true;
-                                        break;
+                    // まずは今の行(リストの先頭)のテキストを取り出す。
+                    // 次の行が、 空行またはファイルの末端またはリストの次の要素の場合、テキストは終了。
+                    // 逆にこれ以外の場合、テキストは継続。
+                    // 例) - Hello,
+                    //       This is a pen.
+                    //    この場合、リストの先頭のテキストは "Hello, This is a pen." となる。(This is a pen. の部分も含む点に注意。)
+
+                    // 以下のアルゴリズムでテキストを取り出す。
+                    // 1. 次の行の内容を読む.
+                    // 2. 以下の条件がどれか true になるまで読み続ける
+                    // 　　条件: 次の行が、　
+                    //          1. 空行(lines[idx + 1] == "")
+                    //          2. ファイルの末端(idx + 1 == size) 
+                    //          3. リストの次の要素
+
+                    
+                    // 1, 2 が見つかったら終了.
+                    // 3 について、 リストの次の要素は、
+                    // - current_prefix 
+                    // - current_prefix にインデント(スペース2) を加えたもの
+                    // - インデントを2n個削除したもの  
+                    // から始まる   
+                    // current_prefix 始まりなら 上のアルゴリズムでテキストを取得して, Item を現在着目しているスコープの子要素の Item として追加する。
+                    // current_prefix + インデント 始まりなら、 リストが一つネストされているので、
+                    // 新しく ListBlock を作成して、 現在着目しているスコープに積む。 同様にテキストを取得して、 Item を現在着目しているスコープの子要素(Item) として追加する。
+                    // インデントを削除したものの場合、削除した個数分だけスタックから pop すればよい。
+
+                    // 現在着目しているスコープを表すためのスタック
+                    std::stack<ListBlock> scopes;
+                    
+                    ListBlock node = ListBlock(uuid());
+                    scopes.push(node);
+
+                    std::string current_prefix = "- ";
+                    std::string INDENT = "  ";
+
+                    // 条件1, 2 に当てはまるかどうかを判定する
+                    auto is_end = [&lines](int idx) -> bool {
+                        if (idx == (int)(lines.size())) return true;
+                        if (lines[idx] == "") return true;
+                        return false;
+                    }; 
+
+                    // 先頭のスペースを削除したとき、 "- " 始まりになるかどうかを判定する・ ワーニング出してやるのに使う。
+                    auto is_list_def = [](std::string s) -> bool {
+                        while (s[0] == ' ') s = s.substr(1);
+                        return s.starts_with("- ");
+                    };
+
+                    // 今集めているテキスト
+                    std::string text = "";
+
+                    while (true) {
+                        // 現在の行のテキストを取る。
+                        text += lines[idx].substr(current_prefix.size());
+                        
+                        // 条件 1, 2
+                        if (is_end(idx + 1)) break;
+
+                        // 条件 3
+                        // current_prefix から始まる場合
+                        if (lines[idx + 1].starts_with(current_prefix)) {
+                            // 継続終了。収集してきたテキストを追加。
+                            Item item = Item(uuid());
+                            item.childs.emplace_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top().childs.emplace_back(item);
+                            std::string text = "";
+
+                            // ネストは発生していないので、現在着目しているスコープは変化しない。
+                        } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
+                            // 継続終了。収集してきたテキストを追加。
+                            Item item = Item(uuid());
+                            item.childs.emplace_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top().childs.emplace_back(item);
+                            std::string text = "";
+
+                            // ネストが発生しているので、現在着目しているスコープを変更する。
+                            // 新しく ListBlock を作成
+                            ListBlock new_node = ListBlock(uuid());
+                            
+                            // 今のスコープの子ノードにして、
+                            scopes.top().childs.emplace_back(new_node);
+
+                            // 新しいスコープに変更する。
+                            scopes.push(new_node);
+
+                        }  else if ((int)scopes.size() > 1) {
+                            for (int i = 1; i < (int)scopes.size(); i++)
+                            {   
+                                // インデントを削除していく. 1つのインデントは 2文字なので、2文字ずつ削除していく。
+                                current_prefix = current_prefix.substr(2);
+                                if (lines[idx + 1].starts_with(current_prefix)) {
+                                    // 継続終了. 収集してきたテキストを追加。
+                                    Item item = Item(uuid());
+                                    item.childs.emplace_back(inline_parser.processer(line));
+                                    // 現在のスタックのトップにある ListBlock に Item を追加する。
+                                    scopes.top().childs.emplace_back(item);
+                                    std::string text = "";
+
+                                    // i 個数分上のスコープのリストになる
+                                    for (int j = 0; j < i; j++) {
+                                        scopes.pop();
                                     }
-                                    list_header = "  " + list_header;
                                 }
-                                if (is_upper) break;
-                                if (lines[line_id].starts_with(list_header)) {
-                                    if (now != nullptr) {
-                                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
-                                        block->childs.emplace_back(now);
-                                        content.clear();
-                                    }
-                                    now = std::make_shared<AST>(Item);
-                                    content = lines[line_id].substr(list_header.size());
-                                }
-                                else if (lines[line_id].starts_with("  " + list_header)) {
-                                    assert(now != nullptr);
-                                    auto [next_line, item_ptr] = self(self, line_id, cur + 2);
-                                    line_id = next_line - 1;
-                                    now->childs.emplace_back(item_ptr);
-                                }
-                                else {
-                                    assert(now != nullptr);
-                                    content += " " + lines[line_id];
-                                }
-                                line_id++;
                             }
-                        }
-                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
-                        block->childs.emplace_back(now);
-                        return std::make_pair(line_id, block);
-                        };
-                    auto [next, list_ast] = list_parser(list_parser, idx);
-                    idx = next;
-                    asts.emplace_back(list_ast);
-                }
-                else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
-                    // item が途切れるまで行を跨いでパースする。 cur は indent 分だけずらしたカーソルを表す。
-                    // 返り値は item が終了した直後の行の idx と パース結果を表す構文木のポインタ 。
-                    auto enumerate_parser = [&](auto&& self, int line_id, int cur = 0) -> std::pair<int, AST::node_ptr> {
-                        auto block = std::make_shared<AST>(EnumerateBlock);
-                        assert(std::regex_match(lines[line_id].substr(cur), std::regex("([ \\t]*)\\d+\\. (.*)")));
-                        AST::node_ptr now = nullptr;
-                        std::string content = "";
-                        while (true) {
-                            if (line_id == (int)(lines.size())) break;
-                            if (is_header(lines[line_id])) break;
-                            else if (lines[line_id].starts_with(":::")) break;
-                            else if (lines[line_id].starts_with("```")) break;
-                            else if (lines[line_id].starts_with("$$")) break;
-                            else if (lines[line_id] == "") break;
-                            else {
-                                int head_size = 0;
-                                std::string SPACE3 = "   ";
-                                std::string enumerate_header = "\\d+\\. (.*)";
-                                bool is_upper = false;
-                                for (int i = 0; i < cur; i += 3) {
-                                    if (std::regex_match(lines[line_id], std::regex(enumerate_header))) {
-                                        assert(now != nullptr);
-                                        is_upper = true;
-                                        break;
-                                    }
-                                    enumerate_header = SPACE3 + enumerate_header;
-                                    head_size += 3;
-                                }
-                                if (is_upper) break;
-                                if (std::regex_match(lines[line_id], std::regex(enumerate_header))) {
-                                    if (now != nullptr) {
-                                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
-                                        block->childs.emplace_back(now);
-                                        content.clear();
-                                    }
-                                    now = std::make_shared<AST>(Item);
-                                    content = lines[line_id].substr(head_size + 3);
-                                }
-                                else if (std::regex_match(lines[line_id], std::regex(SPACE3 + enumerate_header))) {
-                                    assert(now != nullptr);
-                                    auto [next_line, item_ptr] = self(self, line_id, cur + 3);
-                                    line_id = next_line - 1;
-                                    now->childs.emplace_back(item_ptr);
-                                }
-                                else {
-                                    assert(now != nullptr);
-                                    // 先頭のスペース + "1. " の部分
-                                    content += " " + lines[line_id].substr(head_size + 3);
-                                }
-                                line_id++;
-                            }
-                        }
-                        now->childs.insert(now->childs.begin(), inline_parser.processer(content));
-                        block->childs.emplace_back(now);
-                        return std::make_pair(line_id, block);
-                        };
-                    auto [next, enumerate_ast] = enumerate_parser(enumerate_parser, idx);
-                    idx = next;
-                    asts.emplace_back(enumerate_ast);
-                }
-                else if (line.starts_with(">")) {
-                    // 空行がくるか末端に来るまで読み続ける
-                    auto block = std::make_shared<AST>(Quote);
-                    std::string content = line.substr(1);
-                    if (idx == (int)(lines.size())) {
-                        block->childs.emplace_back(inline_parser.processer(content));
-                    }
-                    else {
-                        while (true) {
-                            if (idx == (int)(lines.size())) break;
-                            if (lines[idx] == "") break;
-                            if (is_header(lines[idx])) break;
-                            if (lines[idx].starts_with(":::")) break;
-                            if (lines[idx].starts_with("```")) break;
-                            if (lines[idx].starts_with("$$")) break;
-                            block->childs.emplace_back(inline_parser.processer(lines[idx]));
+                        } else if (is_list_def(lines[idx + 1])) {
+                            // リストの定義っぽいのにインデントがあっていないということなので、警告を出してやる
+                            std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
+                            std::cerr << "リストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
+                            std::cerr << "リストの継続を意図している場合、インデントとしてスペース2個を使っているか確認してください。" << std::endl;
+                        } else {
                             idx++;
                         }
                     }
-                    asts.emplace_back(block);
+                    root.childs.emplace_back(node);
+                }
+                else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
+ 
+                    // 現在着目しているスコープを表すためのスタック
+                    std::stack<EnumerateBlock> scopes;
+                    
+                    EnumerateBlock node = EnumerateBlock(uuid());
+                    scopes.push(node);
+
+                    std::string current_prefix = "\\d+\\. (.*)";
+                    // こっちはスペース3個であることに注意！！！
+                    std::string INDENT = "   ";
+
+                    // 条件1, 2 に当てはまるかどうかを判定する
+                    auto is_end = [&lines](int idx) -> bool {
+                        if (idx == (int)(lines.size())) return true;
+                        if (lines[idx] == "") return true;
+                        return false;
+                    }; 
+
+                    // 先頭のスペースを削除したとき、 "- " 始まりになるかどうかを判定する・ ワーニング出してやるのに使う。
+                    auto is_enum_def = [](std::string s) -> bool {
+                        while (s[0] == ' ') s = s.substr(1);
+                        return std::regex_match(s, std::regex("\\d+\\. (.*)"));
+                    };
+
+                    // 今集めているテキスト
+                    std::string text = "";
+                    int depth = 0;
+
+                    while (true) {
+                        // 現在の行のテキストを取る。
+                        text += lines[idx].substr((depth + 1) * 3);
+                        // 条件 1, 2
+                        if (is_end(idx + 1)) break;
+
+                        // 条件 3
+                        // current_prefix から始まる場合
+                        if (lines[idx + 1].starts_with(current_prefix)) {
+                            // 継続終了。収集してきたテキストを追加。
+                            Item item = Item(uuid());
+                            item.childs.emplace_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top().childs.emplace_back(item);
+                            std::string text = "";
+
+                            // ネストは発生していないので、現在着目しているスコープは変化しない。
+                        } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
+                            // 継続終了。収集してきたテキストを追加。
+                            Item item = Item(uuid());
+                            item.childs.emplace_back(inline_parser.processer(line));
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top().childs.emplace_back(item);
+                            std::string text = "";
+
+                            // ネストが発生しているので、現在着目しているスコープを変更する。
+                            // 新しく ListBlock を作成して、 現在着目しているスコープに積む。
+                            ListBlock new_node = ListBlock(uuid());
+                            scopes.top().childs.emplace_back(new_node);
+                            scopes.push(new_node);
+                        }  else if ((int)scopes.size() > 1) {
+                            // インデントを削除していく. 1つのインデントは 3文字なので、3文字ずつ削除していく。
+                            for (int i = 1; i < (int)scopes.size(); i++)
+                            {
+                                current_prefix = current_prefix.substr(3);
+                                if (lines[idx + 1].starts_with(current_prefix)) {
+                                    // 継続終了. 収集してきたテキストを追加。
+                                    Item item = Item(uuid());
+                                    item.childs.emplace_back(inline_parser.processer(line));
+                                    // 現在のスタックのトップにある ListBlock に Item を追加する。
+                                    scopes.top().childs.emplace_back(item);
+                                    std::string text = "";
+
+                                    // i 個数分上のスコープのリストになる
+                                    for (int j = 0; j < i; j++) {
+                                        scopes.pop();
+                                    }
+                                }
+                            }
+                        } else if (is_enum_def(lines[idx + 1])) {
+                            // 番号付きリストの定義っぽいのにインデントがあっていないということなので、警告を出してやる
+                            std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
+                            std::cerr << "番号付きリストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
+                            std::cerr << "番号付きリストの継続を意図している場合、インデントとしてスペース2個を使っているか確認してください。" << std::endl;
+                        } else {
+                            idx++;
+                        }
+                    }
+                    root.childs.emplace_back(node);
+                }
+                else if (line.starts_with(">")) {
+                    // 空行がくるか末端に来るまで読み続ける
+                    Quote node = Quote(uuid());
+                    
+                    std::vector<std::string> quote_contents;
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == "") break;
+                        quote_contents.emplace_back(lines[idx]);
+                        idx++;
+                    }
+
+                    // 引用の中身もパース
+                    node.childs.emplace_back((quote_contents));
                 }
                 else if (line == "") {
-                    auto block = std::make_shared<AST>(NewLine);
-                    asts.emplace_back(block);
+                    NewLine node = NewLine(uuid());
+                    root.childs.emplace_back(node);
                 }
                 // 水平線
                 else if ((line == "---") || (line == "___") || (line == "***")) {
-                    auto block = std::make_shared<AST>(HorizontalLine);
-                    asts.emplace_back(block);
+                    HorizontalLine node = HorizontalLine(uuid());
+                    root.childs.emplace_back(node);
                 }
                 else if (std::regex_match(line, std::regex("(\\|[^\\|]+).+\\|"))) {
                     const std::regex each_col_regex = std::regex("\\|[^\\|]+");
@@ -557,35 +640,20 @@ namespace almo {
                     }
 
 
-                    auto block = std::make_shared<AST>(Table);
-                    block->table.emplace_back("n_col", std::to_string(n_col));
-                    block->table.emplace_back("n_row", std::to_string(n_row));
-                    block->col_format = col_format;
-                    block->col_names = col_names;
-
+                    Table node =  Table(n_row, n_col, col_format, col_names, uuid()); 
+                    
                     for (int i = 0; i < (int)table.size(); i++) {
-                        block->childs.emplace_back(inline_parser.processer(table[i]));
+                        node.childs.emplace_back(inline_parser.processer(table[i]));
                     }
 
-                    asts.emplace_back(block);
+                    root.childs.emplace_back(node);
                 }
                 else {
-                    asts.emplace_back(inline_parser.processer(line));
+                    root.childs.emplace_back(inline_parser.processer(line));
                 }
                 idx++;
             }
-            return asts;
-        }
-
-    private:
-        // headerブロックであるか判定
-        static bool is_header(const std::string& s) {
-            std::string header = "";
-            for (int i = 1; i <= 6; i++) {
-                header += '#';
-                if (s.starts_with(header + " ")) return true;
-            }
-            return false;
+            return root;
         }
     };
 
