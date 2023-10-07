@@ -1,12 +1,36 @@
-#include <string>
+#pragma once
 
-std::string join(std::vector<std::string> parts){
-    std::string result = "";
-    for (std::string part : parts){
-        result += part;
+#include <string>
+#include <sstream> 
+#include <glob.h>
+
+// 文字列の vector を 結合する。第二引数はOptionalで区切り文字。デフォルトは空
+std::string join(std::vector<std::string> v, std::string sep = "") {
+    std::stringstream ss;
+    for (int i = 0; i < v.size(); i++) {
+        ss << v[i];
+        if (i != v.size() - 1) {
+            ss << sep;
+        }
     }
+    return ss.str();
+}
+
+
+// 文字列を sep で分割する
+std::vector<std::string> split(std::string str, std::string sep) {
+    std::vector<std::string> result;
+    int start = 0;
+    int end = str.find(sep);
+    while (end != -1) {
+        result.push_back(str.substr(start, end - start));
+        start = end + sep.size();
+        end = str.find(sep, start);
+    }
+    result.push_back(str.substr(start, end - start));
     return result;
 }
+
 
 // パースが失敗した時のエラー
 class ParseError : public std::exception {
@@ -14,7 +38,10 @@ class ParseError : public std::exception {
 public:
     ParseError(std::string message) : message(message) {}
     const char* what() const noexcept override {
-        return message.c_str();
+        std::string error = "パースエラー  \n" + message;
+        char* result = new char[error.length() + 1];
+        strcpy(result, error.c_str());
+        return result;
     }
 };
 
@@ -22,10 +49,53 @@ public:
 // 構文が間違っている時のエラー
 class SyntaxError : public std::exception {
     std::string message;
-    int error_pos;
 public:
-    SyntaxError(std::string message, int error_pos) : message(message), error_pos(error_pos) {}
+    SyntaxError(std::string message) : message(message) {}
     const char* what() const noexcept override {
-        return "構文エラー  " + std::to_string(error_pos) + "文字目付近: " + message.c_str(); 
+        std::string error = "構文エラー  \n" + message;
+        char* result = new char[error.length() + 1];
+        strcpy(result, error.c_str());
+        return result;
     }
 };
+
+// ファイルが存在しない時のエラー
+class NotFoundFileError : public std::exception {
+    std::string message;
+public:
+    NotFoundFileError(std::string message) : message(message) {}
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
+};
+
+
+std::vector<std::string> glob(const std::string& pattern) {
+    std::vector<std::string> result;
+    glob_t globResult;
+
+    if (glob(pattern.c_str(), GLOB_TILDE, nullptr, &globResult) == 0) {
+        for (size_t i = 0; i < globResult.gl_pathc; ++i) {
+            result.push_back(globResult.gl_pathv[i]);
+        }
+    }
+
+    globfree(&globResult);
+    return result;
+}
+
+
+// ファイルを読んで、各行をvectorに入れて返す
+// ファイルが存在しない場合はNotFoundFileErrorを投げる
+std::vector<std::string> read_file(std::string path) {
+    std::ifstream ifs(path);
+    if (!ifs) {
+        throw NotFoundFileError("ファイルが存在しません: " + path);
+    }
+    std::vector<std::string> result;
+    std::string line;
+    while (getline(ifs, line)) {
+        result.push_back(line);
+    }
+    return result;
+}
