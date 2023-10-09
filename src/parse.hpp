@@ -87,7 +87,7 @@ namespace almo {
                 std::string before = std::regex_replace(s, italic_html_regex, "$1");
                 std::string content = map["italic"][id];
                 std::string after = std::regex_replace(s, italic_html_regex, "$3");
-                
+
                 root.childs.push_back(std::make_shared<Block>(dfs(before)));
                 node.childs.push_back(std::make_shared<Block>(dfs(content)));
                 root.childs.push_back(std::make_shared<InlineItalic>(node));
@@ -99,7 +99,7 @@ namespace almo {
                 std::string before = std::regex_replace(s, strong_html_regex, "$1");
                 std::string content = map["strong"][id];
                 std::string after = std::regex_replace(s, strong_html_regex, "$3");
-                
+
                 root.childs.push_back(std::make_shared<Block>(dfs(before)));
                 node.childs.push_back(std::make_shared<Block>(dfs(content)));
                 root.childs.push_back(std::make_shared<InlineStrong>(node));
@@ -111,7 +111,7 @@ namespace almo {
                 std::string before = std::regex_replace(s, overline_html_regex, "$1");
                 std::string content = map["overline"][id];
                 std::string after = std::regex_replace(s, overline_html_regex, "$3");
-                
+
                 root.childs.push_back(std::make_shared<Block>(dfs(before)));
                 node.childs.push_back(std::make_shared<Block>(dfs(content)));
                 root.childs.push_back(std::make_shared<InlineOverline>(node));
@@ -122,12 +122,12 @@ namespace almo {
                 int id_str = std::stoi(std::regex_replace(s, url_html_regex, "$3"));
                 std::string before = std::regex_replace(s, url_html_regex, "$1");
                 std::string after = std::regex_replace(s, url_html_regex, "$4");
-                
+
                 std::string url = map["inline_url"][id_url];
                 std::string alt = map["inline_url"][id_str];
 
                 InlineUrl node = InlineUrl(url, alt, uuid());
-                
+
                 root.childs.push_back(std::make_shared<Block>(dfs(before)));
                 // Url は Leaf なので、子要素を持たないからそのまま追加する。
                 root.childs.push_back(std::make_shared<InlineUrl>(node));
@@ -139,7 +139,7 @@ namespace almo {
                 int id_str = std::stoi(std::regex_replace(s, image_html_regex, "$3"));
                 std::string before = std::regex_replace(s, image_html_regex, "$1");
                 std::string after = std::regex_replace(s, image_html_regex, "$4");
-                
+
                 std::string url = map["inline_image"][id_url];
                 std::string caption = map["inline_image"][id_str];
                 InlineImage node = InlineImage(url, caption, uuid());
@@ -207,7 +207,6 @@ namespace almo {
             Block root = Block(uuid());
             int idx = 0;
             while (idx < (int)lines.size()) {
-                std::cout << idx << ": " << lines[idx] << std::endl; 
                 std::string line = lines[idx];
                 if (line.starts_with("# ")) {
                     Header node = Header(1, uuid());
@@ -242,7 +241,7 @@ namespace almo {
                 else if (line == ":::judge") {
                     idx++;
                     std::map<std::string, std::string> judge_info;
-                    
+
                     // Judge の設定のうち、必ず必要なもの
                     std::vector<std::string> required_args = { "title", "sample_in", "sample_out", "in", "out" };
 
@@ -267,7 +266,8 @@ namespace almo {
                             // title がある場合
                             if (judge_info.find("title") != judge_info.end()) {
                                 throw SyntaxError("問題" + judge_info["title"] + "の引数 " + arg + " がありません. 引数を追加してください.");
-                            } else {
+                            }
+                            else {
                                 throw SyntaxError("問題タイトルがありません. 引数を追加してください.");
                             }
                         }
@@ -338,7 +338,7 @@ namespace almo {
                         expression += lines[idx] + "\n";
                         idx++;
                     }
-                    
+
                     MathBlock node = MathBlock(expression, uuid());
                     root.childs.push_back(std::make_shared<MathBlock>(node));
                 }
@@ -358,7 +358,7 @@ namespace almo {
                     //          2. ファイルの末端(idx + 1 == size) 
                     //          3. リストの次の要素
 
-                    
+
                     // 1, 2 が見つかったら終了.
                     // 3 について、 リストの次の要素は、
                     // - current_prefix 
@@ -367,14 +367,15 @@ namespace almo {
                     // から始まる   
                     // current_prefix 始まりなら 上のアルゴリズムでテキストを取得して, Item を現在着目しているスコープの子要素の Item として追加する。
                     // current_prefix + インデント 始まりなら、 リストが一つネストされているので、
-                    // 新しく ListBlock を作成して、 現在着目しているスコープに積む。 同様にテキストを取得して、 Item を現在着目しているスコープの子要素(Item) として追加する。
+                    // 新しく ListBlock を作成して、 スタックに積む。 同様にテキストを取得して、 Item を現在着目しているスコープの子要素(Item) として追加する。
                     // インデントを削除したものの場合、削除した個数分だけスタックから pop すればよい。
 
                     // 現在着目しているスコープを表すためのスタック
-                    std::stack<ListBlock> scopes;
-                    
-                    ListBlock node = ListBlock(uuid());
-                    scopes.push(node);
+                    // 一番上にあるものが現在着目しているスコープ
+                    std::stack<std::shared_ptr<ListBlock>> scopes;
+
+                    ListBlock root_list = ListBlock(uuid());
+                    scopes.push(std::make_shared<ListBlock>(root_list));
 
                     std::string current_prefix = "- ";
                     std::string INDENT = "  ";
@@ -384,22 +385,29 @@ namespace almo {
                         if (idx == (int)(lines.size())) return true;
                         if (lines[idx] == "") return true;
                         return false;
-                    }; 
+                        };
 
                     // 先頭のスペースを削除したとき、 "- " 始まりになるかどうかを判定する・ ワーニング出してやるのに使う。
                     auto is_list_def = [](std::string s) -> bool {
                         while (s[0] == ' ') s = s.substr(1);
                         return s.starts_with("- ");
-                    };
+                        };
 
                     // 今集めているテキスト
                     std::string text = "";
                     while (true) {
                         // 現在の行のテキストを取る。
                         text += lines[idx].substr(current_prefix.size());
-                        
+
                         // 条件 1, 2
-                        if (is_end(idx + 1)) break;
+                        if (is_end(idx + 1)) {
+                            Item item = Item(uuid());
+                            item.childs.push_back(inline_parser.processer(text));
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top()->childs.push_back(std::make_shared<Item>(item));
+
+                            break;
+                        }
 
                         // 条件 3
                         // current_prefix から始まる場合
@@ -407,70 +415,84 @@ namespace almo {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
                             item.childs.push_back(inline_parser.processer(text));
-                            // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.push_back(std::make_shared<Item>(item));
-                            
-                            std::string text = "";
 
-                        } else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top()->childs.push_back(std::make_shared<Item>(item));
+
+                            // 現在のスコープのトップの要素数
+                            text = "";
+
+                        }
+                        else if (lines[idx + 1].starts_with(INDENT + current_prefix)) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
                             item.childs.push_back(inline_parser.processer(text));
-                            // 現在のスタックのトップにある ListBlock に Item を追加する。
-                            scopes.top().childs.push_back(std::make_shared<Item>(item));
 
-                            std::string text = "";
+                            // 現在のスタックのトップにある ListBlock に Item を追加する。
+                            scopes.top()->childs.push_back(std::make_shared<Item>(item));
+
+
+                            text = "";
 
                             // ネストが発生しているので、現在着目しているスコープを変更する。
                             // 新しく ListBlock を作成
                             ListBlock new_node = ListBlock(uuid());
-                            
+                            std::shared_ptr<ListBlock> new_node_ptr = std::make_shared<ListBlock>(new_node);
+
+
                             // 今のスコープの子ノードにして、
-                            scopes.top().childs.push_back(std::make_shared<ListBlock>(new_node));
+                            scopes.top()->childs.push_back(new_node_ptr);
 
-                            // 新しいスコープに変更する。
-                            scopes.push(new_node);
+                            // スコープのスタックを更新。
+                            scopes.push(new_node_ptr);
 
-                        }  else if ((int)scopes.size() > 1) {
+                            // prefix を更新する。
+                            current_prefix = INDENT + current_prefix;
+
+                        }
+                        else if ((int)scopes.size() > 1) {
                             for (int i = 1; i < (int)scopes.size(); i++)
-                            {   
+                            {
                                 // インデントを削除していく. 1つのインデントは 2文字なので、2文字ずつ削除していく。
                                 current_prefix = current_prefix.substr(2);
                                 if (lines[idx + 1].starts_with(current_prefix)) {
                                     // 継続終了. 収集してきたテキストを追加。
                                     Item item = Item(uuid());
                                     item.childs.push_back(inline_parser.processer(text));
+
                                     // 現在のスタックのトップにある ListBlock に Item を追加する。
-                                    scopes.top().childs.push_back(std::make_shared<Item>(item));
+                                    scopes.top()->childs.push_back(std::make_shared<Item>(item));
 
-                                    std::string text = "";
+                                    text = "";
 
-                                    // i 個数分上のスコープのリストになる
+                                    // i 個数分上のスコープに巻き戻す
                                     for (int j = 0; j < i; j++) {
                                         scopes.pop();
                                     }
+                                    break;
                                 }
                             }
-                        } else if (is_list_def(lines[idx + 1])) {
+                        }
+                        else if (is_list_def(lines[idx + 1])) {
                             // リストの定義っぽいのにインデントがあっていないということなので、警告を出してやる
                             std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
                             std::cerr << "リストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
                             std::cerr << "リストの継続を意図している場合、インデントとしてスペース2個を使っているか確認してください。" << std::endl;
-                        } 
+                        }
                         idx++;
                     }
-                    // stack のいちばん底 == トップのスコープなのでこれを追加
-                    // 残りの要素が 1 になるまで pop する
-                    while ((int)scopes.size() > 1) {
+                    // スタックの一番最後の要素を追加する。
+                    while (scopes.size() > 1) {
                         scopes.pop();
                     }
-                    root.childs.push_back(std::make_shared<ListBlock>(scopes.top()));
+
+                    root.childs.push_back(scopes.top());
                 }
                 else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
- 
+
                     // 現在着目しているスコープを表すためのスタック
                     std::stack<EnumerateBlock> scopes;
-                    
+
                     EnumerateBlock node = EnumerateBlock(uuid());
                     scopes.push(node);
 
@@ -483,13 +505,13 @@ namespace almo {
                         if (idx == (int)(lines.size())) return true;
                         if (lines[idx] == "") return true;
                         return false;
-                    }; 
+                        };
 
                     // 先頭のスペースを削除したとき、 "- " 始まりになるかどうかを判定する・ ワーニング出してやるのに使う。
                     auto is_enum_def = [](std::string s) -> bool {
                         while (s[0] == ' ') s = s.substr(1);
                         return std::regex_match(s, std::regex("\\d+\\. (.*)"));
-                    };
+                        };
 
                     // 今集めているテキスト
                     std::string text = "";
@@ -512,7 +534,8 @@ namespace almo {
                             std::string text = "";
 
                             // ネストは発生していないので、現在着目しているスコープは変化しない。
-                        } else if (std::regex_match(lines[idx + 1], std::regex(INDENT + current_match))) {
+                        }
+                        else if (std::regex_match(lines[idx + 1], std::regex(INDENT + current_match))) {
                             // 継続終了。収集してきたテキストを追加。
                             Item item = Item(uuid());
                             item.childs.push_back(inline_parser.processer(text));
@@ -525,7 +548,8 @@ namespace almo {
                             EnumerateBlock new_node = EnumerateBlock(uuid());
                             scopes.top().childs.push_back(std::make_shared<Item>(item));
                             scopes.push(new_node);
-                        }  else if ((int)scopes.size() > 1) {
+                        }
+                        else if ((int)scopes.size() > 1) {
                             // インデントを削除していく. 1つのインデントは 3文字なので、3文字ずつ削除していく。
                             for (int i = 1; i < (int)scopes.size(); i++)
                             {
@@ -544,27 +568,29 @@ namespace almo {
                                     }
                                 }
                             }
-                        } else if (is_enum_def(lines[idx + 1])) {
+                        }
+                        else if (is_enum_def(lines[idx + 1])) {
                             // 番号付きリストの定義っぽいのにインデントがあっていないということなので、警告を出してやる
                             std::cerr << "Warning  " << idx + 1 << "行目:" << std::endl;
                             std::cerr << "番号付きリストの定義が継続している可能性がありますが、インデント幅が一致しません。" << std::endl;
                             std::cerr << "番号付きリストの継続を意図している場合、インデントとしてスペース3個を使っているか確認してください。" << std::endl;
-                        } 
+                        }
                         idx++;
                     }
                     root.childs.push_back(std::make_shared<EnumerateBlock>(node));
-                    
+
                 }
                 else if (line.starts_with(">")) {
                     // > で始まる限り読み続ける
                     Quote node = Quote(uuid());
-                    
+
                     std::vector<std::string> quote_contents;
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == "") break;
                         if (lines[idx].starts_with("> ")) {
                             quote_contents.push_back(lines[idx].substr(2));
-                        } else {
+                        }
+                        else {
                             break;
                         }
                         idx++;
@@ -641,8 +667,8 @@ namespace almo {
                     }
 
 
-                    Table node =  Table(n_row, n_col, col_format, col_names, uuid()); 
-                    
+                    Table node = Table(n_row, n_col, col_format, col_names, uuid());
+
                     for (int i = 0; i < (int)table.size(); i++) {
                         node.childs.push_back(inline_parser.processer(table[i]));
                     }
@@ -658,7 +684,7 @@ namespace almo {
         }
     };
 
-    
+
     // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果を返す。
     // 返り値は、
     // メタデータ (std::map<std::string, std::string>) と
@@ -710,6 +736,6 @@ namespace almo {
             meta_data_map[key] = data;
         }
 
-        return { meta_data_map,  ast};
+        return { meta_data_map,  ast };
     }
 }
