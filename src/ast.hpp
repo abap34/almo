@@ -34,6 +34,7 @@ namespace almo {
 
         // このノードが構文木の葉ノードかどうかを返す. 
         virtual bool is_leaf() const = 0;
+
     };
 
 
@@ -63,7 +64,7 @@ namespace almo {
         virtual std::string to_html(std::vector<std::string> childs_html) const = 0;
 
         // 部分木を html に変換する.
-        std::string render () const {
+        std::string render() const {
             std::vector<std::string> childs_html;
             for (auto child : childs) {
                 if (child->is_leaf()) {
@@ -79,15 +80,15 @@ namespace almo {
         // 部分木を json に変換する.
         nlohmann::json to_json() const {
             nlohmann::json json;
-            add_json(json);
             for (auto child : childs) {
                 if (child->is_leaf()) {
-                    json["childs"].push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                    std::dynamic_pointer_cast<LeafNode>(child)->add_json(json);
                 }
                 else {
                     json["childs"].push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->to_json());
                 }
             }
+            add_json(json);
             return json;
         }
     };
@@ -560,7 +561,7 @@ namespace almo {
 
     public:
         InlineImage(std::string url, std::string caption, std::string uuid) : url(url), caption(caption), uuid(uuid) { }
-        
+
         //　<figure> タグを使うことで キャプションなどをつける。
         std::string to_html() const override {
             std::string output = "<img src=\" " + url + " \" >";
