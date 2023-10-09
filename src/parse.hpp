@@ -491,10 +491,10 @@ namespace almo {
                 else if (std::regex_match(line, std::regex("\\d+\\. (.*)"))) {
 
                     // 現在着目しているスコープを表すためのスタック
-                    std::stack<EnumerateBlock> scopes;
+                    std::stack<std::shared_ptr<EnumerateBlock>> scopes;
 
-                    EnumerateBlock node = EnumerateBlock(uuid());
-                    scopes.push(node);
+                    EnumerateBlock root_enum = EnumerateBlock(uuid());
+                    scopes.push(std::make_shared<EnumerateBlock>(root_enum));
 
                     std::string current_match = "\\d+\\. (.*)";
                     // こっちはスペース3個であることに注意！！！
@@ -515,7 +515,6 @@ namespace almo {
 
                     // 今集めているテキスト
                     std::string text = "";
-                    int depth = 0;
 
                     while (true) {
                         // 現在の行のテキストを取る。
@@ -530,8 +529,8 @@ namespace almo {
                             Item item = Item(uuid());
                             item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
-                            scopes.top().childs.push_back(std::make_shared<Item>(item));
-                            std::string text = "";
+                            scopes.top()->childs.push_back(std::make_shared<Item>(item));
+                            text = "";
 
                             // ネストは発生していないので、現在着目しているスコープは変化しない。
                         }
@@ -540,17 +539,23 @@ namespace almo {
                             Item item = Item(uuid());
                             item.childs.push_back(inline_parser.processer(text));
                             // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
-                            scopes.top().childs.push_back(std::make_shared<Item>(item));
-                            std::string text = "";
+                            scopes.top()->childs.push_back(std::make_shared<Item>(item));
+
+                            text = "";
 
                             // ネストが発生しているので、現在着目しているスコープを変更する。
                             // 新しく EnumerateBlock を作成して、 現在着目しているスコープに積む。
                             EnumerateBlock new_node = EnumerateBlock(uuid());
-                            scopes.top().childs.push_back(std::make_shared<Item>(item));
-                            scopes.push(new_node);
+                            std::shared_ptr<EnumerateBlock> new_node_ptr = std::make_shared<EnumerateBlock>(new_node);
+                            scopes.top()->childs.push_back(new_node_ptr);
+
+                            scopes.push(new_node_ptr);
+
+                            // current_match を更新する。
+                            current_match = INDENT + current_match;
                         }
                         else if ((int)scopes.size() > 1) {
-                            // インデントを削除していく. 1つのインデントは 3文字なので、3文字ずつ削除していく。
+                            // インデントを削除していく. 1つのインデントは "3"文字なので、"3"文字ずつ削除していく。
                             for (int i = 1; i < (int)scopes.size(); i++)
                             {
                                 current_match = current_match.substr(3);
@@ -559,13 +564,14 @@ namespace almo {
                                     Item item = Item(uuid());
                                     item.childs.push_back(inline_parser.processer(text));
                                     // 現在のスタックのトップにある EnumerateBlock に Item を追加する。
-                                    scopes.top().childs.push_back(std::make_shared<Item>(item));
-                                    std::string text = "";
+                                    scopes.top()->childs.push_back(std::make_shared<Item>(item));
+                                    text = "";
 
                                     // i 個数分上のスコープのリストになる
                                     for (int j = 0; j < i; j++) {
                                         scopes.pop();
                                     }
+                                    break;
                                 }
                             }
                         }
@@ -577,8 +583,12 @@ namespace almo {
                         }
                         idx++;
                     }
-                    root.childs.push_back(std::make_shared<EnumerateBlock>(node));
+                    // スタックの一番最後の要素を追加する。
+                    while (scopes.size() > 1) {
+                        scopes.pop();
+                    }
 
+                    root.childs.push_back(scopes.top());
                 }
                 else if (line.starts_with(">")) {
                     // > で始まる限り読み続ける
