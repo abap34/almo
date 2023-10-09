@@ -518,7 +518,10 @@ namespace almo {
 
                     while (true) {
                         // 現在の行のテキストを取る。
-                        text += lines[idx].substr((depth + 1) * 3);
+                        std::smatch match;
+                        std::regex_match(lines[idx], match, std::regex(current_match));
+                        text += match[1];
+
                         // 条件 1, 2
                         if (is_end(idx + 1)) break;
 
