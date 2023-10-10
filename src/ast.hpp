@@ -660,8 +660,9 @@ namespace almo {
             std::string output = "<table>\n";
             output += "<thead>\n";
             output += "<tr>\n";
-            for (std::string col_name : col_names) {
-                output += "<th>" + col_name + "</th>\n";
+            for (int i = 0; i < n_col; i++) {
+                std::string align = col_format[i] == 0 ? "left" : col_format[i] == 1 ? "center" : "right";
+                output += "<th align=\"" + align + "\">" + col_names[i] + "</th>\n";
             }
             output += "</tr>\n";
             output += "</thead>\n";
@@ -719,6 +720,23 @@ namespace almo {
 
         void add_json(nlohmann::json& json) const override {
             json["class"] = "Quote";
+            json["uuid"] = uuid;
+        }
+    };
+
+
+    class DivBlock : public NonLeafNode {
+        std::string uuid;
+        std::string div_class;
+    public:
+        DivBlock(std::string div_class, std::string uuid) : uuid(uuid), div_class(div_class) { }
+
+        std::string to_html(std::vector<std::string> childs_html) const override {
+            return "<div class=\"" + div_class + "\">" + join(childs_html) +  "</div>";
+        }
+
+        void add_json(nlohmann::json& json) const override {
+            json["class"] = "DivBlock";
             json["uuid"] = uuid;
         }
     };
