@@ -330,6 +330,33 @@ namespace almo {
                     CodeBlock node = CodeBlock(code, language, uuid());
                     root.childs.push_back(std::make_shared<CodeBlock>(node));
                 }
+                else if (line.starts_with(":::")) {
+                    std::stack<std::shared_ptr<DivBlock>> scopes;
+                    std::string title = line.substr(3);
+
+                    DivBlock root_div = DivBlock(title, uuid());
+        
+                    scopes.push(std::make_shared<DivBlock>(root_div));
+                    
+                    while (idx < (int)lines.size()) {
+                        if (lines[idx] == ":::") {
+                            scopes.pop();
+                            if (scopes.empty()) break;
+                        }
+                        else if (lines[idx].starts_with(":::")) {
+                            std::string title = lines[idx].substr(3);
+                            DivBlock node = DivBlock(title, uuid());
+                            std::shared_ptr<DivBlock> node_ptr = std::make_shared<DivBlock>(node);
+                            scopes.top()->childs.push_back(node_ptr);
+                            scopes.push(node_ptr);
+                        }
+                        else {
+                            scopes.top()->childs.push_back(inline_parser.processer(lines[idx]));
+                        }
+                        idx++;
+                    }
+                    root.childs.push_back(scopes.top());
+                }
                 else if (line == "$$") {
                     idx++;
                     std::string expression;
