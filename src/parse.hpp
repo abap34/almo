@@ -334,30 +334,61 @@ namespace almo {
                     std::stack<std::shared_ptr<DivBlock>> scopes;
                     std::string title = line.substr(3);
 
-                    std::shared_ptr<DivBlock> root_div = std::make_shared<DivBlock>(DivBlock(title, uuid()));
-
-                    scopes.push(root_div);
+                    DivBlock root_div = DivBlock(title, uuid());
+                    scopes.push(std::make_shared<DivBlock>(root_div));
 
                     idx++;
+                    std::vector<std::string> text;
 
-                    while (idx < (int)lines.size()) {
-                        if (lines[idx] == ":::") {
-                            scopes.pop();
-                            if (scopes.empty()) break;
-                        }
-                        else if (lines[idx].starts_with(":::")) {
-                            std::string title = lines[idx].substr(3);
-                            DivBlock node = DivBlock(title, uuid());
-                            std::shared_ptr<DivBlock> node_ptr = std::make_shared<DivBlock>(node);
-                            scopes.top()->childs.push_back(node_ptr);
-                            scopes.push(node_ptr);
-                        }
-                        else {
-                            scopes.top()->childs.push_back(inline_parser.processer(lines[idx]));
-                        }
-                        idx++;
+                    if (lines[idx] == ":::") {
+                        root.childs.push_back(scopes.top());
                     }
-                    root.childs.push_back(root_div);
+                    else {
+                        while (idx < (int)lines.size()) {
+
+                            if (lines[idx] == ":::") {
+                                // 一つぶん入れ子が終了
+                                BlockParser parser = BlockParser();
+                                Block contents = parser.processer(text);
+                                std::shared_ptr content_ptr = std::make_shared<Block>(contents);
+                                scopes.top()->childs.push_back(content_ptr);
+
+                                text = {};
+
+                                if (scopes.size() == 1) {
+                                    // 全ての入れ子が終了
+                                    root.childs.push_back(scopes.top());
+                                    break;
+                                }
+                                else {
+                                    // 一つぶん入れ子を抜ける
+                                    scopes.pop();
+                                }
+                            }
+                            else if (lines[idx].starts_with(":::")) {
+
+                                // 新しい DivBlock の定義
+                                // 収集したテキストをパースして現在のスコープに追加する。
+                                BlockParser parser = BlockParser();
+                                Block contents = parser.processer(text);
+                                std::shared_ptr content_ptr = std::make_shared<Block>(contents);
+                                scopes.top()->childs.push_back(content_ptr);
+
+                                // 新しいスコープを作成
+                                DivBlock new_node = DivBlock(lines[idx].substr(3), uuid());
+                                std::shared_ptr<DivBlock> new_node_ptr = std::make_shared<DivBlock>(new_node);
+                                scopes.top()->childs.push_back(new_node_ptr);
+                                
+                                scopes.push(new_node_ptr);
+
+                                text = {};
+                            }
+                            else {
+                                text.push_back(lines[idx]);
+                            }
+                            idx++;
+                        }
+                    }
                 }
                 else if (line == "$$") {
                     idx++;
