@@ -76,6 +76,7 @@ int main(int argc, char *argv[]){
     if (theme == "dark"){
         editor_theme = "ace/theme/monokai";
         syntax_theme = "monokai-sublime.min";
+        css_setting = "dark";
     }
 
 
