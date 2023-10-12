@@ -1,5 +1,5 @@
 R"(
-    body {
+body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     max-width: 800px;
@@ -288,6 +288,71 @@ td {
     font-weight: bold;
     margin-bottom: 10px;
     color: #ccc;
+}
+
+.success, .info, .warning, .danger {
+    padding: 12px;
+    border: 1px solid;
+    border-radius: 4px;
+}
+
+.success {
+    color: #dff0d8;
+    background-color: #3c763d;
+    border-color: #204820;
+}
+
+.info {
+    color: #d9edf7;
+    background-color: #31708f;
+    border-color: #205570;
+}
+
+.warning {
+    color: #fcf8e3;
+    background-color: #8a6d3b;
+    border-color: #604420;
+}
+
+.danger {
+    color: #f2dede;
+    background-color: #a94442;
+    border-color: #903030;
+}
+
+.definition::before, .theorem::before, .proof::before, .lemma::before {
+    font-family: serif;
+    font-size: large;
+    font-weight: 600;
+    font-style: italic;
+    display: block;
+}
+
+.definition::before {
+    content: "Definition.";
+}
+
+.theorem::before {
+    content: "Theorem.";
+}
+
+.proof::before {
+    content: "Proof.";
+}
+
+.lemma::before {
+    content: "Lemma.";
+}
+
+.definition, .theorem, .proof, .lemma {
+    padding: 12px;
+    border-left: 1px solid;
+}
+
+.proof::after {
+    content: "∎";
+    margin-left: auto;
+    display: block;
 }
 
 )"
