@@ -5,10 +5,8 @@
 #include <utility>
 #include <vector>
 #include <glob.h>
-#include "json.hpp"
+#include "json_like.hpp"
 #include "utils.hpp"
-
-#include"json_like.hpp"
 
 namespace almo {
     // to_html, to_config するためにグローバルな設定が保存されるグローバル変数.
