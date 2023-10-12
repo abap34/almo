@@ -706,8 +706,15 @@ namespace almo {
                         idx++;
                     }
 
+                    std::vector<std::shared_ptr<Block>> columns_blocks;
 
-                    Table node = Table(n_row, n_col, col_format, col_names, uuid());
+                    for (int i = 0; i < n_col; i++)
+                    {
+                        columns_blocks.push_back(inline_parser.processer(col_names[i]));
+                    }
+                    
+
+                    Table node = Table(columns_blocks, n_row, n_col, col_format, uuid());
 
                     for (int i = 0; i < (int)table.size(); i++) {
                         node.childs.push_back(inline_parser.processer(table[i]));

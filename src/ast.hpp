@@ -64,7 +64,7 @@ namespace almo {
         virtual std::string to_html(std::vector<std::string> childs_html) const = 0;
 
         // 部分木を html に変換する.
-        std::string render() const {
+        virtual std::string render() const {
             std::vector<std::string> childs_html;
             for (auto child : childs) {
                 if (child->is_leaf()) {
@@ -647,6 +647,8 @@ namespace almo {
     // テーブルを表すクラス
     class Table : public NonLeafNode {
         std::string uuid;
+
+        std::vector<std::shared_ptr<Block>> columns;
         int n_row;
         int n_col;
 
@@ -654,15 +656,16 @@ namespace almo {
         std::vector<int> col_format;
         std::vector<std::string> col_names;
     public:
-        Table(int n_row, int n_col, std::vector<int> col_format, std::vector<std::string> col_names, std::string uuid) : n_row(n_row), n_col(n_col), col_format(col_format), col_names(col_names), uuid(uuid) { }
+        Table(std::vector<std::shared_ptr<Block>> columns, int n_row, int n_col, std::vector<int> col_format, std::string uuid) : columns(columns), n_row(n_row), n_col(n_col), col_format(col_format),  uuid(uuid) { }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        // テーブル用の特別な to_html. テーブルの render でしか呼ばれないので引数が違ってもOK. 
+        std::string to_html(std::vector<std::string> headers_html, std::vector<std::string> childs_html) const {
             std::string output = "<table>\n";
             output += "<thead>\n";
             output += "<tr>\n";
             for (int i = 0; i < n_col; i++) {
                 std::string align = col_format[i] == 0 ? "left" : col_format[i] == 1 ? "center" : "right";
-                output += "<th align=\"" + align + "\">" + col_names[i] + "</th>\n";
+                output += "<th align=\"" + align + "\">" + headers_html[i] + "</th>\n";
             }
             output += "</tr>\n";
             output += "</thead>\n";
@@ -680,6 +683,11 @@ namespace almo {
             return output;
         }
 
+        // 仮想クラスにならないようにオーバーライドする.
+        std::string to_html(std::vector<std::string> childs_html) const override {
+            return "dummy";
+        }
+
         void add_json(nlohmann::json& json) const override {
             json["class"] = "Table";
             json["uuid"] = uuid;
@@ -687,6 +695,27 @@ namespace almo {
             json["n_col"] = n_col;
             json["col_format"] = col_format;
             json["col_names"] = col_names;
+        }
+
+
+        std::string render() const override {
+            std::vector<std::string> columns_html;
+            for (auto child : columns) {
+                columns_html.push_back(child->render());
+            }
+            
+            std::vector<std::string> contents_html;
+
+            for (auto child : childs) {
+                if (child->is_leaf()) {
+                    contents_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                }
+                else {
+                    contents_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render());
+                }
+            }
+
+            return to_html(columns_html, contents_html);
         }
     };
 
