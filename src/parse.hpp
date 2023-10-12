@@ -334,10 +334,12 @@ namespace almo {
                     std::stack<std::shared_ptr<DivBlock>> scopes;
                     std::string title = line.substr(3);
 
-                    DivBlock root_div = DivBlock(title, uuid());
-        
-                    scopes.push(std::make_shared<DivBlock>(root_div));
-                    
+                    std::shared_ptr<DivBlock> root_div = std::make_shared<DivBlock>(DivBlock(title, uuid()));
+
+                    scopes.push(root_div);
+
+                    idx++;
+
                     while (idx < (int)lines.size()) {
                         if (lines[idx] == ":::") {
                             scopes.pop();
@@ -355,7 +357,7 @@ namespace almo {
                         }
                         idx++;
                     }
-                    root.childs.push_back(scopes.top());
+                    root.childs.push_back(root_div);
                 }
                 else if (line == "$$") {
                     idx++;
@@ -712,7 +714,7 @@ namespace almo {
                     {
                         columns_blocks.push_back(inline_parser.processer(col_names[i]));
                     }
-                    
+
 
                     Table node = Table(columns_blocks, n_row, n_col, col_format, uuid());
 
