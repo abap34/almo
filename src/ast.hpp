@@ -107,7 +107,16 @@ namespace almo {
         }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
-            return "<h" + std::to_string(level) + ">" + join(childs_html) + "</h" + std::to_string(level) + ">";
+            std::string contents_push = ""
+            "<script>"
+            "page_contents.push({\n"
+                "    \"type\":\"H" + std::to_string(level) + "\",\n" 
+                "    \"id\":\"" + uuid + "\",\n"
+                "    \"title\":\"" + join(childs_html) + "\"\n"
+                "});\n"
+            "</script>\n";
+            
+            return contents_push + "<h" + std::to_string(level) + ">" + join(childs_html) + "</h" + std::to_string(level) + ">";
         }
 
         void add_json(nlohmann::json& json) const override {
