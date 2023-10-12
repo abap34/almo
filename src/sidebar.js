@@ -1,6 +1,5 @@
-R"(
-    <script>
-    
+
+
 
 const tocContainer = document.querySelector("#toc");
 const tocTitle = document.createElement("div");
@@ -13,7 +12,7 @@ tocContainer.appendChild(tocTitle);
 page_contents.forEach(item => {
     if (item.type === "H2" || item.type === "H3") {
         const listItem = document.createElement("li");
-        listItem.innerHTML = `<a href="#${item.id}">${item.content}</a>`;
+        listItem.innerHTML = `<a href="#${item.id}">${item.title}</a>`;
         listItem.classList.add("toc_" + item.type);
         tocContainer.appendChild(listItem);
     }
@@ -54,6 +53,4 @@ function onIntersection(entries) {
 }
 
 
-</script>
 
-)"

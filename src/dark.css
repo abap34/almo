@@ -1,5 +1,4 @@
-R"(
-    body {
+body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     max-width: 800px;
@@ -289,5 +288,3 @@ td {
     margin-bottom: 10px;
     color: #ccc;
 }
-
-)"
