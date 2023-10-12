@@ -261,3 +261,23 @@ std::string _apply_alias(std::string s, std::map<std::string, std::string> alias
     return s;
 }
 
+
+std::string to_string(const std::vector<int> &vec){
+    std::string str_vec = "{ ";
+    for (int i = 0; auto t : vec){
+        if (i++ != 0) str_vec += ", ";
+        str_vec += std::to_string(t);
+    }
+    str_vec += " }";
+    return str_vec;
+}
+
+std::string to_string(const std::vector<std::string> &vec){
+    std::string str_vec = "{ ";
+    for (int i = 0; auto t : vec){
+        if (i++ != 0) str_vec += ", ";
+        str_vec += t;
+    }
+    str_vec += " }";
+    return str_vec;
+}

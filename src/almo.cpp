@@ -84,8 +84,8 @@ int main(int argc, char *argv[]){
     auto [meta_data, ast] = almo::parse_md_file(argv[1]);
 
     if (debug) {
-        nlohmann::json ast_json = ast.to_json();
-        std::cout << ast_json.dump(4) << std::endl;
+        json_like::JsonLike ast_json = ast.to_json();
+        ast_json.dump(2);
     }
 
     // コマンドライン引数を meta_data に追加
