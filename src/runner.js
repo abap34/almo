@@ -1,5 +1,4 @@
-R"(
-<script>
+
 
 
 all_sample_input = {}
@@ -144,7 +143,7 @@ const runBlock = async (objectid) => {
     let pyodide = await pyodidePromise;
     let editor = ace.edit(objectid);
     let code = editor.getValue();
-    document.pyodideMplTarget  = document.getElementById(objectid + "_plot");
+    document.pyodideMplTarget = document.getElementById(objectid + "_plot");
     out_area.innerText = "Loading libraries...";
     for (let i = 0; i < use_libs.length; i++) {
         let lib = use_libs[i];
@@ -162,6 +161,5 @@ const runBlock = async (objectid) => {
     }
 }
 
-</script>
 
-)"
+
