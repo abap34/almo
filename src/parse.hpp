@@ -731,11 +731,9 @@ namespace almo {
         }
     };
 
-
-    // mdファイルのパスを入力として与えて、そのmdファイルをパースした結果を返す。
-    // 返り値は、
+    // mdファイルのパスから
     // メタデータ (std::map<std::string, std::string>) と
-    // 抽象構文木の根 (Block) のペア
+    // 抽象構文木の根 (Block) のペアを返す。
     std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
         std::vector<std::string> lines = read_file(path);
 
@@ -758,6 +756,42 @@ namespace almo {
         for (int i = meta_data_end; i < (int)lines.size(); i++) {
             md_lines.push_back(lines[i]);
         }
+
+        std::string md_str = join(md_lines, "\n");
+
+        // コメントを削除
+        auto remove_comment = [](std::string text) {
+            return _remove_comment(text);
+            };
+
+        // エイリアスを取り出し
+        std::map<std::string, std::string> alias_map = get_alias(md_str);
+
+        // エイリアス定義を削除
+        auto remove_alias = [](std::string text) {
+            return _remove_alias(text);
+            };
+
+        // エイリアスを適用
+        auto apply_alias = [&alias_map](std::string s) {
+            return _apply_alias(s, alias_map);
+            };
+
+
+
+        std::vector<std::function<std::string(std::string)>> hooks = {
+            remove_comment,
+            remove_alias,
+            apply_alias
+        };
+
+        for (auto hook : hooks) {
+            md_str = hook(md_str);
+        }
+
+
+
+        md_lines = split(md_str, "\n");
 
         // パース
         BlockParser parser = BlockParser();
