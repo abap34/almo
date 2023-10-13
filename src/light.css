@@ -1,12 +1,15 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
+    max-width: 800px;
     margin: 0 auto;
     padding: 20px;
     background-color: #F7F7F7;
     color: #333;
+    flex-direction: column;
     display: flex;
-    gap: 10px;
+    width: 95%;
+
 }
 
 h1,
@@ -78,11 +81,15 @@ td {
 }
 
 .content {
+    flex: 1;
     padding: 40px 40px;
-    margin: 0px auto;
+    margin-left: 0px;
+    margin-right: 10px;
+    margin-top: 0px;
+    margin-bottom: 0px;
     background-color: #ffffff;
     border-radius: 5px;
-    max-width: 800px;
+    overflow: auto;
     width: 100%;
 }
 
@@ -95,14 +102,18 @@ td {
 }
 
 .sidebar {
+    flex: 3;
+    border-right: 1px solid #eee;
     height: 100%;
-    padding: 20px;
-    border-radius: 4px;
+    width: 10%;
+    padding: 10px 10px;
+    left: 0;
     overflow: auto;
+    position: fixed;
+    top: 0;
     width: 220px;
+    z-index: 1000;
     background-color: #F2F2F2;
-    position: sticky;
-    top: 20px;
 }
 
 @media (max-width: 1260px) {
@@ -112,13 +123,14 @@ td {
 }
 
 .links {
+    position: fixed;
+    right: 0;
+    top: 0;
     width: 200px;
     height: 100%;
-    padding: 20px;
-    border-radius: 4px;
+    padding: 10px 10px;
+    overflow: auto;
     background-color: #F2F2F2;
-    position: sticky;
-    top: 20px;
 }
 
 @media (max-width: 1260px) {
@@ -129,7 +141,7 @@ td {
 
 #toc {
     background-color: #f4f4f4;
-    border-radius: 4px;
+    border-radius: 5px;
     padding: 15px;
     list-style: none;
 }
@@ -274,4 +286,69 @@ td {
     font-weight: bold;
     margin-bottom: 10px;
     color: #666;
+}
+
+.success, .info, .warning, .danger {
+    padding: 12px;
+    border: 1px solid;
+    border-radius: 4px;
+}
+
+.success {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+
+.info {
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+}
+
+.warning {
+    color: #8a6d3b;
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+}
+
+.danger {
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+}
+
+.definition::before, .theorem::before, .proof::before, .lemma::before {
+    font-family: serif;
+    font-size: large;
+    font-weight: 600;
+    font-style: italic;
+    display: block;
+}
+
+.definition::before {
+    content: "Definition.";
+}
+
+.theorem::before {
+    content: "Theorem.";
+}
+
+.proof::before {
+    content: "Proof.";
+}
+
+.lemma::before {
+    content: "Lemma.";
+}
+
+.definition, .theorem, .proof, .lemma {
+    padding: 12px;
+    border-left: 1px solid;
+}
+
+.proof::after {
+    content: "∎";
+    margin-left: auto;
+    display: block;
 }
