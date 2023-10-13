@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 #include <glob.h>
-#include "json.hpp"
+#include "json_like.hpp"
 #include "utils.hpp"
 
 namespace almo {
@@ -28,7 +28,7 @@ namespace almo {
     class ASTNode {
     public:
         // 構文木を json に変換するときに、そのノードの情報を json に追加する. それを頂点とする部分木を json に変換するわけではないので注意.
-        virtual void add_json(nlohmann::json& json) const = 0;
+        virtual void add_json(json_like::JsonLike& json) const = 0;
 
         virtual ~ASTNode() = default;
 
@@ -78,14 +78,14 @@ namespace almo {
         }
 
         // 部分木を json に変換する.
-        nlohmann::json to_json() const {
-            nlohmann::json json;
+        json_like::JsonLike to_json() const {
+            json_like::JsonLike json;
             for (auto child : childs) {
                 if (child->is_leaf()) {
                     std::dynamic_pointer_cast<LeafNode>(child)->add_json(json);
                 }
                 else {
-                    json["childs"].push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->to_json());
+                    json.push_childs(std::dynamic_pointer_cast<NonLeafNode>(child)->to_json());
                 }
             }
             add_json(json);
@@ -119,9 +119,9 @@ namespace almo {
             return contents_push + "<h" + std::to_string(level) + ">" + join(childs_html) + "</h" + std::to_string(level) + ">";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Header";
-            json["level"] = level;
+            json["level"] = std::to_string(level);
             json["uuid"] = uuid;
         }
     };
@@ -140,7 +140,7 @@ namespace almo {
             return join(childs_html);
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Block";
             json["uuid"] = uuid;
         }
@@ -162,7 +162,7 @@ namespace almo {
             return content;
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "RawText";
             json["content"] = content;
             json["uuid"] = uuid;
@@ -184,7 +184,7 @@ namespace almo {
             return "<div class=\"math-block\"> \\[ \n" + expression + "\n \\] </div>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "MathBlock";
             json["expression"] = expression;
             json["uuid"] = uuid;
@@ -206,7 +206,7 @@ namespace almo {
         }
 
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineMath";
             json["expr"] = expr;
             json["uuid"] = uuid;
@@ -222,7 +222,7 @@ namespace almo {
 
             return "<span class=\"overline\"> <s>" + join(childs_html) + "</s> </span>";
         }
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineOverline";
             json["uuid"] = uuid;
         }
@@ -238,7 +238,7 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"strong\"> <strong>" + join(childs_html) + "</strong> </span>";
         }
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineStrong";
             json["uuid"] = uuid;
         }
@@ -253,7 +253,7 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"italic\"> <i>" + join(childs_html) + "</i> </span>";
         }
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineItalic";
             json["uuid"] = uuid;
         }
@@ -268,7 +268,7 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<div class=\"plain-text\">" + join(childs_html) + "</span>";
         }
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "PlainText";
             json["uuid"] = uuid;
         }
@@ -294,7 +294,7 @@ namespace almo {
         }
 
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "CodeBlock";
             json["code"] = code;
             json["language"] = language;
@@ -312,7 +312,7 @@ namespace almo {
         std::string to_html() const override {
             return "<span class=\"inline-code\"> <code>" + code + "</code> </span>";
         }
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineCodeBlock";
             json["code"] = code;
             json["uuid"] = uuid;
@@ -454,7 +454,7 @@ namespace almo {
             return output;
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Judge";
             json["title"] = title;
             json["sample_in"] = sample_in_path;
@@ -511,7 +511,7 @@ namespace almo {
             return output;
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "ExecutableCodeBlock";
             json["code"] = code;
             json["uuid"] = uuid;
@@ -537,9 +537,9 @@ namespace almo {
             return output;
         };
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "LoadLib";
-            json["libs"] = libs;
+            json["libs"] = to_string(libs);
             json["uuid"] = uuid;
         }
     };
@@ -556,7 +556,7 @@ namespace almo {
             return "<url> <a href=\"" + url + "\">" + url + "</a> </url>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineUrl";
             json["url"] = url;
         }
@@ -578,7 +578,7 @@ namespace almo {
             return "<figure>" + output + figcaption + "</figure>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "InlineImage";
             json["url"] = url;
             json["caption"] = caption;
@@ -598,7 +598,7 @@ namespace almo {
             return "<br>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "NewLine";
             json["uuid"] = uuid;
         }
@@ -614,7 +614,7 @@ namespace almo {
             return "<ul>" + join(childs_html) + "</ul>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "ListBlock";
             json["uuid"] = uuid;
         }
@@ -630,7 +630,7 @@ namespace almo {
             return "<ol>" + join(childs_html) + "</ol>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "EnumerateBlock";
             json["uuid"] = uuid;
         }
@@ -646,7 +646,7 @@ namespace almo {
             return "<li>" + join(childs_html) + "</li>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Item";
             json["uuid"] = uuid;
         }
@@ -697,13 +697,13 @@ namespace almo {
             return "dummy";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Table";
             json["uuid"] = uuid;
             json["n_row"] = n_row;
             json["n_col"] = n_col;
-            json["col_format"] = col_format;
-            json["col_names"] = col_names;
+            json["col_format"] = to_string(col_format);
+            json["col_names"] = to_string(col_names);
         }
 
 
@@ -739,7 +739,7 @@ namespace almo {
             return "<hr>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "HorizontalLine";
             json["uuid"] = uuid;
         }
@@ -756,7 +756,7 @@ namespace almo {
             return "<blockquote>" + join(childs_html) + "</blockquote>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "Quote";
             json["uuid"] = uuid;
         }
@@ -773,7 +773,7 @@ namespace almo {
             return "<div class=\"" + div_class + "\">" + join(childs_html) +  "</div>";
         }
 
-        void add_json(nlohmann::json& json) const override {
+        void add_json(json_like::JsonLike& json) const override {
             json["class"] = "DivBlock";
             json["uuid"] = uuid;
         }
