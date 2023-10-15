@@ -279,6 +279,15 @@ std::string escape(std::string s) {
         else if (s[i] == '\\') {
             result += "\\\\";
         }
+        else if (s[i] == '\r') {
+            result += "\\r";
+        }
+        else if (s[i] == '{') {
+            result += "\\{";
+        }
+        else if (s[i] == '}') {
+            result += "\\}";
+        }
         else {
             result += s[i];
         }
