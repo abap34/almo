@@ -58,6 +58,27 @@ namespace almo {
             return json + "}";
         }
 
+        // 部分木を dot 言語に変換する.
+        std::string to_dot() const {
+            std::map<std::string, std::string> properties = get_properties();
+
+            std::string node = properties["uuid"];
+            std::string label = "";
+
+            std::string label_header = properties["class"] + " | ";
+
+            int i = 1;
+            for (auto property : properties) {
+                if (property.first == "class" || property.first == "uuid") {
+                    continue;
+                }
+                label += "<f" + std::to_string(i) + "> " + property.first + ": " + escape(property.second) + " | ";
+                i++;
+            }
+
+            return node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n";
+        }
+
     };
 
 
@@ -104,6 +125,44 @@ namespace almo {
             json = json.substr(0, json.length() - 1);
             json += "]}";
             return json;
+        }
+
+        // 部分木を dot 言語に変換する.
+        virtual std::string to_dot() const {
+            std::map<std::string, std::string> properties = get_properties();
+
+            std::string node = properties["uuid"];
+            std::string label = "";
+
+            std::string label_header = "<f0> " + properties["class"] + " | ";
+
+            int i = 1;
+            for (auto property : properties) {
+                if (property.first == "class" || property.first == "uuid") {
+                    continue;
+                }
+                label += "<f" + std::to_string(i) + "> " + property.first + ": " + escape(property.second) + " | ";
+                i++;
+            }
+
+            // 子ノードを追加する
+            std::string childs_dot = "";
+            for (auto child : childs) {
+                if (child->is_leaf()) {
+                    childs_dot += std::dynamic_pointer_cast<LeafNode>(child)->to_dot();
+                }
+                else {
+                    childs_dot += std::dynamic_pointer_cast<NonLeafNode>(child)->to_dot();
+                }
+            }
+
+            // 子ノードと繋ぐ
+            std::string edges = "";
+            for (auto child : childs) {
+                edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_properties()["uuid"] + "\n";
+            }
+
+            return node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
         }
 
     };
