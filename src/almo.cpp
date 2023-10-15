@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
     bool debug = false;
     std::string editor_theme = "ace/theme/xcode";
     std::string syntax_theme = "github.min";
+    bool plot_graph = false;
 
     // 出力ファイルのデフォルト値を設定。 .md -> .html に置き換える
     std::string out_path = argv[1];
@@ -48,6 +49,9 @@ int main(int argc, char* argv[]) {
             else if (argv[i][1] == 's') {
                 syntax_theme = argv[i + 1];
             }
+            else if (argv[i][1] == 'g') {
+                plot_graph = true;
+            }
             else if (argv[i][1] == 'h') {
                 if (argc > 3) {
                     throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションと他のオプションは同時に指定できません。");
@@ -60,6 +64,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
                 std::cout << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
                 std::cout << "  -d            デバッグモードで実行します。" << std::endl;
+                std::cout << "  -g            構文木をdot言語として出力します。" << std::endl;
                 std::cout << "  -h            ヘルプを表示します。" << std::endl;
             }
             else {
@@ -107,6 +112,18 @@ int main(int argc, char* argv[]) {
         
         std::cout << output << std::endl;
     }
+
+    if (plot_graph) {
+        std::string graph = ast.to_dot();
+        std::cout << "digraph g {" << std::endl;
+        std::cout << "    graph [" << std::endl;
+        std::cout << "        labelloc=\"t\";" << std::endl;
+        std::cout << "        ];" << std::endl;
+        std::cout << graph << std::endl;
+        std::cout << "}" << std::endl;
+    }
+
+
 
     almo::meta_data = meta_data;
 
