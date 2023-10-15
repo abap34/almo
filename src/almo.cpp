@@ -1,4 +1,3 @@
-// #include "makejson.hpp"
 #include "parse.hpp"
 #include "render.hpp"
 #include <iostream>
@@ -6,7 +5,7 @@
 #include <string>
 #include "utils.hpp"
 
-int main(int argc, char *argv[]){
+int main(int argc, char* argv[]) {
     // コマンドライン引数のデフォルト値を設定
     std::string theme = "light";
     std::string css_setting = "light";
@@ -16,7 +15,7 @@ int main(int argc, char *argv[]){
 
     // 出力ファイルのデフォルト値を設定。 .md -> .html に置き換える
     std::string out_path = argv[1];
-    if (out_path.ends_with(".md")){
+    if (out_path.ends_with(".md")) {
         out_path = out_path.substr(0, out_path.length() - 3) + ".html";
     }
     else {
@@ -25,32 +24,32 @@ int main(int argc, char *argv[]){
     }
 
 
-    for (int i = 2; i < argc; i++){
-        if (argv[i][0] == '-'){
-            if (strlen(argv[i]) > 3){
+    for (int i = 2; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (strlen(argv[i]) > 3) {
                 throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションでヘルプを確認してください。");
                 exit(1);
             }
-            if (argv[i][1] == 'o'){
+            if (argv[i][1] == 'o') {
                 out_path = argv[i + 1];
             }
-            else if (argv[i][1] == 't'){
+            else if (argv[i][1] == 't') {
                 theme = argv[i + 1];
             }
-            else if (argv[i][1] == 'c'){
+            else if (argv[i][1] == 'c') {
                 css_setting = argv[i + 1];
             }
-            else if (argv[i][1] == 'd'){
+            else if (argv[i][1] == 'd') {
                 debug = true;
             }
-            else if (argv[i][1] == 'e'){
+            else if (argv[i][1] == 'e') {
                 editor_theme = argv[i + 1];
             }
-            else if (argv[i][1] == 's'){
+            else if (argv[i][1] == 's') {
                 syntax_theme = argv[i + 1];
             }
-            else if (argv[i][1] == 'h'){
-                if (argc > 3){
+            else if (argv[i][1] == 'h') {
+                if (argc > 3) {
                     throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションと他のオプションは同時に指定できません。");
                     exit(1);
                 }
@@ -73,7 +72,7 @@ int main(int argc, char *argv[]){
 
 
     // もし theme が dark であれば、 editor_theme と syntax_theme も対応したものにしておく
-    if (theme == "dark"){
+    if (theme == "dark") {
         editor_theme = "ace/theme/monokai";
         syntax_theme = "monokai-sublime.min";
         css_setting = "dark";
@@ -83,17 +82,31 @@ int main(int argc, char *argv[]){
     // パース
     auto [meta_data, ast] = almo::parse_md_file(argv[1]);
 
-    if (debug) {
-        json_like::JsonLike ast_json = ast.to_json();
-        ast_json.dump(2);
-    }
-
     // コマンドライン引数を meta_data に追加
     meta_data["theme"] = theme;
     meta_data["out_path"] = out_path;
     meta_data["css_setting"] = css_setting;
     meta_data["editor_theme"] = editor_theme;
     meta_data["syntax_theme"] = syntax_theme;
+
+
+    if (debug) {
+        std::string ir = ast.to_json();
+        std::string meta_dump = "{\n";
+        for (auto [key, value] : meta_data) {
+            meta_dump += "   \"" + key + "\": \"" + escape(value) + "\",";
+        }
+        // 最後のカンマを削除
+        meta_dump = meta_dump.substr(0, meta_dump.length() - 1);
+        meta_dump += "} \n";
+        std::string output = "{\n"
+            "\"meta\": " + meta_dump + ",\n"
+            "\"ir\": " + ir + "\n"
+            "}\n";
+
+        
+        std::cout << output << std::endl;
+    }
 
     almo::meta_data = meta_data;
 
