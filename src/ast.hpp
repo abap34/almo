@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 #include <glob.h>
-#include "json_like.hpp"
 #include "utils.hpp"
 
 namespace almo {
@@ -27,14 +26,14 @@ namespace almo {
     // `Inline` という prefix がついているクラスは、インラインでの記法が許されている構文.
     class ASTNode {
     public:
-        // 構文木を json に変換するときに、そのノードの情報を json に追加する. それを頂点とする部分木を json に変換するわけではないので注意.
-        virtual void add_json(json_like::JsonLike& json) const = 0;
-
+        virtual std::string to_json() const = 0;
         virtual ~ASTNode() = default;
 
         // このノードが構文木の葉ノードかどうかを返す. 
         virtual bool is_leaf() const = 0;
 
+        // そのノードが持つプロパティを列挙する
+        virtual std::map<std::string, std::string> get_properties() const = 0;
     };
 
 
@@ -47,6 +46,18 @@ namespace almo {
 
         // 構文木をhtmlに変換する. 葉ノードなので子は持たないため、引数なしで呼ばれる.
         virtual std::string to_html() const = 0;
+
+        virtual std::string to_json() const override {
+            std::map<std::string, std::string> properties = get_properties();
+            std::string json = "{";
+            for (auto property : properties) {
+                json += "\"" + property.first + "\":\"" + escape(property.second) + "\",";
+            }
+            // 最後のカンマを削除する
+            json = json.substr(0, json.length() - 1);
+            return json + "}";
+        }
+
     };
 
 
@@ -77,20 +88,24 @@ namespace almo {
             return to_html(childs_html);
         }
 
-        // 部分木を json に変換する.
-        json_like::JsonLike to_json() const {
-            json_like::JsonLike json;
-            for (auto child : childs) {
-                if (child->is_leaf()) {
-                    std::dynamic_pointer_cast<LeafNode>(child)->add_json(json);
-                }
-                else {
-                    json.push_childs(std::dynamic_pointer_cast<NonLeafNode>(child)->to_json());
-                }
+        // 部分木を json 形式の string に変換する.
+        virtual std::string to_json() const override {
+            std::map<std::string, std::string> properties = get_properties();
+            std::string json = "{";
+            for (auto property : properties) {
+                json += "\"" + property.first + "\":\"" + escape(property.second) + "\",";
             }
-            add_json(json);
+
+            json += "\"childs\":[";
+            for (auto child : childs) {
+                json += child->to_json() + ",";
+            }
+            // 最後のカンマを削除する
+            json = json.substr(0, json.length() - 1);
+            json += "]}";
             return json;
         }
+
     };
 
     // H1~6 に対応する構文木のノード
@@ -108,21 +123,23 @@ namespace almo {
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             std::string contents_push = ""
-            "<script>"
-            "page_contents.push({\n"
-                "    \"type\":\"H" + std::to_string(level) + "\",\n" 
+                "<script>"
+                "page_contents.push({\n"
+                "    \"type\":\"H" + std::to_string(level) + "\",\n"
                 "    \"id\":\"" + uuid + "\",\n"
                 "    \"title\":\"" + join(childs_html) + "\"\n"
                 "});\n"
-            "</script>\n";
-            
+                "</script>\n";
+
             return contents_push + "<h" + std::to_string(level) + ">" + join(childs_html) + "</h" + std::to_string(level) + ">";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Header";
-            json["level"] = std::to_string(level);
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "Header"},
+                {"level", std::to_string(level)},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -140,9 +157,11 @@ namespace almo {
             return join(childs_html);
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Block";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "Block"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -162,10 +181,12 @@ namespace almo {
             return content;
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "RawText";
-            json["content"] = content;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "RawText"},
+                {"content", content},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -184,10 +205,12 @@ namespace almo {
             return "<div class=\"math-block\"> \\[ \n" + expression + "\n \\] </div>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "MathBlock";
-            json["expression"] = expression;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "MathBlock"},
+                {"expression", expression},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -206,10 +229,12 @@ namespace almo {
         }
 
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineMath";
-            json["expr"] = expr;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineMath"},
+                {"expr", expr},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -222,9 +247,12 @@ namespace almo {
 
             return "<span class=\"overline\"> <s>" + join(childs_html) + "</s> </span>";
         }
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineOverline";
-            json["uuid"] = uuid;
+
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineOverline"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -238,9 +266,12 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"strong\"> <strong>" + join(childs_html) + "</strong> </span>";
         }
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineStrong";
-            json["uuid"] = uuid;
+
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineStrong"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -253,9 +284,12 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"italic\"> <i>" + join(childs_html) + "</i> </span>";
         }
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineItalic";
-            json["uuid"] = uuid;
+
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineItalic"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -268,9 +302,12 @@ namespace almo {
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<div class=\"plain-text\">" + join(childs_html) + "</span>";
         }
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "PlainText";
-            json["uuid"] = uuid;
+
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "PlainText"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -294,11 +331,13 @@ namespace almo {
         }
 
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "CodeBlock";
-            json["code"] = code;
-            json["language"] = language;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "CodeBlock"},
+                {"code", code},
+                {"language", language},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -312,10 +351,13 @@ namespace almo {
         std::string to_html() const override {
             return "<span class=\"inline-code\"> <code>" + code + "</code> </span>";
         }
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineCodeBlock";
-            json["code"] = code;
-            json["uuid"] = uuid;
+
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineCodeBlock"},
+                {"code", code},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -454,15 +496,18 @@ namespace almo {
             return output;
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Judge";
-            json["title"] = title;
-            json["sample_in"] = sample_in_path;
-            json["sample_out"] = sample_out_path;
-            json["source"] = source;
-            json["in_files_glob"] = in_files_glob;
-            json["out_files_glob"] = out_files_glob;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "Judge"},
+                {"title", title},
+                {"sample_in_path", sample_in_path},
+                {"sample_out_path", sample_out_path},
+                {"in_files_glob", in_files_glob},
+                {"out_files_glob", out_files_glob},
+                {"judge_type", judge_type},
+                {"source", source},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -511,10 +556,12 @@ namespace almo {
             return output;
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "ExecutableCodeBlock";
-            json["code"] = code;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "ExecutableCodeBlock"},
+                {"code", code},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -537,10 +584,12 @@ namespace almo {
             return output;
         };
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "LoadLib";
-            json["libs"] = to_string(libs);
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "LoadLib"},
+                {"libs", join(libs)},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -556,9 +605,13 @@ namespace almo {
             return "<url> <a href=\"" + url + "\">" + url + "</a> </url>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineUrl";
-            json["url"] = url;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineUrl"},
+                {"url", url},
+                {"alt", alt},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -578,11 +631,13 @@ namespace almo {
             return "<figure>" + output + figcaption + "</figure>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "InlineImage";
-            json["url"] = url;
-            json["caption"] = caption;
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "InlineImage"},
+                {"url", url},
+                {"caption", caption},
+                {"uuid", uuid}
+            };
         }
 
     };
@@ -598,9 +653,11 @@ namespace almo {
             return "<br>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "NewLine";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "NewLine"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -614,9 +671,11 @@ namespace almo {
             return "<ul>" + join(childs_html) + "</ul>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "ListBlock";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "ListBlock"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -630,9 +689,11 @@ namespace almo {
             return "<ol>" + join(childs_html) + "</ol>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "EnumerateBlock";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "EnumerateBlock"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -646,9 +707,11 @@ namespace almo {
             return "<li>" + join(childs_html) + "</li>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Item";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "Item"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -665,7 +728,7 @@ namespace almo {
         std::vector<int> col_format;
         std::vector<std::string> col_names;
     public:
-        Table(std::vector<std::shared_ptr<Block>> columns, int n_row, int n_col, std::vector<int> col_format, std::string uuid) : columns(columns), n_row(n_row), n_col(n_col), col_format(col_format),  uuid(uuid) { }
+        Table(std::vector<std::shared_ptr<Block>> columns, int n_row, int n_col, std::vector<int> col_format, std::string uuid) : columns(columns), n_row(n_row), n_col(n_col), col_format(col_format), uuid(uuid) { }
 
         // テーブル用の特別な to_html. テーブルの render でしか呼ばれないので引数が違ってもOK. 
         std::string to_html(std::vector<std::string> headers_html, std::vector<std::string> childs_html) const {
@@ -697,13 +760,32 @@ namespace almo {
             return "dummy";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Table";
-            json["uuid"] = uuid;
-            json["n_row"] = n_row;
-            json["n_col"] = n_col;
-            json["col_format"] = to_string(col_format);
-            json["col_names"] = to_string(col_names);
+        std::map<std::string, std::string> get_properties() const override {
+            std::string col_format_str = "";
+            for (int i = 0; i < n_col; i++) {
+                std::string align = col_format[i] == 0 ? "l" : col_format[i] == 1 ? "c" : "r";
+                col_format_str += align;
+            }
+
+            std::string col_names_str = "[";
+
+            for (int i = 0; i < n_col; i++) {
+                col_names_str += "\"" + col_names[i] + "\"";
+                if (i != n_col - 1) {
+                    col_names_str += ", ";
+                }
+            }
+
+            col_names_str += "]";
+
+            return {
+                {"class", "Table"},
+                {"n_row", std::to_string(n_row)},
+                {"n_col", std::to_string(n_col)},
+                {"col_format", col_format_str},
+                {"col_names", col_names_str},
+                {"uuid", uuid}
+            };
         }
 
 
@@ -712,7 +794,7 @@ namespace almo {
             for (auto child : columns) {
                 columns_html.push_back(child->render());
             }
-            
+
             std::vector<std::string> contents_html;
 
             for (auto child : childs) {
@@ -739,9 +821,11 @@ namespace almo {
             return "<hr>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "HorizontalLine";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "HorizontalLine"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -756,9 +840,11 @@ namespace almo {
             return "<blockquote>" + join(childs_html) + "</blockquote>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "Quote";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "Quote"},
+                {"uuid", uuid}
+            };
         }
     };
 
@@ -770,12 +856,15 @@ namespace almo {
         DivBlock(std::string div_class, std::string uuid) : uuid(uuid), div_class(div_class) { }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
-            return "<div class=\"" + div_class + "\">" + join(childs_html) +  "</div>";
+            return "<div class=\"" + div_class + "\">" + join(childs_html) + "</div>";
         }
 
-        void add_json(json_like::JsonLike& json) const override {
-            json["class"] = "DivBlock";
-            json["uuid"] = uuid;
+        std::map<std::string, std::string> get_properties() const override {
+            return {
+                {"class", "DivBlock"},
+                {"div_classe", div_class},
+                {"uuid", uuid}
+            };
         }
     };
 }

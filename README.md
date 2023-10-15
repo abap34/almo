@@ -102,7 +102,7 @@ out=example/helloalmo/out/*.txt
 
 ## 使い方
 
-`almo [options] <markdown file>`
+`almo <markdown file> [options]`
 
 ### オプション
 
