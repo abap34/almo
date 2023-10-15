@@ -213,7 +213,7 @@ std::string _remove_alias(std::string s) {
 // エイリアスを適用
 std::string _apply_alias(std::string s, std::map<std::string, std::string> alias_map) {
     std::regex noarg_alias_regex = std::regex("\\{\\{\\s*([a-zA-Z1-9_]*)\\s*\\}\\}");
-    std::regex alias_regex =       std::regex("\\{\\{\\s*([a-zA-Z1-9_]*)\\s(.*)\\}\\}");
+    std::regex alias_regex = std::regex("\\{\\{\\s*([a-zA-Z1-9_]*)\\s(.*)\\}\\}");
 
     std::smatch match;
 
@@ -263,22 +263,25 @@ std::string _apply_alias(std::string s, std::map<std::string, std::string> alias
 }
 
 
-std::string to_string(const std::vector<int> &vec){
-    std::string str_vec = "{ ";
-    for (int i = 0; auto t : vec){
-        if (i++ != 0) str_vec += ", ";
-        str_vec += std::to_string(t);
+// 文字列を受け取り、ダブルクオーテーションや改行などをエスケープする
+std::string escape(std::string s) {
+    std::string result;
+    for (int i = 0; i < s.size(); i++) {
+        if (s[i] == '"') {
+            result += "\\\"";
+        }
+        else if (s[i] == '\n') {
+            result += "\\n";
+        }
+        else if (s[i] == '\t') {
+            result += "\\t";
+        }
+        else if (s[i] == '\\') {
+            result += "\\\\";
+        }
+        else {
+            result += s[i];
+        }
     }
-    str_vec += " }";
-    return str_vec;
-}
-
-std::string to_string(const std::vector<std::string> &vec){
-    std::string str_vec = "{ ";
-    for (int i = 0; auto t : vec){
-        if (i++ != 0) str_vec += ", ";
-        str_vec += t;
-    }
-    str_vec += " }";
-    return str_vec;
+    return result;
 }
