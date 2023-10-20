@@ -8,7 +8,6 @@
 #include <glob.h>
 #include <regex>
 #include "ast.hpp"
-#include "json.hpp"
 #include "utils.hpp"
 
 namespace almo {
