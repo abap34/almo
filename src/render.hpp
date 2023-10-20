@@ -77,19 +77,15 @@ namespace almo {
         return output_html;
     }
 
-    void render(Block ast, std::map<std::string, std::string> meta_data, std::string output_path) {
+    std::string render(Block ast, std::map<std::string, std::string> meta_data) {
         
         std::string html_template = load_html_template(meta_data["css_setting"]);
 
         std::string content = ast.render();
         
-        std::string output_html;
+        std::string output_html = replace_template(html_template, meta_data, content);
 
-        output_html = replace_template(html_template, meta_data, content);
-
-        std::ofstream output_file(output_path);
-        output_file << output_html;
-        output_file.close();
+        return output_html;
     }
 
 }
