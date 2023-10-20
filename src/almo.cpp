@@ -13,16 +13,7 @@ int main(int argc, char* argv[]) {
     std::string editor_theme = "ace/theme/xcode";
     std::string syntax_theme = "github.min";
     bool plot_graph = false;
-
-    // 出力ファイルのデフォルト値を設定。 .md -> .html に置き換える
-    std::string out_path = argv[1];
-    if (out_path.ends_with(".md")) {
-        out_path = out_path.substr(0, out_path.length() - 3) + ".html";
-    }
-    else {
-        throw InvalidCommandLineArgumentsError("不正な入力ファイルです。 .md 拡張子を持つファイルを入力してください。");
-        exit(1);
-    }
+    std::string out_path = "__stdout__";
 
 
     for (int i = 2; i < argc; i++) {
@@ -59,7 +50,7 @@ int main(int argc, char* argv[]) {
                 }
                 std::cout << "使用法: almo <入力> [オプション]" << std::endl;
                 std::cout << "オプション:" << std::endl;
-                std::cout << "  -o <出力>     出力ファイル名を指定します。デフォルトは入力ファイル名の拡張子を .html に変更したものです。" << std::endl;
+                std::cout << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
                 std::cout << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
                 std::cout << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
                 std::cout << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
@@ -109,7 +100,7 @@ int main(int argc, char* argv[]) {
             "\"ir\": " + ir + "\n"
             "}\n";
 
-        
+
         std::cout << output << std::endl;
     }
 
@@ -127,6 +118,15 @@ int main(int argc, char* argv[]) {
 
     almo::meta_data = meta_data;
 
-    almo::render(ast, meta_data, out_path);
+    std::string result = almo::render(ast, meta_data);
+
+    if (out_path == "__stdout__") {
+        std::cout << result << std::endl;
+    }
+    else {
+        std::ofstream ofs(out_path);
+        ofs << result << std::endl;
+    }
+
     return 0;
 }
