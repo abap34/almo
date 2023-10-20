@@ -283,10 +283,10 @@ std::string escape(std::string s) {
             result += "\\r";
         }
         else if (s[i] == '{') {
-            result += "\\{";
+            result += "\\\\{";
         }
         else if (s[i] == '}') {
-            result += "\\}";
+            result += "\\\\}";
         }
         else {
             result += s[i];
