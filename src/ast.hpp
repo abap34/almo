@@ -498,7 +498,7 @@ namespace almo {
 
             std::string sample_out_area =
                 "<div class=\"box-title\"> 出力 </div>"
-                "<pre class=\"sample_out\" id=\"" + uuid + "_sample_out\"></pre>\n";
+                "<pre class=\"sample_out\" id=\"" + uuid + "_out\"></pre>\n";
 
             std::string expect_out_area =
                 "<div class=\"box-title\"> サンプルの答え </div>"
@@ -605,11 +605,11 @@ namespace almo {
 
             // 通常の出力に加えて、matplotlib のプロットを表示するための div を作っておく。
             std::string editor_div = "<br> \n <div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
-            std::string out_area = "<pre class=\"exec_out\" id=\"" + uuid + "_output\"></pre>\n";
+            std::string out_area = "<pre class=\"exec_out\" id=\"" + uuid + "_out\"></pre>\n";
             std::string plot_area = "<div class=\"exec_plot\" id=\"" + uuid + "_plot\"></div>\n";
 
             std::string run_button =
-                "<button class=\"runbutton\" onclick=\"runCode('" + uuid + "', false)\"> Run </button>\n";
+                "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
 
             std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
 
@@ -639,7 +639,7 @@ namespace almo {
         std::string to_html() const override {
             std::string output = "";
             for (std::string lib : libs) {
-                std::string output = "<script> use_libs.push(\"" + lib + "\"); </script>";
+                output += "<script> use_libs.push(\"" + lib + "\"); </script>";
             }
             return output;
         };
