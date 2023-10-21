@@ -604,13 +604,14 @@ namespace almo {
                 "</script>\n";
 
             // 通常の出力に加えて、matplotlib のプロットを表示するための div を作っておく。
+            std::string editor_div = "<br> \n <div class=\"editor\" id=\"" + uuid + "\" rows=\"3\" cols=\"80\"></div> \n";
             std::string out_area = "<pre class=\"exec_out\" id=\"" + uuid + "_output\"></pre>\n";
             std::string plot_area = "<div class=\"exec_plot\" id=\"" + uuid + "_plot\"></div>\n";
 
             std::string run_button =
                 "<button class=\"runbutton\" onclick=\"runCode('" + uuid + "', false)\"> Run </button>\n";
 
-            std::string output = ace_editor + out_area + plot_area + run_button;
+            std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
 
             return output;
         }
