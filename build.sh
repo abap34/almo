@@ -2,8 +2,9 @@
 
 src_dir="src/"
 
-# 移動先のディレクトリ
 build_dir="build/"
+
+mkdir -p "$build_dir"
 
 for file in "$src_dir"*
 do
@@ -12,7 +13,6 @@ do
 done
 
 
-# C++で直接 #include できるように、文字列リテラルの記号を追記する
 for file in "$build_dir"*
 do
     extension="${file##*.}"
