@@ -1,15 +1,12 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    max-width: 800px;
     margin: 0 auto;
     padding: 20px;
     background-color: #F7F7F7;
     color: #333;
-    flex-direction: column;
     display: flex;
-    width: 95%;
-
+    gap: 10px;
 }
 
 h1,
@@ -81,18 +78,13 @@ td {
 }
 
 .content {
-    flex: 1;
     padding: 40px 40px;
-    margin-left: 0px;
-    margin-right: 10px;
-    margin-top: 0px;
-    margin-bottom: 0px;
+    margin: 0px auto;
     background-color: #ffffff;
     border-radius: 5px;
-    overflow: auto;
+    max-width: 800px;
     width: 100%;
 }
-
 
 @media (max-width: 768px) {
     .content {
@@ -102,18 +94,14 @@ td {
 }
 
 .sidebar {
-    flex: 3;
-    border-right: 1px solid #eee;
     height: 100%;
-    width: 10%;
-    padding: 10px 10px;
-    left: 0;
+    padding: 20px;
+    border-radius: 4px;
     overflow: auto;
-    position: fixed;
-    top: 0;
     width: 220px;
-    z-index: 1000;
     background-color: #F2F2F2;
+    position: sticky;
+    top: 20px;
 }
 
 @media (max-width: 1260px) {
@@ -123,14 +111,13 @@ td {
 }
 
 .links {
-    position: fixed;
-    right: 0;
-    top: 0;
     width: 200px;
     height: 100%;
-    padding: 10px 10px;
-    overflow: auto;
+    padding: 20px;
+    border-radius: 4px;
     background-color: #F2F2F2;
+    position: sticky;
+    top: 20px;
 }
 
 @media (max-width: 1260px) {
@@ -141,7 +128,7 @@ td {
 
 #toc {
     background-color: #f4f4f4;
-    border-radius: 5px;
+    border-radius: 4px;
     padding: 15px;
     list-style: none;
 }
@@ -287,6 +274,12 @@ td {
     margin-bottom: 10px;
     color: #666;
 }
+
+.inline-code,
+.code-block{
+    font-family: monospace;
+}
+
 
 .success, .info, .warning, .danger {
     padding: 12px;
