@@ -31,8 +31,8 @@ function stdout_func(answer) {
 }
 
 function error_handle(error) {
-    document.getElementById(target_objectid + "_sample_out").innerText = error;
-    document.getElementById(target_objectid + "_sample_out").style.color = "orange";
+    document.getElementById(target_objectid + "_out").innerText = error;
+    document.getElementById(target_objectid + "_out").style.color = "orange";
     status = "RE";
 }
 
@@ -47,8 +47,8 @@ const runCode = async (objectid, require_judge) => {
     let result_bar_id = target_objectid + "_status";
     let result_bar = document.getElementById(result_bar_id)
 
-    document.getElementById(target_objectid + "_sample_out").innerText = "";
-    document.getElementById(target_objectid + "_sample_out").style.color = "";
+    document.getElementById(target_objectid + "_out").innerText = "";
+    document.getElementById(target_objectid + "_out").style.color = "";
     result_bar.innerText = "Running...";
 
 
@@ -88,7 +88,7 @@ const runCode = async (objectid, require_judge) => {
         try {
             outputs = "";
             await pyodide.runPythonAsync(code);
-            document.getElementById(target_objectid + "_sample_out").innerText = outputs;
+            document.getElementById(target_objectid + "_out").innerText = outputs;
             result_bar.innerText = "WJ";
         } catch (error) {
             error_handle(error);
@@ -146,6 +146,7 @@ const runBlock = async (objectid) => {
     document.pyodideMplTarget = document.getElementById(objectid + "_plot");
     out_area.innerText = "Loading libraries...";
     for (let i = 0; i < use_libs.length; i++) {
+        out_area.innerText = "Loading " + use_libs[i] + "...";
         let lib = use_libs[i];
         await pyodide.loadPackage(lib);
     }
