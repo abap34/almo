@@ -8,24 +8,21 @@ mkdir -p "$build_dir"
 
 for file in "$src_dir"*
 do
-    cp "$file" "$build_dir"
-    echo "ファイル $file を $build_dir にコピーしました。"
-done
-
-
-for file in "$build_dir"*
-do
-    extension="${file##*.}"
-
+    name="$(basename "$file")"
+    extension="${name##*.}"
     if [ "$extension" != "cpp" ] && [ "$extension" != "hpp" ]; then
-        sed -i '' '1s/^/R"(/' "$file"
-
-        echo ')"' >> "$file"
-
+        contents="$(cat "$file")"
+        escaped_contents="${contents//\\/\\\\}" 
+        echo -e "R\"(\n" > "$build_dir"$name
+        echo -e "$escaped_contents" >> "$build_dir"$name
+        echo -e "\n)\"" >> "$build_dir"$name
         echo "ファイル $file を処理済み"
+    else
+        cp "$file" "$build_dir"
+        echo "ファイル $file をコピー"
     fi
-
 done
+
 
 g++ -std=c++20 "$build_dir"almo.cpp -o "$build_dir"almo 
 
