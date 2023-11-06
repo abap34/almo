@@ -662,7 +662,7 @@ namespace almo {
         InlineUrl(std::string url, std::string alt, std::string uuid) : url(url), alt(alt), uuid(uuid) { };
 
         std::string to_html() const override {
-            return "<url> <a href=\"" + url + "\">" + url + "</a> </url>";
+            return "<url> <a href=\"" + url + "\">" + alt + "</a> </url>";
         }
 
         std::map<std::string, std::string> get_properties() const override {
