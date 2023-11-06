@@ -797,32 +797,14 @@ namespace almo {
             return _remove_comment(text);
             };
 
-        // エイリアスを取り出し
-        std::map<std::string, std::string> alias_map = get_alias(md_str);
-
-        // エイリアス定義を削除
-        auto remove_alias = [](std::string text) {
-            return _remove_alias(text);
-            };
-
-        // エイリアスを適用
-        auto apply_alias = [&alias_map](std::string s) {
-            return _apply_alias(s, alias_map);
-            };
-
-
 
         std::vector<std::function<std::string(std::string)>> hooks = {
             remove_comment,
-            remove_alias,
-            apply_alias
         };
 
         for (auto hook : hooks) {
             md_str = hook(md_str);
         }
-
-
 
         md_lines = split(md_str, "\n");
 
