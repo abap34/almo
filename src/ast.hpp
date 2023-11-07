@@ -190,7 +190,7 @@ namespace almo {
                 "});\n"
                 "</script>\n";
 
-            return contents_push + "<h" + std::to_string(level) + ">" + join(childs_html) + "</h" + std::to_string(level) + ">";
+            return contents_push + "<h" + std::to_string(level) + "id=\"" + uuid + "\">" + join(childs_html) + "</h" + std::to_string(level) + ">";
         }
 
         std::map<std::string, std::string> get_properties() const override {
