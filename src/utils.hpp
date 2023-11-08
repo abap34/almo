@@ -176,33 +176,16 @@ std::string _remove_comment(std::string s) {
 
 
 // 文字列を受け取り、ダブルクオーテーションや改行などをエスケープする
-std::string escape(std::string s) {
-    std::string result;
-    for (int i = 0; i < s.size(); i++) {
-        if (s[i] == '"') {
-            result += "\\\"";
-        }
-        else if (s[i] == '\n') {
-            result += "\\n";
-        }
-        else if (s[i] == '\t') {
-            result += "\\t";
-        }
-        else if (s[i] == '\\') {
-            result += "\\\\";
-        }
-        else if (s[i] == '\r') {
-            result += "\\r";
-        }
-        else if (s[i] == '{') {
-            result += "\\\\{";
-        }
-        else if (s[i] == '}') {
-            result += "\\\\}";
-        }
-        else {
-            result += s[i];
+// https://stackoverflow.com/questions/7724448/simple-json-string-escape-for-c
+std::string escape(const std::string &s) {
+    std::ostringstream o;
+    for (auto c = s.cbegin(); c != s.cend(); c++) {
+        if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
+            o << "\\u"
+              << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(*c);
+        } else {
+            o << *c;
         }
     }
-    return result;
+    return o.str();
 }
