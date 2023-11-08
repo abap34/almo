@@ -34,28 +34,29 @@ namespace almo {
     std::string load_html_template(std::string css_setting) {
         std::string result;
         if (css_setting == "light") {
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{ style \\}\\}"), LIGHT_THEME);
+            std::string css = "<style>" + LIGHT_THEME + "</style>";
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
         }
         else if (css_setting == "dark") {
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{ style \\}\\}"), DARK_THEME);
+            std::string css = "<style>" + DARK_THEME + "</style>";
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
         }
         else if (css_setting.ends_with(".css")) {
             std::string css = join(read_file(css_setting), "\n");
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{ style \\}\\}"), css);
+            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
         }
         else {
             throw InvalidCommandLineArgumentsError("不正なCSSの設定です。 `light`, `dark` もしくは `.css` で終了するファイル名を指定してください。");
         }
 
-        // </html>の前にrunner.jsを挿入
         std::string runner = "<script>" + RUNNER + "</script>";
         std::string sidebar_builder = "<script>" + SIDEBAR_BULDER + "</script>";
-        std::string::size_type pos = result.find("</head>");
 
-        result.insert(pos, runner);
-        pos = result.find("</html>");
+        // runner を挿入
+        result = std::regex_replace(result, std::regex("\\{\\{runner\\}\\}"), runner);
+        // sidebar_builder を挿入
+        result = std::regex_replace(result, std::regex("\\{\\{sidebar_builder\\}\\}"), sidebar_builder);
 
-        result.insert(pos, sidebar_builder);
 
         return result;
     }
