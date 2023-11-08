@@ -8,6 +8,7 @@
 #include <map>
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 
 // 文字列の vector を 結合する。第二引数はOptionalで区切り文字。デフォルトは空
 std::string join(std::vector<std::string> v, std::string sep = "") {
