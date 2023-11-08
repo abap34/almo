@@ -42,66 +42,83 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
 
-    <style>
-        {{ style }}
-    </style>
+    {{style}}
+
+
+    {{runner}}
 
 
 </head>
 
 
 <body>
-    <div class="sidebar">
-        <ul id="toc"></ul>
-    </div>
-
-
 
     <div class="content">
 
-        <div style="text-align: center">
-            <img height="300px" width="300px" src="{{ogp_url}}">
+        <div class="article-header">
+            <div class="thumbnail" style="text-align: center">
+                <img height="300px" width="300px" src="{{ogp_url}}">
+            </div>
+
+
+            <div class="title">
+                {{title}}
+            </div>
+
+            <script>
+                title = document.querySelector(".title").innerHTML;
+            </script>
+
+            <br>
+            <div class="date">
+                {{date}}
+            </div>
+            <br>
+            <div class="tag">
+                {{tag}}
+            </div>
+
+        </div>
+
+        <div class="article-body">
+            {{contents}}
         </div>
 
 
-        <h1>{{title}}</h1>
+    </div>
 
-        <br>
-        <div class="date"></div>
-        <br>
-        <div class="tag"></div>
+    <div class="side">
+        <div class="side-sticky">
+            <div class="sidebar">
+                <ul id="toc"></ul>
+            </div>
 
-        <script>
-            const tags = "{{tag}}"
-            const date = "{{date}}"
-            document.getElementsByClassName("tag")[0].innerText = tags;
-            document.getElementsByClassName("date")[0].innerText = date;
-        </script>
+            <div class="links">
+                <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button"
+                    data-show-count="false">Tweet</a>
+                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-        {{contents}}
+                <br>
+                <br>
+                <br>
+
+                <p><i class="icon fab fa-twitter"></i><a href="https://twitter.com/{{twitter_id}}">@{{twitter_id}}</a>
+                </p>
+                <p><i class="icon fab fa-github"></i><a href="https://github.com/{{github_id}}">@{{github_id}}</a></p>
+                <p><i class="icon fas fa-envelope"></i><a href="mailto:{{mail}}"> {{mail}}</a></p>
+
+                <footer>
+                    <p>&copy; {{author}} </p>
+                </footer>
+
+            </div>
+        </div>
+
+        <!-- サイドバーの情報は content 内のスクリプトで追加されていて、構築は sidebar を参照しているので content と sidebar より後に置かなければいけないことに注意！ -->
+        {{sidebar_builder}}
 
     </div>
 
-    <div class="links">
-        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button"
-            data-show-count="false">Tweet</a>
-        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-        <br>
-
-        <br>
-
-        <br>
-
-        <p><i class="icon fab fa-twitter"></i><a href="https://twitter.com/{{twitter_id}}">@{{twitter_id}}</a></p>
-        <p><i class="icon fab fa-github"></i><a href="https://github.com/{{github_id}}">@{{github_id}}</a></p>
-        <p><i class="icon fas fa-envelope"></i><a href="mailto:{{mail}}"> {{mail}}</a></p>
-
-        <footer>
-            <p>&copy; {{author}} </p>
-        </footer>
-    </div>
-    </script>
 </body>
 
 
