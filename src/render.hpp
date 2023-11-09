@@ -42,7 +42,8 @@ namespace almo {
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
         }
         else if (css_setting.ends_with(".css")) {
-            std::string css = join(read_file(css_setting), "\n");
+            std::string css = "<style>" + join(read_file(css_setting), "\n") + "</style>";
+
             result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
         }
         else {
