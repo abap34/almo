@@ -8,10 +8,10 @@
 int main(int argc, char* argv[]) {
     // コマンドライン引数のデフォルト値を設定
     std::string theme = "light";
-    std::string css_setting = "light";
+    std::string css_setting = "__default__";
     bool debug = false;
-    std::string editor_theme = "ace/theme/xcode";
-    std::string syntax_theme = "github.min";
+    std::string editor_theme = "__default__";
+    std::string syntax_theme = "__default__";
     bool plot_graph = false;
     std::string out_path = "__stdout__";
 
@@ -67,13 +67,33 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // もし theme が dark であれば、 editor_theme と syntax_theme も対応したものにしておく
-    if (theme == "dark") {
-        editor_theme = "ace/theme/monokai";
-        syntax_theme = "monokai-sublime.min";
-        css_setting = "dark";
-    }
+    // もし theme が dark であれば、 editor_theme と syntax_theme がデフォルトの場合対応したものにしておく
+    if (theme == "light") {
+        if (editor_theme == "__default__") {
+            editor_theme = "ace/theme/chrome";
+        }
 
+        if (syntax_theme == "__default__") {
+            syntax_theme = "github.min";
+        }
+
+        if (css_setting == "__default__") {
+            css_setting = "light";
+        }
+    }
+    else if (theme == "dark") {
+        if (editor_theme == "__default__") {
+            editor_theme = "ace/theme/monokai";
+        }
+
+        if (syntax_theme == "__default__") {
+            syntax_theme = "monokai.min";
+        }
+
+        if (css_setting == "__default__") {
+            css_setting = "dark";
+        }
+    }
 
     // パース
     auto [meta_data, ast] = almo::parse_md_file(argv[1]);
