@@ -5,6 +5,32 @@
 #include <string>
 #include "utils.hpp"
 
+void help(bool err) {
+    if (err) {
+        std::cerr << "使用法: almo <入力> [オプション]" << std::endl;
+        std::cerr << "オプション:" << std::endl;
+        std::cerr << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
+        std::cerr << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
+        std::cerr << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
+        std::cerr << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
+        std::cerr << "  -d            デバッグモードで実行します。" << std::endl;
+        std::cerr << "  -g            構文木をdot言語として出力します。" << std::endl;
+        std::cerr << "  -h            ヘルプを表示します。" << std::endl;
+    }
+    else {
+        std::cout << "使用法: almo <入力> [オプション]" << std::endl;
+        std::cout << "オプション:" << std::endl;
+        std::cout << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
+        std::cout << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
+        std::cout << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
+        std::cout << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
+        std::cout << "  -d            デバッグモードで実行します。" << std::endl;
+        std::cout << "  -g            構文木をdot言語として出力します。" << std::endl;
+        std::cout << "  -h            ヘルプを表示します。" << std::endl;
+    }
+}
+
+
 int main(int argc, char* argv[]) {
     // コマンドライン引数のデフォルト値を設定
     std::string theme = "light";
@@ -15,6 +41,16 @@ int main(int argc, char* argv[]) {
     bool plot_graph = false;
     std::string out_path = "__stdout__";
 
+    if (argc < 2) {
+        std::cerr << "コマンドライン引数が不足しています。" << std::endl;
+        help(true);
+        exit(1);
+    }
+
+    if (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h') {
+        help(false);
+        exit(0);
+    }
 
     for (int i = 2; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -44,23 +80,10 @@ int main(int argc, char* argv[]) {
                 plot_graph = true;
             }
             else if (argv[i][1] == 'h') {
-                if (argc > 3) {
-                    throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションと他のオプションは同時に指定できません。");
-                    exit(1);
-                }
-                std::cout << "使用法: almo <入力> [オプション]" << std::endl;
-                std::cout << "オプション:" << std::endl;
-                std::cout << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
-                std::cout << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
-                std::cout << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
-                std::cout << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
-                std::cout << "  -d            デバッグモードで実行します。" << std::endl;
-                std::cout << "  -g            構文木をdot言語として出力します。" << std::endl;
-                std::cout << "  -h            ヘルプを表示します。" << std::endl;
+                throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションと他のオプションは同時に指定できません。");
             }
             else {
-                std::cerr << "Unkown command line arguments is passed." << std::endl;
-                std::cerr << "Please check the option by `almo -h`" << std::endl;
+                std::cerr << "不正なコマンドライン引数です。 -h オプションでヘルプを確認してください。" << std::endl;
                 exit(1);
             }
         }
