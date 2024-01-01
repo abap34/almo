@@ -686,7 +686,7 @@ namespace almo {
 
         //　<figure> タグを使うことで キャプションなどをつける。
         std::string to_html() const override {
-            std::string output = "<img src=\" " + url + " \" >";
+            std::string output = "<img src=\"" + url + "\" >";
             std::string figcaption = "<figcaption>" + caption + "</figcaption>";
             return "<figure>" + output + figcaption + "</figure>";
         }
