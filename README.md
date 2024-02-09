@@ -6,13 +6,15 @@
 </p>
 
 
-C++製の拡張Markdownパーサです。 
+ALMOは、C++製の拡張Markdownパーサ・静的サイトジェネレータです。 
 
-WebAseemblyを使ってブラウザ上で完結するサーバ不要の実行およびジャッジ環境を提供します。 
+WebAssemblyを使って実行・ジャッジ環境同梱のHTMLファイルを作ることができます。
 
 ## 機能
 
-ALMOの拡張構文は、
+ALMOは、Markdown記法によって執筆された記事をHTMLファイルに変換することができます。
+
+加えて、ALMOの拡張構文は、
 
 - 競技プログラミング
 - データ分析
@@ -36,13 +38,13 @@ _='_=%r;print(_%%_)';print(_%_)
 
 という記法は、以下のようなコードブロックを生成します。
 
-さらにコードは実行することができ、また実行はユーザのブラウザ上で完結します。
+さらにコードは実行することができ、**その実行はCPythonのWebAssemblyへの移植であるPyodideによっておこなわれます。**
 
-したがって、サンプルプログラムの実行をサーバを用意しなくてもユーザに提供することができます。
+そのため、記事の執筆者は自分でサーバを用意することなく、簡単に実行可能なサンプルコードを提供することができます。
 
 ![](example/demo_code.gif)
 
-### matplotlib によるグラフ描画
+### Pythonのライブラリの使用 / matplotlib によるグラフ描画
 
 実行可能コードブロックでは、Pythonの主要なライブラリを利用できます。
 
@@ -86,34 +88,31 @@ out=example/helloalmo/out/*.txt
 
 - サンプル入力は `example/helloalmo/in/sample.txt` 
 - サンプル出力は `example/helloalmo/out/sample.txt`
-- 入力ファイルは `example/helloalmo/in/*.txt`
-- 出力ファイルは `example/helloalmo/out/*.txt`
+- 入力ファイルは `example/helloalmo/in/*.txt`　にマッチする全てのファイル
+- 出力ファイルは `example/helloalmo/out/*.txt`　にマッチする全てのファイル
 
 と対応したジャッジシステムを自動で構築します。
 
 ![](example/demo_judge.gif)
 
 
-
 これらは全て[デモページ](https://www.abap34.com/almo.html)で試すことができます。
 
-詳しい記法は[ドキュメント](https://www.abap34.com/almo_document.html)を参照してください。
+
+## インターフェース
+
+`almo <入力> [オプション]`
 
 
-## 使い方
+オプション:
 
-`almo <markdown file> [options]`
-
-### オプション
-
-以下は全て省略可能です。
-
-- `-o <output file>`: 出力ファイル名を指定します。デフォルトは第一引数の入力ファイル名の拡張子を`.html`にしたものです。
-- `-t <theme>` : テーマを指定します。デフォルトは`light`です。`light`または`dark`を指定できます。 
-- `-c` : ユーザ定義のCSSファイルを指定します。デフォルトでは `-t` で指定されたテーマのデフォルト仕様である
-[dark.css](https://github.com/abap34/ALMO/blob/main/src/dark.css) または [light.css](https://github.com/abap34/ALMO/blob/main/src/light.css) が使用されます。 
-- `-d` : デバッグモードにします。デフォルトはオフです。　パースされた結果がJSON形式で標準出力に出力されます。
-- `-h` : ヘルプを表示します。
+-  `-o <出力>`     出力ファイル名を指定します。 指定しない場合、HTMLファイルが標準出力に出力されます。
+-  `-t <テーマ>`   テーマを指定します。デフォルトは light です。
+-  `-c <CSSファイルへのパス>`   CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。
+-  `-e <テーマ>`   エディタのテーマを指定します。デフォルトは light の場合、 `ace/theme/chrome`, dark の場合 `ace/theme/monokai` が使用されます。 [使用可能なテーマ](https://github.com/ajaxorg/ace/tree/master/src/theme)
+-  `-d`            デバッグモードで実行します。 
+-  `-g`            構文木をdot言語として出力します。
+-  `-h`            ヘルプを表示します。
 
 
 ## インストール方法
@@ -125,16 +124,4 @@ brew tap abap34/homebrew-almo
 brew install almo
 ```
 
-それ以外の環境では、 `src/almo.cpp` を以下のコンパイルしてください。
-
-```bash
-git clone https://github.com/abap34/ALMO
-cd ALMO
-g++ -std=c++20 -lcurl -o almo src/almo.cpp
-```
-
-`curl` が必要です。
-
-## ドキュメント
-
-[https://www.abap34.com/almo_document.html](https://www.abap34.com/almo_document.html)
+それ以外の環境では、 `build.sh` を実行することでビルドすることができます。
