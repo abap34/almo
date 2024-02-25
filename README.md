@@ -125,3 +125,10 @@ brew install almo
 ```
 
 それ以外の環境では、 `build.sh` を実行することでビルドすることができます。
+
+## エコシステム
+
+- https://github.com/abap34/ALMO-extension
+  - ALMO でファイルを編集する際にリアルタイムプレビューを行う VSCode の拡張機能です。
+- https://github.com/abap34/ALMO-blog-template
+  - ALMO を使って簡単にブログを構築するためのテンプレートです。
