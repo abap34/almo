@@ -391,7 +391,6 @@ namespace almo {
 
         // Highlight.js によって正確にハイライトするために、<code> にクラスを付与する。
         std::string to_html() const override {
-            loaded_pyodide = true;
             return "<div class=\"code-block\"> <pre><code class=\"" + language + "\">" + code + "</code></pre> </div>";
         }
 
@@ -558,10 +557,7 @@ namespace almo {
 
             std::string output = title_h3 + editor_div + ace_editor + sample_in_area + sample_out_area + expect_out_area + define_data + test_run_button + submit_button + judge_code;
 
-            if (!loaded_pyodide) {
-                output = pyodide_loader + output;
-                loaded_pyodide = true;
-            }
+            loaded_pyodide = true;
 
             return output;
         }
@@ -624,10 +620,7 @@ namespace almo {
 
             std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
 
-            if (!loaded_pyodide) {
-                output = pyodide_loader + output;
-                loaded_pyodide = true;
-            }
+            loaded_pyodide = true;
 
             return output;
         }

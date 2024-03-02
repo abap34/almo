@@ -60,6 +60,14 @@ namespace almo {
         }
 
         std::string runner = "<script>" + RUNNER + "</script>";
+
+        if (loaded_pyodide) {
+            // runnner の先頭に　　pyodide を挿入
+            runner = pyodide_loader + runner;
+        } else {
+            runner = "";
+        }
+
         std::string sidebar_builder = "<script>" + SIDEBAR_BULDER + "</script>";
 
         // runner を挿入
