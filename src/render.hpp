@@ -65,7 +65,7 @@ namespace almo {
             // runnner の先頭に　　pyodide を挿入
             runner = pyodide_loader + runner;
         } else {
-            runner = "";
+            runner = "<!-- Runner is not required. Skip this. -->";
         }
 
         std::string sidebar_builder = "<script>" + SIDEBAR_BULDER + "</script>";
@@ -96,11 +96,10 @@ namespace almo {
     }
 
     std::string render(Block ast, std::map<std::string, std::string> meta_data) {
-        
-        std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
-
         std::string content = ast.render();
-        
+
+        std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
+    
         std::string output_html = replace_template(html_template, meta_data, content);
 
         return output_html;
