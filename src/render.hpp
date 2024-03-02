@@ -31,20 +31,29 @@ namespace almo {
         ;
 
     
-    std::string load_html_template(std::string css_setting) {
+    std::string load_html_template(std::string html_path, std::string css_setting) {
+        std::string html;
+
+        if (html_path == "__default__") {
+            html = TEMPLATE;
+        }
+        else {
+            html = join(read_file(html_path), "\n");
+        }
+
         std::string result;
         if (css_setting == "light") {
             std::string css = "<style>" + LIGHT_THEME + "</style>";
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
+            result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
         }
         else if (css_setting == "dark") {
             std::string css = "<style>" + DARK_THEME + "</style>";
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
+            result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
         }
         else if (css_setting.ends_with(".css")) {
             std::string css = "<style>" + join(read_file(css_setting), "\n") + "</style>";
 
-            result = std::regex_replace(TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
+            result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
         }
         else {
             throw InvalidCommandLineArgumentsError("不正なCSSの設定です。 `light`, `dark` もしくは `.css` で終了するファイル名を指定してください。");
@@ -80,7 +89,7 @@ namespace almo {
 
     std::string render(Block ast, std::map<std::string, std::string> meta_data) {
         
-        std::string html_template = load_html_template(meta_data["css_setting"]);
+        std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
 
         std::string content = ast.render();
         

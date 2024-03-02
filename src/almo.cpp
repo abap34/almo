@@ -10,6 +10,7 @@ void help(bool err) {
         std::cerr << "使用法: almo <入力> [オプション]" << std::endl;
         std::cerr << "オプション:" << std::endl;
         std::cerr << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
+        std::cerr << "  -b <テンプレート> テンプレートファイルを指定します。 " << std::endl;
         std::cerr << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
         std::cerr << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
         std::cerr << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
@@ -21,6 +22,7 @@ void help(bool err) {
         std::cout << "使用法: almo <入力> [オプション]" << std::endl;
         std::cout << "オプション:" << std::endl;
         std::cout << "  -o <出力>     出力ファイル名を指定します。 指定しない場合標準出力に出力されます。" << std::endl;
+        std::cout << "  -b <テンプレート> テンプレートファイルを指定します。 " << std::endl;
         std::cout << "  -t <テーマ>   テーマを指定します。デフォルトは light です。" << std::endl;
         std::cout << "  -c <CSS>      CSSファイルを指定します。デフォルトは テーマに付属するものが使用されます。" << std::endl;
         std::cout << "  -e <テーマ>   エディタのテーマを指定します。デフォルトは  です。" << std::endl;
@@ -33,6 +35,7 @@ void help(bool err) {
 
 int main(int argc, char* argv[]) {
     // コマンドライン引数のデフォルト値を設定
+    std::string template_file = "__default__";
     std::string theme = "light";
     std::string css_setting = "__default__";
     bool debug = false;
@@ -40,6 +43,7 @@ int main(int argc, char* argv[]) {
     std::string syntax_theme = "__default__";
     bool plot_graph = false;
     std::string out_path = "__stdout__";
+
 
     if (argc < 2) {
         std::cerr << "コマンドライン引数が不足しています。" << std::endl;
@@ -60,6 +64,9 @@ int main(int argc, char* argv[]) {
             }
             if (argv[i][1] == 'o') {
                 out_path = argv[i + 1];
+            }
+            else if (argv[i][1] == 'b') {
+                template_file = argv[i + 1];
             }
             else if (argv[i][1] == 't') {
                 theme = argv[i + 1];
@@ -122,6 +129,7 @@ int main(int argc, char* argv[]) {
     auto [meta_data, ast] = almo::parse_md_file(argv[1]);
 
     // コマンドライン引数を meta_data に追加
+    meta_data["template_file"] = template_file;
     meta_data["theme"] = theme;
     meta_data["out_path"] = out_path;
     meta_data["css_setting"] = css_setting;
