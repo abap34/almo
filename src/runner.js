@@ -1,5 +1,4 @@
-
-
+            
 
 all_sample_input = {}
 all_sample_output = {}
@@ -11,7 +10,6 @@ use_libs = []
 
 judge_types = {}
 problem_status = {}
-page_contents = []
 
 const pyodidePromise = loadPyodide({
     stdin: stdin_func,
