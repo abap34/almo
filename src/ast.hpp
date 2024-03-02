@@ -14,6 +14,11 @@ namespace almo {
     // - syntax_theme: Highlight.jsのテーマ
     std::map<std::string, std::string> meta_data;
 
+    // レスポンス時間短縮のため、pyodideが不要なら読み込みをスキップするためのフラグ.
+    bool loaded_pyodide = false;
+
+    std::string pyodide_loader = "<script src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></script>";
+
     // 各ノードに対して一意なIDを生成する用の関数オブジェクト. 呼ぶと前に呼ばれた時の値 + 1 が返る.
     struct UUID_gen {
         std::string operator()() {
@@ -386,6 +391,7 @@ namespace almo {
 
         // Highlight.js によって正確にハイライトするために、<code> にクラスを付与する。
         std::string to_html() const override {
+            loaded_pyodide = true;
             return "<div class=\"code-block\"> <pre><code class=\"" + language + "\">" + code + "</code></pre> </div>";
         }
 
@@ -552,6 +558,11 @@ namespace almo {
 
             std::string output = title_h3 + editor_div + ace_editor + sample_in_area + sample_out_area + expect_out_area + define_data + test_run_button + submit_button + judge_code;
 
+            if (!loaded_pyodide) {
+                output = pyodide_loader + output;
+                loaded_pyodide = true;
+            }
+
             return output;
         }
 
@@ -612,6 +623,11 @@ namespace almo {
                 "<button class=\"runbutton\" onclick=\"runBlock('" + uuid + "')\"> Run </button>\n";
 
             std::string output = editor_div + ace_editor + out_area + plot_area + run_button;
+
+            if (!loaded_pyodide) {
+                output = pyodide_loader + output;
+                loaded_pyodide = true;
+            }
 
             return output;
         }
