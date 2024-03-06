@@ -473,6 +473,9 @@ namespace almo {
 
             // ace editor の設定をする.
             // テーマは meta_data から取得する.
+
+            std::string source_code = join(read_file(source), "\n");
+
             std::string ace_editor = ""
                 "<script>"
                 "editor = ace.edit(\"" + uuid + "\"); "
@@ -489,7 +492,7 @@ namespace almo {
                 "    fontSize: \"14px\""
                 "});"
                 "editor.renderer.setScrollMargin(10, 10);"
-                "editor.setValue(`" + source + "`, -1);"
+                "editor.setValue(`" + source_code + "`, -1);"
                 "</script>\n";
 
             // サンプル入力を読み込む.
