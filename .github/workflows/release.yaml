@@ -22,7 +22,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: build/main
+          asset_path: build/almo
           asset_name: ${{ matrix.os }}
           asset_content_type: application/octet-stream 
         env:
