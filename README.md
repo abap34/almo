@@ -117,6 +117,8 @@ out=example/helloalmo/out/*.txt
 
 ## インストール方法
 
+### Homebrew
+
 macOS (Apple Silicon) では、 Homebrew を使ってビルド済みのバイナリをインストールできます。
 
 ```bash
@@ -124,7 +126,25 @@ brew tap abap34/homebrew-almo
 brew install almo
 ```
 
-それ以外の環境では、 `build.sh` を実行することでビルドすることができます。
+### Docker
+
+[abap/almo](https://hub.docker.com/repository/docker/abap/almo/general) にビルド済みのイメージがあります。
+
+```bash
+docker pull abap/almo:latest
+docker run abap/almo:latest example.md
+```
+
+### ビルド
+
+`build.sh` を実行すると、ビルド済みのバイナリが `build/almo` に生成されます。
+
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+
 
 ## エコシステム
 
