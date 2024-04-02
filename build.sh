@@ -26,6 +26,4 @@ done
 
 g++ -std=c++20 "$build_dir"almo.cpp -o "$build_dir"almo 
 
-mv "$build_dir"almo .
-
 echo "ビルドが完了しました。"
