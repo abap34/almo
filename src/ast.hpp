@@ -384,14 +384,21 @@ namespace almo {
         std::string code;
 
         // Highlight.js によって正確にハイライトするために、言語を指定する必要がある。
-        // ```python -> python を持っておき、 `to_html` する際に <code class="python"> として出力する。
+        // ```python -> python を持っておき、 `to_html` する際に <code class="language-python"> として出力する。
         std::string language;
     public:
         CodeBlock(std::string code, std::string language, std::string uuid) : code(code), language(language), uuid(uuid) { }
 
-        // Highlight.js によって正確にハイライトするために、<code> にクラスを付与する。
         std::string to_html() const override {
-            return "<div class=\"code-block\"> <pre><code class=\"" + language + "\">" + code + "</code></pre> </div>";
+            std::string code_class;
+
+            if (language == "") {
+                code_class = "language-plaintext";
+            } else {
+                code_class = "language-" + language;
+            }
+
+            return "<div class=\"code-block\"> <pre><code class=\"" + code_class + "\">" + code + "</code></pre> </div>";
         }
 
 
