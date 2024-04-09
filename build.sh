@@ -24,6 +24,13 @@ do
 done
 
 
+
 g++ -std=c++20 "$build_dir"almo.cpp -o "$build_dir"almo 
+
+if [ $? -ne 0 ]; then
+    echo "ビルドに失敗しました。"
+    exit 1
+fi
+
 
 echo "ビルドが完了しました。"
