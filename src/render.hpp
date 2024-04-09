@@ -26,9 +26,6 @@ namespace almo {
             #include "template.html"
         ;
 
-    std::string SIDEBAR_BULDER =
-            #include "sidebar.js"
-        ;
 
     
     std::string load_html_template(std::string html_path, std::string css_setting) {
@@ -67,14 +64,8 @@ namespace almo {
         } else {
             runner = "<!-- Runner is not required. Skip this. -->";
         }
-
-        std::string sidebar_builder = "<script>" + SIDEBAR_BULDER + "</script>";
-
         // runner を挿入
         result = std::regex_replace(result, std::regex("\\{\\{runner\\}\\}"), runner);
-        // sidebar_builder を挿入
-        result = std::regex_replace(result, std::regex("\\{\\{sidebar_builder\\}\\}"), sidebar_builder);
-
 
         return result;
     }
