@@ -39,6 +39,18 @@ namespace almo {
 
         // そのノードが持つプロパティを列挙する
         virtual std::map<std::string, std::string> get_properties() const = 0;
+
+        virtual std::string get_classname() const = 0;
+
+        std::string uuid;
+
+        std::string get_uuid() const {
+            return uuid;
+        }
+
+        void set_uuid(std::string new_uuid) {
+            uuid = new_uuid;
+        }
     };
 
 
@@ -55,6 +67,11 @@ namespace almo {
         virtual std::string to_json() const override {
             std::map<std::string, std::string> properties = get_properties();
             std::string json = "{";
+            // add classname
+            json += "\"class\":\"" + escape(get_classname()) + "\",";
+            // add uuid
+            json += "\"uuid\":\"" + escape(get_uuid()) + "\",";
+            // add other properties
             for (auto property : properties) {
                 json += "\"" + property.first + "\":\"" + escape(property.second) + "\",";
             }
@@ -67,16 +84,13 @@ namespace almo {
         std::string to_dot() const {
             std::map<std::string, std::string> properties = get_properties();
 
-            std::string node = properties["uuid"];
+            std::string node = get_uuid();
             std::string label = "";
 
-            std::string label_header = properties["class"] + " | ";
+            std::string label_header = get_classname() + " | ";
 
             int i = 1;
             for (auto property : properties) {
-                if (property.first == "class" || property.first == "uuid") {
-                    continue;
-                }
                 label += "<f" + std::to_string(i) + "> " + property.first + ": " + escape(property.second) + " | ";
                 i++;
             }
@@ -118,6 +132,11 @@ namespace almo {
         virtual std::string to_json() const override {
             std::map<std::string, std::string> properties = get_properties();
             std::string json = "{";
+            // add classname
+            json += "\"class\":\"" + escape(get_classname()) + "\",";
+            // add uuid
+            json += "\"uuid\":\"" + escape(get_uuid()) + "\",";
+            // add other properties
             for (auto property : properties) {
                 json += "\"" + property.first + "\":\"" + escape(property.second) + "\",";
             }
@@ -136,16 +155,13 @@ namespace almo {
         virtual std::string to_dot() const {
             std::map<std::string, std::string> properties = get_properties();
 
-            std::string node = properties["uuid"];
+            std::string node = get_uuid();
             std::string label = "";
 
-            std::string label_header = "<f0> " + properties["class"] + " | ";
+            std::string label_header = "<f0> " + get_classname() + " | ";
 
             int i = 1;
             for (auto property : properties) {
-                if (property.first == "class" || property.first == "uuid") {
-                    continue;
-                }
                 label += "<f" + std::to_string(i) + "> " + property.first + ": " + escape(property.second) + " | ";
                 i++;
             }
@@ -164,7 +180,7 @@ namespace almo {
             // 子ノードと繋ぐ
             std::string edges = "";
             for (auto child : childs) {
-                edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_properties()["uuid"] + "\n";
+                edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_uuid() + "\n";
             }
 
             return node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
@@ -174,15 +190,15 @@ namespace almo {
 
     // H1~6 に対応する構文木のノード
     class Header : public NonLeafNode {
-        std::string uuid;
 
         // ヘッダのレベル. H{level} に対応する.
         int level;
     public:
-        Header(int level, std::string uuid) : level(level), uuid(uuid) {
+        Header(int level, std::string uuid) : level(level) {
             if (level < 1 || level > 6) {
                 throw ParseError("Internal Error: Header level must be 1~6. But " + std::to_string(level) + " is given.");
             }
+            set_uuid(uuid);
         }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
@@ -200,10 +216,11 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "Header"},
-                {"level", std::to_string(level)},
-                {"uuid", uuid}
+                {"level", std::to_string(level)}
             };
+        }
+        std::string get_classname() const override {
+            return "Header";
         }
     };
 
@@ -212,9 +229,10 @@ namespace almo {
     // 例えば一行分 parseしたとき、 `Block` を根とする木としてパース結果が帰ってくる。
     // Block のみ `render` というメソッドを持ち、 部分木を html に変換したものをそのまま返す。
     class Block : public NonLeafNode {
-        std::string uuid;
     public:
-        Block(std::string uuid) : uuid(uuid) { }
+        Block(std::string uuid_) {
+            set_uuid(uuid);
+        }
 
         // これ自体は意味を持たないので、子ノードが変換されたものをそのまま返す.
         std::string to_html(std::vector<std::string> childs_html) const override {
@@ -223,9 +241,10 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "Block"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "Block";
         }
     };
 
@@ -234,12 +253,13 @@ namespace almo {
     // 例えば **Hoge** という文字列をパースしたとき、
     // InlineStrong -> Raw(content="Hoge") という木として結果をもつ。
     class RawText : public LeafNode {
-        std::string uuid;
 
         // このノードが持つ文字列
         std::string content;
     public:
-        RawText(std::string content, std::string uuid) : content(content), uuid(uuid) { }
+        RawText(std::string content, std::string uuid) : content(content) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             return content;
@@ -247,22 +267,23 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "RawText"},
-                {"content", content},
-                {"uuid", uuid}
+                {"content", content}
             };
+        }
+        std::string get_classname() const override {
+            return "RawText";
         }
     };
 
     // 数式ブロック. 内容はMathJaxでレンダリングされる. 内容は `math-block` というクラスが付与されたdivタグで囲まれる
     class MathBlock : public LeafNode {
-        std::string uuid;
-
         // markdownで渡された式をそのまま string で持つ。
         std::string expression;
 
     public:
-        MathBlock(std::string expression, std::string uuid) : expression(expression), uuid(uuid) { }
+        MathBlock(std::string expression, std::string uuid) : expression(expression) {
+            set_uuid(uuid);
+        }
 
         // mathjax の　複数行数式用に \[ \] で囲む
         std::string to_html() const override {
@@ -271,21 +292,22 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "MathBlock"},
-                {"expression", expression},
-                {"uuid", uuid}
+                {"expression", expression}
             };
+        }
+        std::string get_classname() const override {
+            return "MathBlock";
         }
     };
 
     // インラインの数式ブロック. 内容はMathJaxでレンダリングされる. 内容は `math-inline` というクラスが付与されたspanタグで囲まれる
     class InlineMath : public LeafNode {
-        std::string uuid;
-
         // markdownで渡された式をそのまま string で持つ。
         std::string expr;
     public:
-        InlineMath(std::string expr, std::string uuid) : expr(expr), uuid(uuid) { }
+        InlineMath(std::string expr, std::string uuid) : expr(expr) {
+            set_uuid(uuid);
+        }
 
         // mathjax の　インライン数式用に \( \) で囲む
         std::string to_html() const override {
@@ -295,18 +317,20 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineMath"},
-                {"expr", expr},
-                {"uuid", uuid}
+                {"expr", expr}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineMath";
         }
     };
 
     // 打消し. <s>タグで囲まれる
     class InlineOverline : public NonLeafNode {
-        std::string uuid;
     public:
-        InlineOverline(std::string uuid) : uuid(uuid) { }
+        InlineOverline(std::string uuid) {
+            set_uuid(uuid);
+        }
         std::string to_html(std::vector<std::string> childs_html) const override {
 
             return "<span class=\"overline\"> <s>" + join(childs_html) + "</s> </span>";
@@ -314,18 +338,20 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineOverline"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineOverline";
         }
     };
 
 
     // 強調. <strong>タグで囲まれる
     class InlineStrong : public NonLeafNode {
-        std::string uuid;
     public:
-        InlineStrong(std::string uuid) : uuid(uuid) { }
+        InlineStrong(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"strong\"> <strong>" + join(childs_html) + "</strong> </span>";
@@ -333,17 +359,19 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineStrong"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineStrong";
         }
     };
 
     // イタリック. <i>タグで囲まれる
     class InlineItalic : public NonLeafNode {
-        std::string uuid;
     public:
-        InlineItalic(std::string uuid) :uuid(uuid) { }
+        InlineItalic(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<span class=\"italic\"> <i>" + join(childs_html) + "</i> </span>";
@@ -351,17 +379,19 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineItalic"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineItalic";
         }
     };
 
     // プレインテキストを表すクラス.  <div class="plain-text"> タグで囲まれる
     class PlainText : public NonLeafNode {
-        std::string uuid;
     public:
-        PlainText(std::string uuid) : uuid(uuid) { }
+        PlainText(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<div class=\"plain-text\">" + join(childs_html) + "</span>";
@@ -369,17 +399,16 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "PlainText"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "PlainText";
         }
     };
 
 
     // コードブロックを表すクラス.  <div class="code-block"> タグで囲まれ、その中に <pre><code> タグが入る.
     class CodeBlock : public LeafNode {
-        std::string uuid;
-
         // コードの中身。
         std::string code;
 
@@ -387,7 +416,9 @@ namespace almo {
         // ```python -> python を持っておき、 `to_html` する際に <code class="language-python"> として出力する。
         std::string language;
     public:
-        CodeBlock(std::string code, std::string language, std::string uuid) : code(code), language(language), uuid(uuid) { }
+        CodeBlock(std::string code, std::string language, std::string uuid) : code(code), language(language) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             std::string code_class;
@@ -404,20 +435,22 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "CodeBlock"},
                 {"code", code},
-                {"language", language},
-                {"uuid", uuid}
+                {"language", language}
             };
+        }
+        std::string get_classname() const override {
+            return "CodeBlock";
         }
     };
 
     // インラインのコードブロックを表すクラス. <div class="inline-code"> タグで囲まれる.
     class InlineCodeBlock : public LeafNode {
-        std::string uuid;
         std::string code;
     public:
-        InlineCodeBlock(std::string code, std::string uuid) : code(code), uuid(uuid) { }
+        InlineCodeBlock(std::string code, std::string uuid) : code(code) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             return "<span class=\"inline-code\"> <code>" + code + "</code> </span>";
@@ -425,10 +458,11 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineCodeBlock"},
-                {"code", code},
-                {"uuid", uuid}
+                {"code", code}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineCodeBlock";
         }
     };
 
@@ -436,8 +470,6 @@ namespace almo {
 
     // 独自記法のジャッジ付きプログラム実行環境を表すクラス。
     class Judge : public LeafNode {
-        std::string uuid;
-
         // 問題のタイトル
         std::string title;
 
@@ -460,11 +492,12 @@ namespace almo {
         // 出力ファイルを表す glob パターン
         std::string out_files_glob;
     public:
-        Judge(std::string title, std::string sample_in_path, std::string sample_out_path, std::string in_files_glob, std::string out_files_glob, std::string judge_type, std::string source, std::string uuid) : title(title), sample_in_path(sample_in_path), sample_out_path(sample_out_path), in_files_glob(in_files_glob), out_files_glob(out_files_glob), judge_type(judge_type), source(source), uuid(uuid) {
+        Judge(std::string title, std::string sample_in_path, std::string sample_out_path, std::string in_files_glob, std::string out_files_glob, std::string judge_type, std::string source, std::string uuid) : title(title), sample_in_path(sample_in_path), sample_out_path(sample_out_path), in_files_glob(in_files_glob), out_files_glob(out_files_glob), judge_type(judge_type), source(source) {
             // ジャッジが`err_{rate}` または `equal` 以外の場合はエラーを出す.
             if (judge_type.substr(0, 4) != "err_" && judge_type != "equal") {
                 throw ParseError("Invalid judge type. Expected `err_{rate}` or `equal`, but `" + judge_type + "` is given.");
             }
+            set_uuid(uuid);
         }
 
         std::string to_html() const override {
@@ -574,16 +607,17 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "Judge"},
                 {"title", title},
                 {"sample_in_path", sample_in_path},
                 {"sample_out_path", sample_out_path},
                 {"in_files_glob", in_files_glob},
                 {"out_files_glob", out_files_glob},
                 {"judge_type", judge_type},
-                {"source", source},
-                {"uuid", uuid}
+                {"source", source}
             };
+        }
+        std::string get_classname() const override {
+            return "Judge";
         }
     };
 
@@ -591,10 +625,11 @@ namespace almo {
     // 実行可能なコードブロックを表すクラス. 
     // `Judge` と異なり、こちらはジャッジを提供せず、単に実行のみを行う。
     class ExecutableCodeBlock : public LeafNode {
-        std::string uuid;
         std::string code;
     public:
-        ExecutableCodeBlock(std::string code, std::string uuid) : code(code), uuid(uuid) { }
+        ExecutableCodeBlock(std::string code, std::string uuid) : code(code) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             // コード全体を表示するために、何行のコードかを調べておく
@@ -637,22 +672,23 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "ExecutableCodeBlock"},
-                {"code", code},
-                {"uuid", uuid}
+                {"code", code}
             };
+        }
+        std::string get_classname() const override {
+            return "ExecutableCodeBlock";
         }
     };
 
     // ライブラリの読み込みをする独自記法. 
     class LoadLib : public LeafNode {
-        std::string uuid;
-
         // 読み込むライブラリの名前のリスト
         std::vector<std::string> libs;
 
     public:
-        LoadLib(std::vector<std::string> libs, std::string uuid) : libs(libs), uuid(uuid) { }
+        LoadLib(std::vector<std::string> libs, std::string uuid) : libs(libs) {
+            set_uuid(uuid);
+        }
 
         // use_libs に追加しておくと JS側で読み込み処理を行う。
         std::string to_html() const override {
@@ -665,20 +701,22 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "LoadLib"},
-                {"libs", join(libs)},
-                {"uuid", uuid}
+                {"libs", join(libs)}
             };
+        }
+        std::string get_classname() const override {
+            return "LoadLib";
         }
     };
 
     // リンク表記を表すクラス. <url> タグで囲まれる. 
     class InlineUrl : public LeafNode {
-        std::string uuid;
         std::string url;
         std::string alt;
     public:
-        InlineUrl(std::string url, std::string alt, std::string uuid) : url(url), alt(alt), uuid(uuid) { };
+        InlineUrl(std::string url, std::string alt, std::string uuid) : url(url), alt(alt) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             return "<url> <a href=\"" + url + "\">" + alt + "</a> </url>";
@@ -686,22 +724,24 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineUrl"},
                 {"url", url},
-                {"alt", alt},
-                {"uuid", uuid}
+                {"alt", alt}
             };
+        }
+        std::string get_classname() const override {
+            return "InlineUrl";
         }
     };
 
     // 画像表記を表すクラス. 
     class InlineImage : public LeafNode {
-        std::string uuid;
         std::string url;
         std::string caption;
 
     public:
-        InlineImage(std::string url, std::string caption, std::string uuid) : url(url), caption(caption), uuid(uuid) { }
+        InlineImage(std::string url, std::string caption, std::string uuid) : url(url), caption(caption) {
+            set_uuid(uuid);
+        }
 
         //　<figure> タグを使うことで キャプションなどをつける。
         std::string to_html() const override {
@@ -712,21 +752,21 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "InlineImage"},
                 {"url", url},
-                {"caption", caption},
-                {"uuid", uuid}
+                {"caption", caption}
             };
         }
-
+        std::string get_classname() const override {
+            return "InlineImage";
+        }
     };
 
     // 改行を表すクラス
     class NewLine : public LeafNode {
-        std::string uuid;
-
     public:
-        NewLine(std::string uuid) : uuid(uuid) { }
+        NewLine(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             return "<br>";
@@ -734,17 +774,19 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "NewLine"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "NewLine";
         }
     };
 
     // 箇条書き(番号なし) を表すクラス
     class ListBlock : public NonLeafNode {
-        std::string uuid;
     public:
-        ListBlock(std::string uuid) : uuid(uuid) { }
+        ListBlock(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<ul>" + join(childs_html) + "</ul>";
@@ -752,17 +794,19 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "ListBlock"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "ListBlock";
         }
     };
 
     // 番号付き箇条書きを表すクラス 
     class EnumerateBlock : public NonLeafNode {
-        std::string uuid;
     public:
-        EnumerateBlock(std::string uuid) : uuid(uuid) { }
+        EnumerateBlock(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<ol>" + join(childs_html) + "</ol>";
@@ -770,17 +814,19 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "EnumerateBlock"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "EnumerateBlock";
         }
     };
 
     // 箇条書きの要素を表すクラス
     class Item : public NonLeafNode {
-        std::string uuid;
     public:
-        Item(std::string uuid) : uuid(uuid) { }
+        Item(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<li>" + join(childs_html) + "</li>";
@@ -788,17 +834,16 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "Item"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "Item";
         }
     };
 
 
     // テーブルを表すクラス
     class Table : public NonLeafNode {
-        std::string uuid;
-
         std::vector<std::shared_ptr<Block>> columns;
         int n_row;
         int n_col;
@@ -807,7 +852,9 @@ namespace almo {
         std::vector<int> col_format;
         std::vector<std::string> col_names;
     public:
-        Table(std::vector<std::shared_ptr<Block>> columns, int n_row, int n_col, std::vector<int> col_format, std::string uuid) : columns(columns), n_row(n_row), n_col(n_col), col_format(col_format), uuid(uuid) { }
+        Table(std::vector<std::shared_ptr<Block>> columns, int n_row, int n_col, std::vector<int> col_format, std::string uuid) : columns(columns), n_row(n_row), n_col(n_col), col_format(col_format) {
+            set_uuid(uuid);
+        }
 
         // テーブル用の特別な to_html. テーブルの render でしか呼ばれないので引数が違ってもOK. 
         std::string to_html(std::vector<std::string> headers_html, std::vector<std::string> childs_html) const {
@@ -858,13 +905,14 @@ namespace almo {
             col_names_str += "]";
 
             return {
-                {"class", "Table"},
                 {"n_row", std::to_string(n_row)},
                 {"n_col", std::to_string(n_col)},
                 {"col_format", col_format_str},
-                {"col_names", col_names_str},
-                {"uuid", uuid}
+                {"col_names", col_names_str}
             };
+        }
+        std::string get_classname() const override {
+            return "Table";
         }
 
 
@@ -892,9 +940,10 @@ namespace almo {
 
     // 水平線を表すクラス
     class HorizontalLine : public LeafNode {
-        std::string uuid;
     public:
-        HorizontalLine(std::string uuid) : uuid(uuid) { }
+        HorizontalLine(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html() const override {
             return "<hr>";
@@ -902,18 +951,20 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "HorizontalLine"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "HorizontalLine";
         }
     };
 
 
     // 引用を表すクラス
     class Quote : public NonLeafNode {
-        std::string uuid;
     public:
-        Quote(std::string uuid) : uuid(uuid) { }
+        Quote(std::string uuid) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<blockquote>" + join(childs_html) + "</blockquote>";
@@ -921,18 +972,20 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "Quote"},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "Quote";
         }
     };
 
 
     class DivBlock : public NonLeafNode {
-        std::string uuid;
         std::string div_class;
     public:
-        DivBlock(std::string div_class, std::string uuid) : uuid(uuid), div_class(div_class) { }
+        DivBlock(std::string div_class, std::string uuid) : div_class(div_class) {
+            set_uuid(uuid);
+        }
 
         std::string to_html(std::vector<std::string> childs_html) const override {
             return "<div class=\"" + div_class + "\">" + join(childs_html) + "</div>";
@@ -940,10 +993,11 @@ namespace almo {
 
         std::map<std::string, std::string> get_properties() const override {
             return {
-                {"class", "DivBlock"},
                 {"div_classe", div_class},
-                {"uuid", uuid}
             };
+        }
+        std::string get_classname() const override {
+            return "DivBlock";
         }
     };
 }
