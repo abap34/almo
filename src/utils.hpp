@@ -190,3 +190,10 @@ std::string escape(const std::string &s) {
     }
     return o.str();
 }
+
+
+// 文字列を受け取り、末尾のスペースを削除する
+std::string rtrim(std::string s) {
+    s.erase(s.find_last_not_of(" \n\r\t") + 1);
+    return s;
+}

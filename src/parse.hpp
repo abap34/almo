@@ -253,7 +253,7 @@ namespace almo {
 
                     // 1行ずつ読み込み、judge_info に情報を追加していく
                     while (idx < (int)lines.size()) {
-                        if (lines[idx] == ":::") break;
+                        if (rtrim(lines[idx]) == ":::") break;
                         std::string key = lines[idx].substr(0, lines[idx].find("="));
                         std::string value = lines[idx].substr(lines[idx].find("=") + 1);
                         judge_info[key] = value;
@@ -298,7 +298,7 @@ namespace almo {
                     assert(idx < (int)lines.size());
                     std::string code;
                     while (idx < (int)lines.size()) {
-                        if (lines[idx] == ":::") break;
+                        if (rtrim(lines[idx]) == ":::") break;
                         code += lines[idx] + "\n";
                         idx++;
                     }
@@ -310,7 +310,7 @@ namespace almo {
                     assert(idx < (int)lines.size());
                     std::vector<std::string> libs;
                     while (idx < (int)lines.size()) {
-                        if (lines[idx] == ":::") break;
+                        if (rtrim(lines[idx]) == ":::") break;
                         libs.push_back(lines[idx]);
                         idx++;
                     }
@@ -322,7 +322,7 @@ namespace almo {
                     idx++;
                     std::string code;
                     while (idx < (int)lines.size()) {
-                        if (lines[idx] == "```") break;
+                        if (rtrim(lines[idx]) == "```") break;
                         code += lines[idx] + "\n";
                         idx++;
                     }
@@ -340,13 +340,13 @@ namespace almo {
                     idx++;
                     std::vector<std::string> text;
 
-                    if (lines[idx] == ":::") {
+                    if (rtrim(lines[idx]) == ":::") {
                         root.childs.push_back(scopes.top());
                     }
                     else {
                         while (idx < (int)lines.size()) {
 
-                            if (lines[idx] == ":::") {
+                            if (rtrim(lines[idx]) == ":::") {
                                 // 一つぶん入れ子が終了
                                 BlockParser parser = BlockParser();
                                 Block contents = parser.processer(text);
