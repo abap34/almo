@@ -429,7 +429,7 @@ namespace almo {
                 code_class = "language-" + language;
             }
 
-            return "<div class=\"code-block\"> <pre><code class=\"" + code_class + "\">" + code + "</code></pre> </div>";
+            return "<div class=\"code-block\"> <pre><code class=\"" + code_class + "\">" + escape_for_html(code) + "</code></pre> </div>";
         }
 
 
@@ -453,7 +453,7 @@ namespace almo {
         }
 
         std::string to_html() const override {
-            return "<span class=\"inline-code\"> <code>" + code + "</code> </span>";
+            return "<span class=\"inline-code\"> <code>" + escape_for_html(code) + "</code> </span>";
         }
 
         std::map<std::string, std::string> get_properties() const override {

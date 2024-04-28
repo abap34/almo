@@ -192,8 +192,23 @@ std::string escape(const std::string &s) {
 }
 
 
+//　文字列を受け取り、 HTMLに埋め込んでも大丈夫なようにエスケープする.
+//  ref: https://github.com/abap34/ALMO/issues/91
+std::string escape_for_html(const std::string &s) {
+    std::string ret = s;
+    ret = std::regex_replace(ret, std::regex("&"), "&amp;");
+    ret = std::regex_replace(ret, std::regex("<"), "&lt;");
+    ret = std::regex_replace(ret, std::regex(">"), "&gt;");
+    ret = std::regex_replace(ret, std::regex("\""), "&quot;");
+    ret = std::regex_replace(ret, std::regex("'"), "&#39;");
+    return ret;
+}
+
+
+
 // 文字列を受け取り、末尾のスペースを削除する
 std::string rtrim(std::string s) {
     s.erase(s.find_last_not_of(" \n\r\t") + 1);
     return s;
 }
+
