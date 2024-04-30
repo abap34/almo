@@ -455,10 +455,10 @@ namespace almo {
 
                     // 今集めているテキスト
                     std::string text = "";
-                    while (true) {
-                        // 現在の行のテキストを取る。
-                        text += lines[idx].substr(current_prefix.size());
 
+                    while (true) {
+                        text += remove_listdef(ltrim(lines[idx]));
+                        
                         // 条件 1, 2
                         if (is_end(idx + 1)) {
                             Item item = Item(uuid());

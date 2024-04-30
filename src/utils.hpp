@@ -212,3 +212,19 @@ std::string rtrim(std::string s) {
     return s;
 }
 
+
+// 文字列を受け取り、先頭にあるスペースを削除する
+std::string ltrim(std::string s) {
+    s.erase(0, s.find_first_not_of(" \n\r\t"));
+    return s;
+}
+
+
+
+// 文字列を受け取って、先頭が "- " だったら削除
+std::string remove_listdef(std::string s){
+    if (s.size() >= 2 && s[0] == '-' && s[1] == ' ') {
+        return s.substr(2);
+    }
+    return s;
+}
