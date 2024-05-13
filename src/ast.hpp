@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <glob.h>
+#include <ranges>
 #include "utils.hpp"
 
 namespace almo {
@@ -142,11 +143,9 @@ namespace almo {
             }
 
             json += "\"childs\":[";
-            for (auto child : childs) {
-                json += child->to_json() + ",";
+            for (auto c : childs | std::views::transform([](auto child){ return child->to_json(); }) | std::views::join_with(',')){
+                json += c;
             }
-            // 最後のカンマを削除する
-            json = json.substr(0, json.length() - 1);
             json += "]}";
             return json;
         }
