@@ -9,12 +9,6 @@
 #include "utils.hpp"
 
 namespace almo {
-    // to_html, to_config するためにグローバルな設定が保存されるグローバル変数.
-    // 格納されるもの:
-    // - editor_theme: Ace Editorのテーマ
-    // - syntax_theme: Highlight.jsのテーマ
-    std::map<std::string, std::string> meta_data;
-
     // レスポンス時間短縮のため、pyodideが不要なら読み込みをスキップするためのフラグ.
     bool loaded_pyodide = false;
 
@@ -62,8 +56,8 @@ namespace almo {
             return true;
         }
 
-        // 構文木をhtmlに変換する. 葉ノードなので子は持たないため、引数なしで呼ばれる.
-        virtual std::string to_html() const = 0;
+        // 構文木をhtmlに変換する. 
+        virtual std::string to_html(std::map<std::string, std::string> meta_data) const = 0;
 
         virtual std::string to_json() const override {
             std::map<std::string, std::string> properties = get_properties();
@@ -113,20 +107,21 @@ namespace almo {
         std::vector<std::shared_ptr<ASTNode>> childs = {};
 
         // 構文木をhtmlに変換する。子ノードが存在するので、それぞれを html に変換したものの vector が渡される.
-        virtual std::string to_html(std::vector<std::string> childs_html) const = 0;
+        virtual std::string to_html(std::vector<std::string> childs_html,
+                                    std::map<std::string, std::string> meta_data) const = 0;
 
         // 部分木を html に変換する.
-        virtual std::string render() const {
+        virtual std::string render(std::map<std::string, std::string> meta_data) {
             std::vector<std::string> childs_html;
             for (auto child : childs) {
                 if (child->is_leaf()) {
-                    childs_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                    childs_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html(meta_data));
                 }
                 else {
-                    childs_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render());
+                    childs_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render(meta_data));
                 }
             }
-            return to_html(childs_html);
+            return to_html(childs_html, meta_data);
         }
 
         // 部分木を json 形式の string に変換する.
@@ -151,7 +146,7 @@ namespace almo {
         }
 
         // 部分木を dot 言語に変換する.
-        virtual std::string to_dot() const {
+        virtual std::string to_dot(bool is_root = false) const {
             std::map<std::string, std::string> properties = get_properties();
 
             std::string node = get_uuid();
@@ -182,7 +177,13 @@ namespace almo {
                 edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_uuid() + "\n";
             }
 
-            return node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
+            std::string content =  node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
+
+            if (is_root) {
+                return "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + content + "}";
+            } else {
+                return content;
+            }
         }
 
     };
@@ -200,7 +201,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             std::string contents_push = ""
                 "<script>"
                 "page_contents.push({\n"
@@ -234,7 +235,7 @@ namespace almo {
         }
 
         // これ自体は意味を持たないので、子ノードが変換されたものをそのまま返す.
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return join(childs_html);
         }
 
@@ -260,7 +261,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return content;
         }
 
@@ -285,7 +286,7 @@ namespace almo {
         }
 
         // mathjax の　複数行数式用に \[ \] で囲む
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<div class=\"math-block\"> \\[ \n" + expression + "\n \\] </div>";
         }
 
@@ -309,7 +310,7 @@ namespace almo {
         }
 
         // mathjax の　インライン数式用に \( \) で囲む
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<span class=\"math-inline\"> \\( " + expr + " \\) </span>";
         }
 
@@ -330,7 +331,7 @@ namespace almo {
         InlineOverline(std::string uuid) {
             set_uuid(uuid);
         }
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
 
             return "<span class=\"overline\"> <s>" + join(childs_html) + "</s> </span>";
         }
@@ -352,7 +353,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<span class=\"strong\"> <strong>" + join(childs_html) + "</strong> </span>";
         }
 
@@ -372,7 +373,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<span class=\"italic\"> <i>" + join(childs_html) + "</i> </span>";
         }
 
@@ -392,7 +393,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<div class=\"plain-text\">" + join(childs_html) + "</span>";
         }
 
@@ -419,7 +420,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             std::string code_class;
 
             if (language == "") {
@@ -451,7 +452,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<span class=\"inline-code\"> <code>" + escape_for_html(code) + "</code> </span>";
         }
 
@@ -499,7 +500,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
 
 
             // タイトルを作る
@@ -630,7 +631,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             // コード全体を表示するために、何行のコードかを調べておく
             int n_line = std::count(code.begin(), code.end(), '\n');
 
@@ -690,7 +691,7 @@ namespace almo {
         }
 
         // use_libs に追加しておくと JS側で読み込み処理を行う。
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             std::string output = "";
             for (std::string lib : libs) {
                 output += "<script> use_libs.push(\"" + lib + "\"); </script>";
@@ -717,7 +718,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<url> <a href=\"" + url + "\">" + alt + "</a> </url>";
         }
 
@@ -743,7 +744,7 @@ namespace almo {
         }
 
         //　<figure> タグを使うことで キャプションなどをつける。
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             std::string output = "<img src=\"" + url + "\" >";
             std::string figcaption = "<figcaption>" + caption + "</figcaption>";
             return "<figure>" + output + figcaption + "</figure>";
@@ -767,7 +768,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<br>";
         }
 
@@ -787,7 +788,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<ul>" + join(childs_html) + "</ul>";
         }
 
@@ -807,7 +808,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<ol>" + join(childs_html) + "</ol>";
         }
 
@@ -827,7 +828,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<li>" + join(childs_html) + "</li>";
         }
 
@@ -881,7 +882,7 @@ namespace almo {
         }
 
         // 仮想クラスにならないようにオーバーライドする.
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "dummy";
         }
 
@@ -915,20 +916,20 @@ namespace almo {
         }
 
 
-        std::string render() const override {
+        std::string render(std::map<std::string, std::string> meta_data) {
             std::vector<std::string> columns_html;
             for (auto child : columns) {
-                columns_html.push_back(child->render());
+                columns_html.push_back(child->render(meta_data));
             }
 
             std::vector<std::string> contents_html;
 
             for (auto child : childs) {
                 if (child->is_leaf()) {
-                    contents_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html());
+                    contents_html.push_back(std::dynamic_pointer_cast<LeafNode>(child)->to_html(meta_data));
                 }
                 else {
-                    contents_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render());
+                    contents_html.push_back(std::dynamic_pointer_cast<NonLeafNode>(child)->render(meta_data));
                 }
             }
 
@@ -944,7 +945,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html() const override {
+        std::string to_html(std::map<std::string, std::string> meta_data) const override {
             return "<hr>";
         }
 
@@ -965,7 +966,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<blockquote>" + join(childs_html) + "</blockquote>";
         }
 
@@ -986,7 +987,7 @@ namespace almo {
             set_uuid(uuid);
         }
 
-        std::string to_html(std::vector<std::string> childs_html) const override {
+        std::string to_html(std::vector<std::string> childs_html, std::map<std::string, std::string> meta_data) const override {
             return "<div class=\"" + div_class + "\">" + join(childs_html) + "</div>";
         }
 

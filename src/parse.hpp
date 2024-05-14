@@ -764,33 +764,11 @@ namespace almo {
         }
     };
 
-    // mdファイルのパスから
-    // メタデータ (std::map<std::string, std::string>) と
-    // 抽象構文木の根 (Block) のペアを返す。
-    std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
-        std::vector<std::string> lines = read_file(path);
 
-        std::vector<std::pair<std::string, std::string>> meta_data;
-        int meta_data_end = 0;
-
-        if (!lines.empty() && lines[0] == "---") {
-            int index = 1;
-            while (index < (int)lines.size() && lines[index] != "---") {
-                std::string key = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$1");
-                std::string data = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$2");
-                meta_data.emplace_back(key, data);
-                index++;
-            }
-            meta_data_end = index + 1;
-        }
-
-        // メタデータ以降の行を取り出し
-        std::vector<std::string> md_lines;
-        for (int i = meta_data_end; i < (int)lines.size(); i++) {
-            md_lines.push_back(lines[i]);
-        }
-
-        std::string md_str = join(md_lines, "\n");
+    // md ファイルの中身 (frot YAML を含まない)
+    // を受け取って、前処理 ([コメントの削除, ])　を行う
+    std::vector<std::string> preprocess(std::vector<std::string> content) {
+        std::string content_join = join(content, "\n");
 
         // コメントを削除
         auto remove_comment = [](std::string text) {
@@ -803,10 +781,49 @@ namespace almo {
         };
 
         for (auto hook : hooks) {
-            md_str = hook(md_str);
+            content_join = hook(content_join);
         }
 
-        md_lines = split(md_str, "\n");
+        content = split(content_join, "\n");
+
+        return content;
+    }
+
+    // md ファイルの中身 (front YAML) 
+    // を受け取って、 front YAML をパースした結果と残りの md ファイルの開始位置を返す
+    // TODO: きちんとした YAML パーサを使うようにする。
+    std::pair<std::vector<std::pair<std::string, std::string>>, int> parse_front(std::vector<std::string> content) {
+        std::vector<std::pair<std::string, std::string>> front_yaml;
+        int front_yaml_end = 0;
+
+        if (!content.empty() && content[0] == "---") {
+            int index = 1;
+            while (index < (int)content.size() && content[index] != "---") {
+                std::string key = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$1");
+                std::string data = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$2");
+                front_yaml.emplace_back(key, data);
+                index++;
+            }
+            front_yaml_end = index + 1;
+        }
+
+        return { front_yaml, front_yaml_end };
+    }
+
+    // mdファイルの内容から
+    // メタデータ (std::map<std::string, std::string>) と
+    // 抽象構文木の根 (Block) のペアを返す。
+    std::pair<std::map<std::string, std::string>, Block> parse(std::vector<std::string> content) {
+        auto [meta_data, meta_data_end] = parse_front(content);
+
+        // メタデータ以降の行を取り出し
+        std::vector<std::string> md_lines;
+        for (int i = meta_data_end; i < (int)content.size(); i++) {
+            md_lines.push_back(content[i]);
+        }
+
+        // 前処理
+        md_lines = preprocess(md_lines);
 
         // パース
         BlockParser parser = BlockParser();
@@ -833,5 +850,14 @@ namespace almo {
         }
 
         return { meta_data_map,  ast };
+    }
+
+
+    // mdファイルのパスから
+    // メタデータ (std::map<std::string, std::string>) と
+    // 抽象構文木の根 (Block) のペアを返す。
+    std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
+        std::vector<std::string> content = read_file(path);
+        return parse(content);
     }
 }

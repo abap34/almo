@@ -11,20 +11,20 @@
 #include "utils.hpp"
 
 namespace almo {
-    std::string LIGHT_THEME =
+    std::string LIGHT_THEME = {
             #include "light.css"
-        ;
-    std::string DARK_THEME =
+    };
+    std::string DARK_THEME = {
             #include "dark.css"
-        ;
+    };
 
-    std::string RUNNER =
+    std::string RUNNER = {
             #include "runner.js"
-        ;
+    };
 
-    std::string TEMPLATE =
+    std::string TEMPLATE = {
             #include "template.html"
-        ;
+    };
 
 
     
@@ -87,7 +87,7 @@ namespace almo {
     }
 
     std::string render(Block ast, std::map<std::string, std::string> meta_data) {
-        std::string content = ast.render();
+        std::string content = ast.render(meta_data);
 
         std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
     
