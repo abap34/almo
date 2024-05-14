@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    almo::meta_data = meta_data;
+
     std::string result = almo::render(ast, meta_data);
 
     if (config.out_path == "__stdout__") {
