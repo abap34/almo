@@ -764,20 +764,19 @@ namespace almo {
         }
     };
 
-    // mdファイルのパスから
+
+    // mdファイルの内容から
     // メタデータ (std::map<std::string, std::string>) と
     // 抽象構文木の根 (Block) のペアを返す。
-    std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
-        std::vector<std::string> lines = read_file(path);
-
+    std::pair<std::map<std::string, std::string>, Block> parse(std::vector<std::string> content) {
         std::vector<std::pair<std::string, std::string>> meta_data;
         int meta_data_end = 0;
 
-        if (!lines.empty() && lines[0] == "---") {
+        if (!content.empty() && content[0] == "---") {
             int index = 1;
-            while (index < (int)lines.size() && lines[index] != "---") {
-                std::string key = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$1");
-                std::string data = std::regex_replace(lines[index], std::regex("(.*):\\s(.*)"), "$2");
+            while (index < (int)content.size() && content[index] != "---") {
+                std::string key = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$1");
+                std::string data = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$2");
                 meta_data.emplace_back(key, data);
                 index++;
             }
@@ -786,8 +785,8 @@ namespace almo {
 
         // メタデータ以降の行を取り出し
         std::vector<std::string> md_lines;
-        for (int i = meta_data_end; i < (int)lines.size(); i++) {
-            md_lines.push_back(lines[i]);
+        for (int i = meta_data_end; i < (int)content.size(); i++) {
+            md_lines.push_back(content[i]);
         }
 
         std::string md_str = join(md_lines, "\n");
@@ -833,5 +832,14 @@ namespace almo {
         }
 
         return { meta_data_map,  ast };
+    }
+
+
+    // mdファイルのパスから
+    // メタデータ (std::map<std::string, std::string>) と
+    // 抽象構文木の根 (Block) のペアを返す。
+    std::pair<std::map<std::string, std::string>, Block> parse_md_file(std::string path) {
+        std::vector<std::string> content = read_file(path);
+        return parse(content);
     }
 }
