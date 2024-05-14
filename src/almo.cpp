@@ -34,6 +34,7 @@ public:
                     throw InvalidCommandLineArgumentsError("不正なコマンドライン引数です。 -h オプションでヘルプを確認してください。");
                     exit(1);
                 }
+                
                 switch (argv[i][1]) {
                     case 'o':
                         out_path = argv[i + 1];
@@ -116,6 +117,23 @@ public:
     }
 };
 
+
+void debug_json(std::string ir_json, std::map<std::string, std::string> meta_data) {
+    std::string meta_dump = "{\n";
+    for (auto& [key, value] : meta_data) {
+        meta_dump += "   \"" + key + "\": \"" + escape(value) + "\",";
+    }
+    meta_dump = meta_dump.substr(0, meta_dump.length() - 1);
+    meta_dump += "} \n";
+    std::string output = "{\n"
+        "\"meta\": " + meta_dump + ",\n"
+        "\"ir\": " + ir_json + "\n"
+        "}\n";
+    std::cout << output << std::endl;
+}
+
+
+
 int main(int argc, char* argv[]) {
     Config config;
     config.parse_arguments(argc, argv);
@@ -132,18 +150,8 @@ int main(int argc, char* argv[]) {
     meta_data["syntax_theme"] = config.syntax_theme;
 
     if (config.debug) {
-        std::string ir = ast.to_json();
-        std::string meta_dump = "{\n";
-        for (auto& [key, value] : meta_data) {
-            meta_dump += "   \"" + key + "\": \"" + escape(value) + "\",";
-        }
-        meta_dump = meta_dump.substr(0, meta_dump.length() - 1);
-        meta_dump += "} \n";
-        std::string output = "{\n"
-            "\"meta\": " + meta_dump + ",\n"
-            "\"ir\": " + ir + "\n"
-            "}\n";
-        std::cout << output << std::endl;
+        std::string ir_json = ast.to_json();
+        debug_json(ir_json, meta_data);
     }
 
     if (config.plot_graph) {
