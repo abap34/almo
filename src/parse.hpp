@@ -789,7 +789,7 @@ namespace almo {
         return content;
     }
 
-    // md ファイルの中身 (front YAML) 
+    // md ファイルの中身 (front YAML を含む)
     // を受け取って、 front YAML をパースした結果と残りの md ファイルの開始位置を返す
     // TODO: きちんとした YAML パーサを使うようにする。
     std::pair<std::vector<std::pair<std::string, std::string>>, int> parse_front(std::vector<std::string> content) {
@@ -810,24 +810,26 @@ namespace almo {
         return { front_yaml, front_yaml_end };
     }
 
+    // mdファイルの中身 (fron YAML を含まない)
+    // を受け取って、抽象構文木を返す。
+    Block parse_rest(std::vector<std::string> content) {
+        // パース
+        BlockParser parser = BlockParser();
+        Block ast = parser.processer(content);
+
+        return ast;
+    }
+
+
     // mdファイルの内容から
     // メタデータ (std::map<std::string, std::string>) と
     // 抽象構文木の根 (Block) のペアを返す。
     std::pair<std::map<std::string, std::string>, Block> parse(std::vector<std::string> content) {
-        auto [meta_data, meta_data_end] = parse_front(content);
+        auto [front_yaml, front_yaml_end] = parse_front(content);
 
-        // メタデータ以降の行を取り出し
-        std::vector<std::string> md_lines;
-        for (int i = meta_data_end; i < (int)content.size(); i++) {
-            md_lines.push_back(content[i]);
-        }
+        std::vector<std::string> rest_content(content.begin() + front_yaml_end, content.end());
 
-        // 前処理
-        md_lines = preprocess(md_lines);
-
-        // パース
-        BlockParser parser = BlockParser();
-        Block ast = parser.processer(md_lines);
+        Block ast = parse_rest(rest_content);
 
         // meta_data を std::map に変換する
         std::map<std::string, std::string> meta_data_map;
@@ -845,7 +847,7 @@ namespace almo {
         meta_data_map["site_name"] = "";
         meta_data_map["twitter_site"] = "";
 
-        for (auto [key, data] : meta_data) {
+        for (auto [key, data] : front_yaml) {
             meta_data_map[key] = data;
         }
 
