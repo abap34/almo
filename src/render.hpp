@@ -11,20 +11,20 @@
 #include "utils.hpp"
 
 namespace almo {
-    std::string LIGHT_THEME =
+    std::string LIGHT_THEME = {
             #include "light.css"
-        ;
-    std::string DARK_THEME =
+    };
+    std::string DARK_THEME = {
             #include "dark.css"
-        ;
+    };
 
-    std::string RUNNER =
+    std::string RUNNER = {
             #include "runner.js"
-        ;
+    };
 
-    std::string TEMPLATE =
+    std::string TEMPLATE = {
             #include "template.html"
-        ;
+    };
 
 
     
