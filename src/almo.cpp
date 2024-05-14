@@ -132,6 +132,10 @@ void debug_json(std::string ir_json, std::map<std::string, std::string> meta_dat
     std::cout << output << std::endl;
 }
 
+void debug_graph(almo::Block ast){
+    std::cout << ast.to_dot(true) << std::endl;
+}
+
 
 
 int main(int argc, char* argv[]) {
@@ -155,13 +159,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (config.plot_graph) {
-        std::string graph = ast.to_dot();
-        std::cout << "digraph g {" << std::endl;
-        std::cout << "    graph [" << std::endl;
-        std::cout << "        labelloc=\"t\";" << std::endl;
-        std::cout << "        ];" << std::endl;
-        std::cout << graph << std::endl;
-        std::cout << "}" << std::endl;
+        debug_graph(ast);
+        return 0;
     }
 
     almo::meta_data = meta_data;

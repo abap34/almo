@@ -151,7 +151,7 @@ namespace almo {
         }
 
         // 部分木を dot 言語に変換する.
-        virtual std::string to_dot() const {
+        virtual std::string to_dot(bool is_root = false) const {
             std::map<std::string, std::string> properties = get_properties();
 
             std::string node = get_uuid();
@@ -182,7 +182,13 @@ namespace almo {
                 edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_uuid() + "\n";
             }
 
-            return node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
+            std::string content =  node + "[label=\"" + label_header + label + "\", shape=\"record\"]\n" + childs_dot + edges;
+
+            if (is_root) {
+                return "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + content + "}";
+            } else {
+                return content;
+            }
         }
 
     };
