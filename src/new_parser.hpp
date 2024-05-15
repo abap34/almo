@@ -15,8 +15,29 @@
 
 namespace almo::feature {
 
+struct InlineParser {
 
-struct InlineParser;
+    static void process_inline(const std::string &str, ASTNode &ast){
+        RawText node(str);
+        ast.add_child(std::make_shared<RawText>(node));
+    }
+    template<class HeadSyntax, class... TailSyntax>
+    static void process_inline(const std::string &str, ASTNode &ast, HeadSyntax&& hsyn, TailSyntax&&... tsyn){
+        if (std::invoke(hsyn, str)){
+            std::invoke(hsyn, str, ast);
+            return ;
+        }
+        return process_inline(str, ast, tsyn...);
+    }
+
+    static void process(const std::string &str, ASTNode &ast){
+        if (str == "") return ;
+        process_inline(
+            str, ast,
+            InlineMath_syntax{}
+        );
+    }
+};
 
 struct MarkdownParser {
     Reader reader;
@@ -58,28 +79,6 @@ struct MarkdownParser {
     }
 };
 
-struct InlineParser {
-
-    static void process_inline(const std::string &str, ASTNode &ast){
-        RawText node(str);
-        ast.add_child(std::make_shared<RawText>(node));
-    }
-    template<class HeadSyntax, class... TailSyntax>
-    static void process_inline(const std::string &str, ASTNode &ast, HeadSyntax&& hsyn, TailSyntax&&... tsyn){
-        if (std::invoke(hsyn, str)){
-            std::invoke(hsyn, str, ast);
-            return "";
-        }
-        return process_inline(str, ast, tsyn...);
-    }
-
-    static void process(const std::string &str, ASTNode &ast){
-        process_inline(
-            str, ast,
-            InlineMath_syntax{}
-        );
-    }
-};
 
 // mdファイルのパスから
 // メタデータ (std::map<std::string, std::string>) と
