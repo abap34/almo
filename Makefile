@@ -7,7 +7,7 @@ build: setup
 	g++ -std=c++23 build/almo.cpp -o build/almo
 
 pybind: setup
-	pipenv run bash scripts/pybind.sh
+	bash scripts/pybind.sh build/pyalmo.cpp almo.so
 
 all: build pybind
 
