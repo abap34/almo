@@ -136,8 +136,6 @@ void debug_graph(almo::Block ast){
     std::cout << ast.to_dot(true) << std::endl;
 }
 
-
-
 int main(int argc, char* argv[]) {
     Config config;
     config.parse_arguments(argc, argv);
@@ -175,3 +173,4 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+

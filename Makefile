@@ -1,0 +1,17 @@
+.PHONY: setup
+
+setup:
+	bash scripts/setup.sh
+
+build: setup
+	g++ -std=c++23 build/almo.cpp -o build/almo
+
+pybind: setup
+	bash scripts/pybind.sh build/pyalmo.cpp almo.so
+
+all: build pybind
+
+clean:
+	rm -rf build
+	rm almo.so
+
