@@ -9,7 +9,7 @@ ext_modules = [
     Pybind11Extension(
         "almo",
         ["build/pyalmo.cpp"],
-        cxx_std=23,
+        cxx_std=20,
         define_macros=[("VERSION_INFO", __version__)],
     ),
 ]
@@ -20,6 +20,6 @@ setup(
     url="https://github.com/abap34/ALMO",
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
-    install_requires=["pybind11>=2.10"],
+    requires=["pybind11"],
     zip_safe=False,
 )
