@@ -138,8 +138,11 @@ namespace almo {
             }
 
             json += "\"childs\":[";
-            for (auto c : childs | std::views::transform([](auto child){ return child->to_json(); }) | std::views::join_with(',')){
-                json += c;
+            if (childs.size() > 0) {
+                for (auto child : childs) {
+                    json += child->to_json() + ",";
+                }
+                json = json.substr(0, json.length() - 1);
             }
             json += "]}";
             return json;
