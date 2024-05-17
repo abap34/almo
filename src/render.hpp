@@ -86,8 +86,10 @@ namespace almo {
         return output_html;
     }
 
-    std::string render(Block ast, std::map<std::string, std::string> meta_data) {
-        std::string content = ast.render(meta_data);
+    std::string render(Markdown ast) {
+        std::string content = ast.to_html();
+
+        auto &meta_data = ast.meta_data;
 
         std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
     
