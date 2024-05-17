@@ -1,10 +1,11 @@
-#include "parse.hpp"
-#include "render.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include "utils.hpp"
+#include "parser.hpp"
+#include "render.hpp"
 
+namespace almo {
 class Config {
 public:
     std::string template_file = "__default__";
@@ -132,18 +133,25 @@ void debug_json(std::string ir_json, std::map<std::string, std::string> meta_dat
     std::cout << output << std::endl;
 }
 
-void debug_graph(almo::Block ast){
-    std::cout << ast.to_dot(true) << std::endl;
+// TODO : not implemented to_dot() 
+void debug_graph(almo::Markdown ast){
+    // std::cout << ast.to_dot(true) << std::endl;
 }
 
+// kore of kore is all we need
+std::string md_to_html(std::map<std::string, std::string> meta_data, std::vector<std::string> md){
+    Markdown ast = parse(meta_data, md);
+    return render(ast);
+}
 
+} // namespace almo
 
 int main(int argc, char* argv[]) {
-    Config config;
+    almo::Config config;
     config.parse_arguments(argc, argv);
 
-    // パース
-    auto [meta_data, ast] = almo::parse_md_file(argv[1]);
+    // メタデータと md 本文の組をパース
+    auto [meta_data, true_markdown] = almo::split_markdown_from_path(argv[1]);
 
     // コマンドライン引数を meta_data に追加
     meta_data["template_file"] = config.template_file;
@@ -152,6 +160,9 @@ int main(int argc, char* argv[]) {
     meta_data["css_setting"] = config.css_setting;
     meta_data["editor_theme"] = config.editor_theme;
     meta_data["syntax_theme"] = config.syntax_theme;
+
+    // パース
+    almo::Markdown ast = almo::parse(meta_data, true_markdown);
 
     if (config.debug) {
         std::string ir_json = ast.to_json();
@@ -164,7 +175,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    std::string result = almo::render(ast, meta_data);
+    std::string result = almo::render(ast);
 
     if (config.out_path == "__stdout__") {
         std::cout << result << std::endl;
