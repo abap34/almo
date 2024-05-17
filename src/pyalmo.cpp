@@ -31,4 +31,11 @@ PYBIND11_MODULE(almo, m) {
     m.def("md_to_html", &md_to_html, "md to html");
     m.def("md_to_json", &md_to_json, "md to json");
     m.def("md_to_dot", &md_to_dot, "md to dot");
+
+
+    #ifdef VERSION_INFO
+        m.attr("__version__") = VERSION_INFO;
+    #else
+        m.attr("__version__") = "dev";
+    #endif
 }
