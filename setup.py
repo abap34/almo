@@ -9,7 +9,7 @@ ext_modules = [
     Pybind11Extension(
         "almo",
         ["build/pyalmo.cpp"],
-        cxx_std=23,
+        cxx_std=20,
         define_macros=[("VERSION_INFO", __version__)],
     ),
 ]
