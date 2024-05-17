@@ -20,5 +20,6 @@ setup(
     url="https://github.com/abap34/ALMO",
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
+    requires=["pybind11"],
     zip_safe=False,
 )
