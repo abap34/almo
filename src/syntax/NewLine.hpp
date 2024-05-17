@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../new_ast.hpp"
-#include "../new_reader.hpp"
-#include "../new_syntax.hpp"
+#include"../interfaces/ast.hpp"
+#include"../interfaces/parser.hpp"
+#include"../interfaces/syntax.hpp"
 
-namespace almo::feature {
+namespace almo {
 
 struct NewLine : public ASTNode {
 
@@ -27,7 +27,7 @@ struct NewLine : public ASTNode {
 
 struct NewLine_syntax : public BlockSyntax {
     bool operator()(Reader &read) const override {
-        return !read.is_line_begin() && read.whole_row() == "";
+        return read.is_line_begin() && read.get_row() == "";
     }
     void operator()(Reader &read, ASTNode &ast) const override {
         NewLine node;

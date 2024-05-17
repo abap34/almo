@@ -3,38 +3,34 @@
 #include"../interfaces/ast.hpp"
 #include"../interfaces/parser.hpp"
 #include"../interfaces/syntax.hpp"
-#include "RawText.hpp"
 
 namespace almo {
 
-struct InlineMath : public ASTNode {
+struct InlineStrong : public ASTNode {
 
-    std::string expr;
-    InlineMath (std::string _expr) : expr(_expr) {
+    InlineStrong() {
         set_uuid();
     }
 
-    // mathjax の　インライン数式用に \( \) で囲む
     std::string to_html() const override {
-        return "<span class=\"math-inline\"> \\( " + expr + " \\) </span>";
+        return "<span class=\"strong\"> <strong>" + concatenated_childs_html() + "</strong> </span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
         return {
-            {"expr", expr}
         };
     }
     std::string get_classname() const override {
-        return "InlineMath";
+        return "InlineStrong";
     }
 };
 
-struct InlineMath_syntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\$(.*?)\$(.*))");
+struct InlineStrong_syntax : public InlineSyntax {
+    static inline const std::regex rex = std::regex(R"((.*?)\*\*(.*?)\*\*(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
         if (std::regex_search(str, sm, rex)){
-            return sm.position(2) - 1;
+            return sm.position(2) - 2;
         }
         return std::numeric_limits<int>::max();
     }
@@ -42,11 +38,12 @@ struct InlineMath_syntax : public InlineSyntax {
         std::smatch sm;
         std::regex_search(str, sm, rex);
         std::string prefix = sm.format("$1");
-        std::string expr = sm.format("$2");
+        std::string content = sm.format("$2");
         std::string suffix = sm.format("$3");
         InlineParser::process(prefix, ast);
-        InlineMath node(expr);
-        ast.add_child(std::make_shared<InlineMath>(node));
+        InlineStrong node;
+        InlineParser::process(content, node);
+        ast.add_child(std::make_shared<InlineStrong>(node));
         InlineParser::process(suffix, ast);
     }
 };

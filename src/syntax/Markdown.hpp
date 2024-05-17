@@ -1,14 +1,16 @@
 #pragma once
 
-#include "../new_ast.hpp"
-#include "../new_reader.hpp"
-#include "../new_syntax.hpp"
+#include"../interfaces/ast.hpp"
+#include"../interfaces/parser.hpp"
+#include"../interfaces/syntax.hpp"
 
-namespace almo::feature {
+namespace almo {
 
 struct Markdown : public ASTNode {
 
-    Markdown () {
+    std::map<std::string, std::string> meta_data;
+
+    Markdown (std::map<std::string, std::string> _meta_data = {}) : meta_data(_meta_data) {
         set_uuid();
     }
 

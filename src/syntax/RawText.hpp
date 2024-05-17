@@ -1,10 +1,12 @@
 #pragma once
 
-#include "../new_ast.hpp"
-#include "../new_reader.hpp"
-#include "../new_syntax.hpp"
+#include"../interfaces/ast.hpp"
+#include"../interfaces/parser.hpp"
+#include"../interfaces/syntax.hpp"
 
-namespace almo::feature {
+#include <limits>
+
+namespace almo {
 
 struct RawText : public ASTNode {
 
@@ -24,6 +26,21 @@ struct RawText : public ASTNode {
     }
     std::string get_classname() const override {
         return "RawText";
+    }
+};
+
+struct RawText_syntax : InlineSyntax {
+    // All string matches Rawtext syntax
+    // but matches infinity position
+    // because Rawtext syntax is weakest.
+    // If the string matches other Inline syntax
+    // RawText does not match it.
+    int operator()(const std::string &str) const override {
+        return std::numeric_limits<int>::max();
+    }
+    void operator()(const std::string &str, ASTNode &ast) const override {
+        RawText node(str);
+        ast.add_child(std::make_shared<RawText>(node));
     }
 };
 

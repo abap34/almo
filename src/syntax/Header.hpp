@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../new_ast.hpp"
-#include "../new_reader.hpp"
-#include "../new_syntax.hpp"
-#include "../new_parser.hpp"
+#include"../interfaces/ast.hpp"
+#include"../interfaces/parser.hpp"
+#include"../interfaces/syntax.hpp"
 
-namespace almo::feature {
+namespace almo {
 
 struct Header : public ASTNode {
 
@@ -40,14 +39,14 @@ struct Header : public ASTNode {
 struct Header_syntax : BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
-        if (read.whole_row().starts_with("# ")) return true;
+        if (read.get_row().starts_with("# ")) return true;
         // todo #2~6
         return false;
     }
     void operator()(Reader &read, ASTNode &ast) const override {
-        if (read.whole_row().starts_with("# ")){
+        if (read.get_row().starts_with("# ")){
             Header node(1);
-            InlineParser::process(read.whole_row().substr(2), node);
+            InlineParser::process(read.get_row().substr(2), node);
             ast.add_child(std::make_shared<Header>(node));
             read.move_next_line();
         }
