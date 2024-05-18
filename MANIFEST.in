@@ -1,1 +1,2 @@
 include src/*
+include scripts/setup.sh
