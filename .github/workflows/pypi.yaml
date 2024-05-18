@@ -20,7 +20,9 @@ jobs:
             pip install setuptools wheel twine pybind11
 
         - name: Build package
-          run: env VERSION=$(git describe --tags --abbrev=0) python setup.py sdist 
+          run: |
+            git describe --tags --abbrev=0 > version.txt
+            python setup.py sdist 
 
         - name: Upload package to PyPI
           uses: pypa/gh-action-pypi-publish@release/v1

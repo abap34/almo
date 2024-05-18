@@ -3,7 +3,8 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
 os.system("bash scripts/setup.sh")
-__version__ = os.getenv("VERSION")
+with open("version.txt") as f:
+    __version__ = f.read().strip()
 
 ext_modules = [
     Pybind11Extension(
