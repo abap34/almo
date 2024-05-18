@@ -3,14 +3,14 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
 os.system("bash scripts/setup.sh")
-__version__ = "\"0.0.1\""
+__version__ = "0.1.0"
 
 ext_modules = [
     Pybind11Extension(
         "almo",
         ["build/pyalmo.cpp"],
         cxx_std=20,
-        define_macros=[("VERSION_INFO", __version__)],
+        define_macros=[("VERSION_INFO", "\"" + __version__ + "\"")],
     ),
 ]
 
@@ -24,6 +24,6 @@ setup(
     long_description=long_description,
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
-    requires=["pybind11"],
     zip_safe=False,
+    version=__version__,
 )
