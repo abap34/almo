@@ -9,9 +9,9 @@ build: setup
 pybind: setup
 	bash scripts/pybind.sh build/pyalmo.cpp almo.so
 
-all: build pybind
+all: clean build pybind
 
 clean:
 	rm -rf build
-	rm almo.so
+	rm -f almo.so
 
