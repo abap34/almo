@@ -7,8 +7,8 @@
 #include <sstream> 
 #include <glob.h>
 #include <regex>
-#include "ast.hpp"
 #include "utils.hpp"
+#include "parse.hpp"
 
 namespace almo {
     std::string LIGHT_THEME = {
@@ -27,7 +27,7 @@ namespace almo {
     };
 
 
-    
+
     std::string load_html_template(std::string html_path, std::string css_setting) {
         std::string html;
 
@@ -61,7 +61,8 @@ namespace almo {
         if (loaded_pyodide) {
             // runnner の先頭に　　pyodide を挿入
             runner = pyodide_loader + runner;
-        } else {
+        }
+        else {
             runner = "<!-- Runner is not required. Skip this. -->";
         }
         // runner を挿入
@@ -86,14 +87,43 @@ namespace almo {
         return output_html;
     }
 
-    std::string render(Block ast, std::map<std::string, std::string> meta_data) {
-        std::string content = ast.render(meta_data);
+    std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
+        std::string content = ast.to_html();
 
         std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
-    
+
         std::string output_html = replace_template(html_template, meta_data, content);
 
         return output_html;
     }
 
-}
+    // Call from python to get html from lines without metadata `md_content` and metadata `meta_data`.
+    // 
+    // - md_to_html
+    // - md_to_json
+    // - md_to_dot
+
+    std::string md_to_html(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+        Markdown ast;
+        MarkdownParser parser(md_content, meta_data);
+        parser.process(ast);
+        return render(ast, meta_data);
+    }
+
+    std::string md_to_json(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+        Markdown ast;
+        MarkdownParser parser(md_content, meta_data);
+        parser.process(ast);
+        return ast.to_json();
+    }
+
+    std::string md_to_dot(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+        Markdown ast;
+        MarkdownParser parser(md_content, meta_data);
+        parser.process(ast);
+        std::string dot = ast.to_dot();
+        dot = "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + dot + "}";
+        return dot;
+    }
+
+} // namespace almo
