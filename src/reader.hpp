@@ -28,9 +28,16 @@ struct Reader {
     std::string get_row() const {
         return lines[row];
     }
+    std::string get_rest_row() const {
+        return lines[row].substr(col);
+    }
     void move_next_line(){
         row++;
         col = 0;
+    }
+    void move_next_char(int n){
+        assert(0 <= n && n <= (int)(lines[row].size()) - col);
+        col += n;
     }
     void read_eof(){
         assert(!eof_read_flg);

@@ -33,7 +33,10 @@ void InlineParser::process(const std::string &str, ASTNode &ast){
         InlineMathSyntax{},
         InlineOverlineSyntax{},
         InlineStrongSyntax{},
-        InlineItalicSyntax{}
+        InlineItalicSyntax{},
+        InlineCodeBlockSyntax{},
+        InlineImageSyntax{},
+        InlineUrlSyntax{}
     );
 }
 

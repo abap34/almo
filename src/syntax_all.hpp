@@ -10,3 +10,6 @@
 #include "syntax/NewLine.hpp"
 #include "syntax/InlineItalic.hpp"
 #include "syntax/Markdown.hpp"
+#include "syntax/InlineCodeBlock.hpp"
+#include "syntax/InlineImage.hpp"
+#include "syntax/InlineUrl.hpp"

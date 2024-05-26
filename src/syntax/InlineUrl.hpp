@@ -5,32 +5,35 @@
 #include"../interfaces/syntax.hpp"
 #include"../utils.hpp"
 
+
 namespace almo {
 
-struct InlineMath : public ASTNode {
+struct InlineUrl : public ASTNode {
 
-    std::string expr;
-    InlineMath (std::string _expr) : expr(_expr) {
+    std::string url;
+    std::string alt;
+  public:
+    InlineUrl(std::string url, std::string alt) : url(url), alt(alt) {
         set_uuid();
     }
 
-    // mathjax の　インライン数式用に \( \) で囲む
     std::string to_html() const override {
-        return "<span class=\"math-inline\"> \\( " + expr + " \\) </span>";
+        return "<url> <a href=\"" + url + "\">" + alt + "</a> </url>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
         return {
-            {"expr", expr}
+            {"url", url},
+            {"alt", alt}
         };
     }
     std::string get_classname() const override {
-        return "InlineMath";
+        return "InlineUrl";
     }
 };
 
-struct InlineMathSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\$(.*?)\$(.*))");
+struct InlineUrlSyntax : public InlineSyntax {
+    static inline const std::regex rex = std::regex(R"((.*?)\[(.*?)\]\((.*?)\)(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
         if (std::regex_search(str, sm, rex)){
@@ -42,11 +45,12 @@ struct InlineMathSyntax : public InlineSyntax {
         std::smatch sm;
         std::regex_search(str, sm, rex);
         std::string prefix = sm.format("$1");
-        std::string expr = sm.format("$2");
-        std::string suffix = sm.format("$3");
+        std::string url = sm.format("$2");
+        std::string alt = sm.format("$3");
+        std::string suffix = sm.format("$4");
         InlineParser::process(prefix, ast);
-        InlineMath node(expr);
-        ast.add_child(std::make_shared<InlineMath>(node));
+        InlineUrl node(url, alt);
+        ast.add_child(std::make_shared<InlineUrl>(node));
         InlineParser::process(suffix, ast);
     }
 };
