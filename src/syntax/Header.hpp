@@ -36,7 +36,7 @@ struct Header : public ASTNode {
     }
 };
 
-struct Header_syntax : BlockSyntax {
+struct HeaderSyntax : BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
         if (read.get_row().starts_with("# ")) return true;

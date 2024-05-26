@@ -45,7 +45,7 @@ struct CodeBlock : public ASTNode {
     }
 };
 
-struct CodeBlock_syntax : public BlockSyntax {
+struct CodeBlockSyntax : public BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
         return read.get_row().starts_with("```");

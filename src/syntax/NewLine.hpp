@@ -25,7 +25,7 @@ struct NewLine : public ASTNode {
     }
 };
 
-struct NewLine_syntax : public BlockSyntax {
+struct NewLineSyntax : public BlockSyntax {
     bool operator()(Reader &read) const override {
         return read.is_line_begin() && read.get_row() == "";
     }

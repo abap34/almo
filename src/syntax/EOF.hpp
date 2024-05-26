@@ -6,7 +6,7 @@
 
 namespace almo {
 
-struct EOF_syntax : public BlockSyntax {
+struct EOFSyntax : public BlockSyntax {
     bool operator()(Reader &read) const override {
         return read.is_eof();
     }

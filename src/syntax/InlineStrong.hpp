@@ -25,7 +25,7 @@ struct InlineStrong : public ASTNode {
     }
 };
 
-struct InlineStrong_syntax : public InlineSyntax {
+struct InlineStrongSyntax : public InlineSyntax {
     static inline const std::regex rex = std::regex(R"((.*?)\*\*(.*?)\*\*(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;

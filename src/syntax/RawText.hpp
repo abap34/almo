@@ -29,7 +29,7 @@ struct RawText : public ASTNode {
     }
 };
 
-struct RawText_syntax : InlineSyntax {
+struct RawTextSyntax : InlineSyntax {
     // All string matches Rawtext syntax
     // but matches infinity position
     // because Rawtext syntax is weakest.

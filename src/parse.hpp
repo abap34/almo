@@ -29,11 +29,11 @@ void InlineParser::process(const std::string &str, ASTNode &ast){
     if (str == "") return ;
     process_inline(
         str, ast,
-        RawText_syntax{}, std::numeric_limits<int>::max(),
-        InlineMath_syntax{},
-        InlineOverline_syntax{},
-        InlineStrong_syntax{},
-        InlineItalic_syntax{}
+        RawTextSyntax{}, std::numeric_limits<int>::max(),
+        InlineMathSyntax{},
+        InlineOverlineSyntax{},
+        InlineStrongSyntax{},
+        InlineItalicSyntax{}
     );
 }
 
@@ -65,10 +65,10 @@ void MarkdownParser::process(ASTNode &ast){
     while (!reader.eof_read_flg){
         process_block(
             str_inline, ast,
-            EOF_syntax{},
-            NewLine_syntax{},
-            Header_syntax{},
-            CodeBlock_syntax{}
+            EOFSyntax{},
+            NewLineSyntax{},
+            HeaderSyntax{},
+            CodeBlockSyntax{}
         );
     }
     if (str_inline != ""){
