@@ -15,8 +15,8 @@ struct ASTNode {
     // json
     std::string to_json() const ;
 
-    // todo: dot
-    // std::string to_dot() const ;
+    // dot
+    std::string to_dot() const ;
 
     // properties
     virtual std::map<std::string, std::string> get_properties() const = 0;

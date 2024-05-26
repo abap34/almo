@@ -53,6 +53,39 @@ std::string ASTNode::to_json() const {
     return json;
 }
 
+std::string ASTNode::to_dot() const {
+    std::map<std::string, std::string> properties = get_properties();
+
+    std::string node = get_uuid_str();
+    std::string label = "";
+
+    for (int i = 1; auto property : properties){
+        label += "<f" + std::to_string(i) + "> " + property.first + ": " + escape(property.second) + " | ";
+        i++;
+    }
+
+    // is Leaf
+    if (childs.empty()){
+        return node + "[label=\"" + get_classname() + " | " + label + "\", shape=\"record\"]\n";
+    }
+
+    // add child node
+    std::string childs_dot = "";
+    for (auto child : childs){
+        childs_dot += child->to_dot();
+    }
+
+    // connect child node
+    std::string edges = "";
+    for (auto child : childs){
+        edges += node + ":f" + std::to_string(edges.length()) + " -> " + child->get_uuid_str() + "\n";
+    }
+
+    // if this node is root, you must format returned string r as follows :
+    //     r = "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + r + "}";
+    return node + "[label=\"<f0> " + get_classname() + " | " + label + "\", shape=\"record\"]\n" + childs_dot + edges;
+}
+
 std::string ASTNode::get_uuid_str() const {
     return std::to_string(uuid);
 }
