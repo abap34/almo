@@ -102,6 +102,9 @@ namespace almo {
     // - md_to_html
     // - md_to_json
     // - md_to_dot
+    // - md_to_ast
+    // - md_to_summary
+    //
     // note : meta_data may change
 
     std::string md_to_html(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data) {
@@ -125,6 +128,34 @@ namespace almo {
         std::string dot = ast.to_dot();
         dot = "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + dot + "}";
         return dot;
+    }
+
+    Markdown md_to_ast(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data){
+        Markdown ast;
+        MarkdownParser parser(md_content, meta_data);
+        parser.process(ast);
+        return ast;
+    }
+
+    struct ParseSummary {
+        Markdown ast;
+        std::string html, json, dot;
+        bool required_pyodide;
+    };
+
+    ParseSummary md_to_summary(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data){
+        Markdown ast;
+        MarkdownParser parser(md_content, meta_data);
+        parser.process(ast);
+        render(ast, meta_data);
+        ParseSummary summary = {
+            .ast = ast,
+            .html = render(ast, meta_data),
+            .json = ast.to_json(),
+            .dot  = "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + ast.to_dot() + "}",
+            .required_pyodide = (parser.reader.get_meta_data("required_pyodide") == "true")
+        };
+        return summary;
     }
 
 } // namespace almo
