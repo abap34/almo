@@ -70,13 +70,23 @@ void MarkdownParser::process(ASTNode &ast){
             str_inline, ast,
             EOFSyntax{},
             NewLineSyntax{},
+            JudgeSyntax{},
+            ExecutableCodeBlockSyntax{},
+            LoadLibSyntax{},
+            DivBlockSyntax{},
+            QuoteSyntax{},
+            ListBlockSyntax{},
+            EnumerateBlockSyntax{},
             HeaderSyntax{},
-            CodeBlockSyntax{}
+            CodeBlockSyntax{},
+            MathBlockSyntax{},
+            HorizontalLineSyntax{},
+            TableSyntax{}
         );
     }
     if (str_inline != ""){
         std::cerr << "Not empty inline string : '" << str_inline << "'" << std::endl;
-        throw SyntaxError("Internal Error");
+        throw ParseError("Internal Error");
     }
 }
 

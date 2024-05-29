@@ -7,14 +7,13 @@
 
 namespace almo {
 
-struct NewLine : public ASTNode {
-
-    NewLine () {
+struct HorizontalLine : public ASTNode {
+    HorizontalLine() {
         set_uuid();
     }
 
     std::string to_html() const override {
-        return "<br>";
+        return "<hr>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
@@ -22,19 +21,21 @@ struct NewLine : public ASTNode {
         };
     }
     std::string get_classname() const override {
-        return "NewLine";
+        return "HorizontalLine";
     }
 };
 
-struct NewLineSyntax : public BlockSyntax {
+struct HorizontalLineSyntax : BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == "") return true;
+        if (rtrim(read.get_row()) == "---") return true;
+        if (rtrim(read.get_row()) == "___") return true;
+        if (rtrim(read.get_row()) == "***") return true;
         return false;
     }
     void operator()(Reader &read, ASTNode &ast) const override {
-        NewLine node;
-        ast.add_child(std::make_shared<NewLine>(node));
+        HorizontalLine node;
+        ast.add_child(std::make_shared<HorizontalLine>(node));
         read.move_next_line();
     }
 };

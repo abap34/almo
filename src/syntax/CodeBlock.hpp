@@ -51,6 +51,9 @@ struct CodeBlockSyntax : public BlockSyntax {
         return read.get_row().starts_with("```");
     }
     void operator()(Reader &read, ASTNode &ast) const override {
+        // BEGIN : '```(.*)'
+        // END   : '```\s*'
+        
         std::string language = read.get_row().substr(3);
         read.move_next_line();
         std::string code;

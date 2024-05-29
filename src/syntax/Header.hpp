@@ -40,17 +40,26 @@ struct HeaderSyntax : BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
         if (read.get_row().starts_with("# ")) return true;
-        // todo #2~6
+        if (read.get_row().starts_with("## ")) return true;
+        if (read.get_row().starts_with("### ")) return true;
+        if (read.get_row().starts_with("#### ")) return true;
+        if (read.get_row().starts_with("##### ")) return true;
+        if (read.get_row().starts_with("###### ")) return true;
         return false;
     }
     void operator()(Reader &read, ASTNode &ast) const override {
-        if (read.get_row().starts_with("# ")){
-            Header node(1);
-            InlineParser::process(read.get_row().substr(2), node);
-            ast.add_child(std::make_shared<Header>(node));
-            read.move_next_line();
-        }
-        // todo #2~6
+        int level = 0;
+        if (read.get_row().starts_with("# ")) level = 1;
+        if (read.get_row().starts_with("## ")) level = 2;
+        if (read.get_row().starts_with("### ")) level = 3;
+        if (read.get_row().starts_with("#### ")) level = 4;
+        if (read.get_row().starts_with("##### ")) level = 5;
+        if (read.get_row().starts_with("###### ")) level = 6;
+        assert(1 <= level && level <= 6);
+        Header node(level);
+        InlineParser::process(read.get_row().substr(level+1), node);
+        ast.add_child(std::make_shared<Header>(node));
+        read.move_next_line();
     }
 };
 
