@@ -132,16 +132,107 @@ void debug_json(std::string ir_json, std::map<std::string, std::string> meta_dat
     std::cout << output << std::endl;
 }
 
-// void debug_graph(almo::Block ast){
-//     std::cout << ast.to_dot(true) << std::endl;
-// }
+void debug_graph(almo::Markdown ast){
+    std::cout << "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + ast.to_dot() + "}" << std::endl;
+}
+
+namespace almo_preprocess {
+
+
+// md ファイルの中身 (frot YAML を含まない)
+// を受け取って、前処理 ([コメントの削除, ])　を行う
+std::vector<std::string> preprocess(std::vector<std::string> content) {
+    std::string content_join = join(content, "\n");
+
+    // コメントを削除
+    auto remove_comment = [](std::string text) {
+        return _remove_comment(text);
+        };
+
+
+    std::vector<std::function<std::string(std::string)>> hooks = {
+        remove_comment,
+    };
+
+    for (auto hook : hooks) {
+        content_join = hook(content_join);
+    }
+
+    content = split(content_join, "\n");
+
+    return content;
+}
+
+// md ファイルの中身 (front YAML) 
+// を受け取って、 front YAML をパースした結果と残りの md ファイルの開始位置を返す
+// TODO: きちんとした YAML パーサを使うようにする。
+std::pair<std::vector<std::pair<std::string, std::string>>, int> parse_front(std::vector<std::string> content) {
+    std::vector<std::pair<std::string, std::string>> front_yaml;
+    int front_yaml_end = 0;
+
+    if (!content.empty() && content[0] == "---") {
+        int index = 1;
+        while (index < (int)content.size() && content[index] != "---") {
+            std::string key = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$1");
+            std::string data = std::regex_replace(content[index], std::regex("(.*):\\s(.*)"), "$2");
+            front_yaml.emplace_back(key, data);
+            index++;
+        }
+        front_yaml_end = index + 1;
+    }
+
+    return { front_yaml, front_yaml_end };
+}
+
+// md ファイルの内容から
+// メタデータと md の本文の組を返す
+std::pair<std::vector<std::string>, std::map<std::string, std::string>> split_markdown(std::vector<std::string> content){
+    auto [meta_data, meta_data_end] = parse_front(content);
+
+    // メタデータ以降の行を取り出し
+    std::vector<std::string> md_lines(content.begin() + meta_data_end, content.end());
+
+    // 前処理
+    md_lines = preprocess(md_lines);
+
+    // meta_data を std::map に変換する
+    std::map<std::string, std::string> meta_data_map;
+
+    // デフォルト値を設定
+    meta_data_map["title"] = "";
+    meta_data_map["date"] = "";
+    meta_data_map["author"] = "";
+    meta_data_map["twitter_id"] = "";
+    meta_data_map["github_id"] = "";
+    meta_data_map["mail"] = "";
+    meta_data_map["ogp_url"] = "https://www.abap34.com/almo_logo.jpg";
+    meta_data_map["tag"] = "";
+    meta_data_map["url"] = "";
+    meta_data_map["site_name"] = "";
+    meta_data_map["twitter_site"] = "";
+
+    for (auto [key, data] : meta_data) {
+        meta_data_map[key] = data;
+    }
+
+    return {md_lines, meta_data_map};
+}
+
+// md ファイルのパスから
+// md と メタデータの組を返す
+std::pair<std::vector<std::string>, std::map<std::string, std::string>> split_markdown_from_path(std::string path){
+    return split_markdown(read_file(path));
+}
+
+
+} // almo_preprocess
 
 int main(int argc, char* argv[]) {
     Config config;
     config.parse_arguments(argc, argv);
 
     // パース
-    auto [meta_data, ast] = almo::parse_md_file(argv[1]);
+    auto [md_content, meta_data] = almo_preprocess::split_markdown_from_path(argv[1]);
 
     // コマンドライン引数を meta_data に追加
     meta_data["template_file"] = config.template_file;
@@ -150,21 +241,21 @@ int main(int argc, char* argv[]) {
     meta_data["css_setting"] = config.css_setting;
     meta_data["editor_theme"] = config.editor_theme;
     meta_data["syntax_theme"] = config.syntax_theme;
+    meta_data["required_pyodide"] = "false";
 
-    
+    almo::ParseSummary summary = almo::md_to_summary(md_content, meta_data);
 
     if (config.debug) {
-        std::string ir_json = ast.to_json();
-        debug_json(ir_json, meta_data);
+        debug_json(summary.json, meta_data);
     }
 
     if (config.plot_graph) {
-        debug_graph(ast);
+        debug_graph(summary.ast);
         return 0;
     }
 
 
-    std::string result = almo::render(ast, meta_data);
+    std::string result = summary.html;
 
     if (config.out_path == "__stdout__") {
         std::cout << result << std::endl;
