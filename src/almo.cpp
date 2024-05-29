@@ -132,9 +132,9 @@ void debug_json(std::string ir_json, std::map<std::string, std::string> meta_dat
     std::cout << output << std::endl;
 }
 
-void debug_graph(almo::Block ast){
-    std::cout << ast.to_dot(true) << std::endl;
-}
+// void debug_graph(almo::Block ast){
+//     std::cout << ast.to_dot(true) << std::endl;
+// }
 
 int main(int argc, char* argv[]) {
     Config config;
@@ -150,6 +150,8 @@ int main(int argc, char* argv[]) {
     meta_data["css_setting"] = config.css_setting;
     meta_data["editor_theme"] = config.editor_theme;
     meta_data["syntax_theme"] = config.syntax_theme;
+
+    
 
     if (config.debug) {
         std::string ir_json = ast.to_json();

@@ -18,7 +18,7 @@ struct InlineParser {
 
 struct MarkdownParser {
     Reader reader;
-    MarkdownParser(const std::vector<std::string> &lines, const std::map<std::string, std::string> &meta_data);
+    MarkdownParser(const std::vector<std::string> &lines, std::map<std::string, std::string> &meta_data);
 
     void process_block(std::string &str_inline, ASTNode &ast);
 

@@ -102,22 +102,23 @@ namespace almo {
     // - md_to_html
     // - md_to_json
     // - md_to_dot
+    // note : meta_data may change
 
-    std::string md_to_html(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+    std::string md_to_html(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data) {
         Markdown ast;
         MarkdownParser parser(md_content, meta_data);
         parser.process(ast);
         return render(ast, meta_data);
     }
 
-    std::string md_to_json(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+    std::string md_to_json(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data) {
         Markdown ast;
         MarkdownParser parser(md_content, meta_data);
         parser.process(ast);
         return ast.to_json();
     }
 
-    std::string md_to_dot(const std::vector<std::string>& md_content, const std::map<std::string, std::string>& meta_data) {
+    std::string md_to_dot(const std::vector<std::string>& md_content, std::map<std::string, std::string>& meta_data) {
         Markdown ast;
         MarkdownParser parser(md_content, meta_data);
         parser.process(ast);

@@ -9,12 +9,13 @@ namespace almo {
 
 struct Reader {
     std::vector<std::string> lines;
-    std::map<std::string, std::string> meta_data;
+    std::map<std::string, std::string> &meta_data;
     int row, col;
     // already read eof
     bool eof_read_flg;
+
     Reader (const std::vector<std::string> &_lines,
-            const std::map<std::string, std::string> &_meta_data)
+            std::map<std::string, std::string> &_meta_data)
             : lines(_lines), meta_data(_meta_data), row(0), col(0), eof_read_flg(false) {}
     bool is_line_begin() const {
         return col == 0;
@@ -43,7 +44,20 @@ struct Reader {
         assert(!eof_read_flg);
         eof_read_flg = true;
     }
-    // TODO: implement method for getting meta_data
+    std::string get_meta_data(std::string key) const {
+        // if meta_data do not contains key, throw out_of_range exception
+        return meta_data.at(key);
+    }
+    void set_meta_data(std::string key, std::string value){
+        if (meta_data.contains(key)){
+            if (meta_data[key] == value) return ;
+            std::cerr << "Warning : key is duplicating. value is overwritten." << std::endl;
+            std::cerr << "duplicated key : " << key << std::endl;
+            std::cerr << "previous value : " << meta_data[key] << std::endl;
+            std::cerr << "     new value : " << value << std::endl;
+        }
+        meta_data[key] = value;
+    }
 };
 
 } // namespace almo
