@@ -5,11 +5,6 @@
 
 namespace almo {
 
-// レスポンス時間短縮のため、pyodideが不要なら読み込みをスキップするためのフラグ.
-bool loaded_pyodide = false;
-
-std::string pyodide_loader = "<script src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></script>";
-
 struct uuid_gen_ {
     int operator()(){
         static int uuid = 0;

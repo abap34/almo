@@ -28,7 +28,9 @@ namespace almo {
 
 
 
-    std::string load_html_template(std::string html_path, std::string css_setting) {
+    std::string load_html_template(std::string html_path, std::string css_setting, bool required_pyodide) {
+        const std::string pyodide_loader = "<script src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></script>";
+
         std::string html;
 
         if (html_path == "__default__") {
@@ -58,7 +60,7 @@ namespace almo {
 
         std::string runner = "<script>" + RUNNER + "</script>";
 
-        if (loaded_pyodide) {
+        if (required_pyodide) {
             // runnner の先頭に　　pyodide を挿入
             runner = pyodide_loader + runner;
         }
@@ -90,7 +92,7 @@ namespace almo {
     std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
         std::string content = ast.to_html();
 
-        std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"]);
+        std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"], meta_data["required_pyodide"] == "true");
 
         std::string output_html = replace_template(html_template, meta_data, content);
 
