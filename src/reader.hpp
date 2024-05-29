@@ -4,6 +4,7 @@
 #include <string>
 #include <cassert>
 #include <map>
+#include <iostream>
 
 namespace almo {
 
@@ -49,6 +50,15 @@ struct Reader {
         return meta_data.at(key);
     }
     void set_meta_data(std::string key, std::string value){
+        // for required_pyodide (stop warning)
+        if (key == "required_pyodide" && value == "true"){
+            assert(meta_data.contains("required_pyodide"));
+            if (meta_data["required_pyodide"] == "false"){
+                std::cerr << "pyodide is required" << std::endl;
+                meta_data[key] = value;
+            }
+            return ;
+        }
         if (meta_data.contains(key)){
             if (meta_data[key] == value) return ;
             std::cerr << "Warning : key is duplicating. value is overwritten." << std::endl;
