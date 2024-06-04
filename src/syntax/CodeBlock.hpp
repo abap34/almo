@@ -54,7 +54,7 @@ struct CodeBlockSyntax : public BlockSyntax {
         // BEGIN : '```(.*)'
         // END   : '```\s*'
         
-        std::string language = read.get_row().substr(3);
+        std::string language = rtrim(read.get_row().substr(3));
         read.move_next_line();
         std::string code;
         while (!read.is_eof()){
