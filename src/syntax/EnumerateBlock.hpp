@@ -120,8 +120,8 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                 // depth has decreased and the difference is multiple of 3
                 if (depth < current && (current - depth) % 3 == 0) return true;
                 // ambiguous enum definition detected
-                std::cerr << "Warning line " << read.row + 1 << " :" << std::endl;
-                std::cerr << "indent width must be 3. this line is considered as row text." << std::endl;
+                std::cerr << "Warning near '" << read.near() << "'" << std::endl;
+                std::cerr << "indent width must be 3. this line is considered as raw text." << std::endl;
                 return false;
             }()){
                 std::size_t delete_indent = (scopes.size() - 1u) * 3u - enum_depth(read.get_row());

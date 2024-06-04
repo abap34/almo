@@ -111,8 +111,8 @@ struct ListBlockSyntax : public BlockSyntax {
                 // depth has decreased and the difference is even
                 if (depth < current && (current - depth) % 2 == 0) return true;
                 // ambiguous list definition detected
-                std::cerr << "Warning line " << read.row + 1 << " :" << std::endl;
-                std::cerr << "indent width must be 2. this line is considered as row text." << std::endl;
+                std::cerr << "Warning near '" << read.near() << "'" << std::endl;
+                std::cerr << "indent width must be 2. this line is considered as raw text." << std::endl;
                 return false;
             }()){
                 std::size_t delete_indent = (scopes.size() - 1u) * 2u - list_depth(read.get_row());

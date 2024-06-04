@@ -67,6 +67,15 @@ struct Reader {
         }
         meta_data[key] = value;
     }
+    // get near text from current position(row, col)
+    std::string near(){
+        std::string ret = "";
+        if (row > 0){
+            ret += lines[row-1] + "\n";
+        }
+        ret += lines[row].substr(0,col);
+        return ret;
+    }
 };
 
 } // namespace almo
