@@ -120,7 +120,7 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                 // depth has decreased and the difference is multiple of 3
                 if (depth < current && (current - depth) % 3 == 0) return true;
                 // ambiguous enum definition detected
-                std::cerr << "Warning near '" << read.near() << "'" << std::endl;
+                std::cerr << "Warning: ambiguous enum\n ... \n" << read.near() << "\n^^^ parsing line" << std::endl;
                 std::cerr << "indent width must be 3. this line is considered as raw text." << std::endl;
                 return false;
             }()){

@@ -111,7 +111,7 @@ struct ListBlockSyntax : public BlockSyntax {
                 // depth has decreased and the difference is even
                 if (depth < current && (current - depth) % 2 == 0) return true;
                 // ambiguous list definition detected
-                std::cerr << "Warning near '" << read.near() << "'" << std::endl;
+                std::cerr << "Warning: ambiguous list\n ... \n" << read.near() << "\n^^^ parsing line" << std::endl;
                 std::cerr << "indent width must be 2. this line is considered as raw text." << std::endl;
                 return false;
             }()){

@@ -73,7 +73,7 @@ struct Reader {
         if (row > 0){
             ret += lines[row-1] + "\n";
         }
-        ret += lines[row].substr(0,col);
+        ret += lines[row];
         return ret;
     }
 };
