@@ -7,7 +7,7 @@
 
 namespace almo {
 
-// 数式ブロック. 内容はMathJaxでレンダリングされる. 内容は `math-block` というクラスが付与されたdivタグで囲まれる
+// 箇条書きの要素を表すクラス
 struct Item : public ASTNode {
   public:
     Item() {
