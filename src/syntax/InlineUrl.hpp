@@ -45,8 +45,8 @@ struct InlineUrlSyntax : public InlineSyntax {
         std::smatch sm;
         std::regex_search(str, sm, rex);
         std::string prefix = sm.format("$1");
-        std::string url = sm.format("$2");
-        std::string alt = sm.format("$3");
+        std::string alt = sm.format("$2");
+        std::string url = sm.format("$3");
         std::string suffix = sm.format("$4");
         InlineParser::process(prefix, ast);
         InlineUrl node(url, alt);
