@@ -54,7 +54,6 @@ struct Reader {
         if (key == "required_pyodide" && value == "true"){
             assert(meta_data.contains("required_pyodide"));
             if (meta_data["required_pyodide"] == "false"){
-                std::cerr << "pyodide is required" << std::endl;
                 meta_data[key] = value;
             }
             return ;
