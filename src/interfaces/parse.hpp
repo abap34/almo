@@ -6,6 +6,7 @@
 
 namespace almo {
 
+// parse a line contain only inline syntax
 struct InlineParser {
     template<class Syntax>
     static void process_inline(const std::string &str, ASTNode &ast, Syntax&& syn, int pos);
@@ -16,6 +17,7 @@ struct InlineParser {
     static void process(const std::string &str, ASTNode &ast);
 };
 
+// parse an entire markdown and detect block syntax
 struct MarkdownParser {
     Reader reader;
     MarkdownParser(const std::vector<std::string> &lines, std::map<std::string, std::string> &meta_data);
