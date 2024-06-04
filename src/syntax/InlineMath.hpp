@@ -8,8 +8,9 @@
 namespace almo {
 
 struct InlineMath : public ASTNode {
-
+  private:
     std::string expr;
+  public:
     InlineMath (std::string _expr) : expr(_expr) {
         set_uuid();
     }

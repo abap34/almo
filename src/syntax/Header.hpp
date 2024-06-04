@@ -7,8 +7,9 @@
 namespace almo {
 
 struct Header : public ASTNode {
-
+  private:
     int level;
+  public:
     Header (int _level) : level(_level) {
         set_uuid();
     }

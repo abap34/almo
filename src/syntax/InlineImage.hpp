@@ -9,7 +9,7 @@
 namespace almo {
 
 struct InlineImage : public ASTNode {
-
+  private:
     std::string url;
     std::string caption;
 

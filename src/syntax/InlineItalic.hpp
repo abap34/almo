@@ -7,7 +7,7 @@
 namespace almo {
 
 struct InlineItalic : public ASTNode {
-
+  public:
     InlineItalic() {
         set_uuid();
     }

@@ -7,7 +7,7 @@
 namespace almo {
 
 struct Markdown : public ASTNode {
-
+  public:
     Markdown () {
         set_uuid();
     }

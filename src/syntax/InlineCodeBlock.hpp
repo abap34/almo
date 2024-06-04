@@ -9,7 +9,7 @@
 namespace almo {
 
 struct InlineCodeBlock : public ASTNode {
-
+  private:
     std::string code;
   public:
     InlineCodeBlock(std::string code) : code(code) {

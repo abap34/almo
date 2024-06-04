@@ -7,7 +7,7 @@
 namespace almo {
 
 struct InlineStrong : public ASTNode {
-
+  public:
     InlineStrong() {
         set_uuid();
     }

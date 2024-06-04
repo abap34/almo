@@ -9,7 +9,7 @@
 namespace almo {
 
 struct InlineUrl : public ASTNode {
-
+  private:
     std::string url;
     std::string alt;
   public:

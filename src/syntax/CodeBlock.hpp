@@ -10,13 +10,15 @@ namespace almo {
 
 // コードブロックを表すクラス.  <div class="code-block"> タグで囲まれ、その中に <pre><code> タグが入る.
 struct CodeBlock : public ASTNode {
-
+  private:
     // コードの中身。
     std::string code;
 
     // Highlight.js によって正確にハイライトするために、言語を指定する必要がある。
     // ```python -> python を持っておき、 `to_html` する際に <code class="language-python"> として出力する。
     std::string language;
+
+  public:
     CodeBlock(std::string code, std::string language) : code(code), language(language) {
         set_uuid();
     }

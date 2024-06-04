@@ -9,8 +9,9 @@
 namespace almo {
 
 struct RawText : public ASTNode {
-
+  private:
     std::string content;
+  public:
     RawText(std::string _content) : content(_content) {
         set_uuid();
     }

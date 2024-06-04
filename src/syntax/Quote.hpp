@@ -11,6 +11,7 @@ namespace almo {
 
 // 引用を表すクラス
 struct Quote : public ASTNode {
+  public:
     Quote() {
         set_uuid();
     }

@@ -21,7 +21,7 @@ struct Table : public ASTNode {
     std::vector<std::string> col_names;
     // 各列について、左寄せ(0), 中央寄せ(1), 右寄せ(2) のいずれかを指定する.
     std::vector<int> col_format;
-public:
+  public:
     Table(std::vector<std::shared_ptr<Markdown>> columns, int n_row, int n_col, std::vector<std::string> col_names, std::vector<int> col_format) : 
         columns(columns), n_row(n_row), n_col(n_col), col_names(col_names), col_format(col_format) {
         set_uuid();

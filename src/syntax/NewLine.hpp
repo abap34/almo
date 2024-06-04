@@ -8,7 +8,7 @@
 namespace almo {
 
 struct NewLine : public ASTNode {
-
+  public:
     NewLine () {
         set_uuid();
     }

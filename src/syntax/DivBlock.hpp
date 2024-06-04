@@ -12,7 +12,7 @@ namespace almo {
 struct DivBlock : public ASTNode {
   private:
     std::string div_class;
-public:
+  public:
     DivBlock(std::string div_class) : div_class(div_class) {
         set_uuid();
     }

@@ -8,6 +8,7 @@
 namespace almo {
 
 struct HorizontalLine : public ASTNode {
+  public:
     HorizontalLine() {
         set_uuid();
     }

@@ -7,7 +7,7 @@
 namespace almo {
 
 struct InlineOverline : public ASTNode {
-
+  public:
     InlineOverline() {
         set_uuid();
     }
