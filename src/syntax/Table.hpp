@@ -122,23 +122,26 @@ struct TableSyntax : public BlockSyntax {
 
         // 0 --> left (default), 1 --> center, 2 --> right
         std::vector<int> col_format;
+        std::regex Lrex(R"(\|\s*:-+\s*)");
+        std::regex Crex(R"(\|\s*:-+:\s*)");
+        std::regex Rrex(R"(\|\s*-+:\s*)");
 
         read.move_next_line();
 
         line = read.get_row();
 
         while (std::regex_search(line, sm, each_col_regex)){
-            if (sm[0].str().starts_with("|:") && sm[0].str().ends_with(":")) {
-                col_format.push_back(1);
+            if (std::regex_match(sm[0].str(), Lrex)){
+                col_format.emplace_back(0);
             }
-            else if (sm[0].str().starts_with("|:")) {
-                col_format.push_back(0);
+            else if (std::regex_match(sm[0].str(), Crex)){
+                col_format.emplace_back(1);
             }
-            else if (sm[0].str().ends_with(":")) {
-                col_format.push_back(2);
+            else if (std::regex_match(sm[0].str(), Rrex)){
+                col_format.emplace_back(2);
             }
             else {
-                col_format.push_back(0);
+                col_format.emplace_back(0);
             }
 
             line = sm.suffix();
