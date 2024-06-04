@@ -40,9 +40,9 @@ struct DivBlockSyntax : public BlockSyntax {
     }
     void operator()(Reader &read, ASTNode &ast) const override {
         std::stack<std::shared_ptr<DivBlock>> scopes;
-        std::string title = read.get_row().substr(3);
+        std::string div_class = read.get_row().substr(3);
 
-        DivBlock root_div(title);
+        DivBlock root_div(div_class);
         scopes.push(std::make_shared<DivBlock>(root_div));
 
         read.move_next_line();
