@@ -39,13 +39,13 @@ struct LoadLib : public ASTNode {
 struct LoadLibSyntax : public BlockSyntax {
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == ":::lib") return true;
+        if (rtrim(read.get_row()) == ":::loadlib") return true;
         return false;
     }
     void operator()(Reader &read, ASTNode &ast) const override {
         std::vector<std::string> libs;
 
-        // skip :::lib
+        // skip :::loadlib
         read.move_next_line();
 
         if (read.is_eof()){
