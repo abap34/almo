@@ -49,6 +49,7 @@ struct DivBlockSyntax : public BlockSyntax {
         std::vector<std::string> text;
 
         while (!read.is_eof()){
+            // Invariant : scopes.size() >= 1
             if (rtrim(read.get_row()) == ":::"){
                 Markdown inner_md;
                 MarkdownParser parser(text, read.meta_data);
@@ -61,6 +62,7 @@ struct DivBlockSyntax : public BlockSyntax {
 
                 if (scopes.size() == 1u){
                     ast.add_child(scopes.top());
+                    scopes.pop();
                     break;
                 }
                 scopes.pop();
@@ -86,7 +88,8 @@ struct DivBlockSyntax : public BlockSyntax {
             text.emplace_back(read.get_row());
             read.move_next_line();
         }
-        while (true){
+        // scopes.empty() iff completed DivBlock
+        while (!scopes.empty()){
             Markdown inner_md;
             MarkdownParser parser(text, read.meta_data);
             parser.process(inner_md);
@@ -94,15 +97,16 @@ struct DivBlockSyntax : public BlockSyntax {
             scopes.top()->add_child(inner_md_ptr);
 
             text = {};
-            read.move_next_line();
 
             if (scopes.size() == 1u){
                 ast.add_child(scopes.top());
+                scopes.pop();
                 break;
             }
             scopes.pop();
             continue;
         }
+        assert(scopes.empty());
     }
 };
 
