@@ -34,6 +34,7 @@ struct Reader {
         return lines[row].substr(col);
     }
     void move_next_line(){
+        assert(row < (int)(lines.size()));
         row++;
         col = 0;
     }
