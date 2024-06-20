@@ -1,3 +1,3 @@
-include src/*
+recursive-include src *
 include scripts/setup.sh
 include version.txt
