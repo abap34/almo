@@ -24,3 +24,6 @@
 #include "syntax/Quote.hpp"
 #include "syntax/RawText.hpp"
 #include "syntax/Table.hpp"
+
+#include "syntax/InlineFootnote.hpp"
+#include "syntax/Footnote.hpp"
