@@ -6,16 +6,16 @@
 #include"../utils.hpp"
 
 namespace almo{
-struct Footnote : public ASTNode {
+struct FootnoteDefinition : public ASTNode {
   private:
     std::string tag;
   public:
-    Footnote (std::string tag_) : tag(tag_){
+    FootnoteDefinition (std::string tag_) : tag(tag_){
         set_uuid();
     }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        return "<span class=\"footnote_id\"> <li id=\"note_" + tag +"\"><a href=\"#ref_" + tag + "\">^" + tag + "</a>" + childs_html +"</li> </span>";
+        return "<span class=\"footnote_def\"> <li id=\"note_" + tag +"\"><a href=\"#ref_" + tag + "\">^" + tag + "</a>" + childs_html +"</li> </span>";
     }
     std::map<std::string, std::string> get_properties() const override {
         return {
@@ -23,11 +23,11 @@ struct Footnote : public ASTNode {
         };
     }
     std::string get_classname() const override {
-        return "Footnote";
+        return "FootnoteDefinition";
     }
 };
 
-struct FootnoteSyntax : public BlockSyntax {
+struct FootnoteDefinitionSyntax : public BlockSyntax {
     /*
         "[^" + expr + "]: + hoge"
     */
@@ -42,9 +42,9 @@ struct FootnoteSyntax : public BlockSyntax {
         std::string row = read.get_row();
         std::smatch sm;
         assert(std::regex_match(row, sm, rex));
-        Footnote node(sm.format("$1"));
+        FootnoteDefinition node(sm.format("$1"));
         InlineParser::process(sm.format("$2"), node);
-        ast.add_child(std::make_shared<Footnote>(node));
+        ast.add_child(std::make_shared<FootnoteDefinition>(node));
         read.move_next_line();
     }
 };

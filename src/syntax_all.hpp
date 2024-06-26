@@ -25,5 +25,5 @@
 #include "syntax/RawText.hpp"
 #include "syntax/Table.hpp"
 
-#include "syntax/InlineFootnote.hpp"
-#include "syntax/Footnote.hpp"
+#include "syntax/InlineFootnoteReference.hpp"
+#include "syntax/FootnoteDefinition.hpp"

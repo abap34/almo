@@ -6,12 +6,12 @@
 #include"../utils.hpp"
 
 namespace almo{
-struct InlineFootnote : public ASTNode{
+struct InlineFootnoteReference : public ASTNode{
   private:
     std::string symbol;
     
   public:
-    InlineFootnote (std::string _symbol) : symbol(_symbol){
+    InlineFootnoteReference (std::string _symbol) : symbol(_symbol){
         set_uuid();
     }
 
@@ -25,10 +25,10 @@ struct InlineFootnote : public ASTNode{
         };
     }
     std::string get_classname() const override {
-        return "InlineFootnote";
+        return "InlineFootnoteReference";
     }
 };
-struct InlineFootnoteSyntax : public InlineSyntax {
+struct InlineFootnoteReferenceSyntax : public InlineSyntax {
     static inline const std::regex rex = std::regex(R"((.*?)\[\^(.*?)\](.*?))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
@@ -44,8 +44,8 @@ struct InlineFootnoteSyntax : public InlineSyntax {
         std::string symbol = sm.format("$2");
         std::string suffix = sm.format("$3");
         InlineParser::process(prefix, ast);
-        InlineFootnote node(symbol);
-        ast.add_child(std::make_shared<InlineFootnote>(node));
+        InlineFootnoteReference node(symbol);
+        ast.add_child(std::make_shared<InlineFootnoteReference>(node));
         InlineParser::process(suffix, ast);
     }
 };

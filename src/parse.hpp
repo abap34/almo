@@ -37,7 +37,7 @@ void InlineParser::process(const std::string &str, ASTNode &ast){
         InlineCodeBlockSyntax{},
         InlineImageSyntax{},
         InlineUrlSyntax{},
-        InlineFootnoteSyntax{}
+        InlineFootnoteReferenceSyntax{}
     );
 }
 
@@ -83,7 +83,7 @@ void MarkdownParser::process(ASTNode &ast){
             MathBlockSyntax{},
             HorizontalLineSyntax{},
             TableSyntax{},
-            FootnoteSyntax{}
+            FootnoteDefinitionSyntax{}
         );
     }
     if (str_inline != ""){
