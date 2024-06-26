@@ -8,20 +8,20 @@
 namespace almo{
 struct InlineFootnote : public ASTNode{
   private:
-    std::string expr;
+    std::string symbol;
     
   public:
-    InlineFootnote (std::string _expr) : expr(_expr){
+    InlineFootnote (std::string _symbol) : symbol(_symbol){
         set_uuid();
     }
 
     std::string to_html() const override {
-        return "<sup id=\"ref_" + expr + "\"><a href=\"#note_" + expr +"\">[" + expr + "]</a></sup>"; 
+        return "<span class=\"footnote-ref\"> <sup id=\"ref_" + symbol + "\"><a href=\"#note_" + symbol +"\">[" + symbol + "]</a></sup> </span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
         return {
-            {"expr", expr}
+            {"symbol", symbol}
         };
     }
     std::string get_classname() const override {
@@ -41,10 +41,10 @@ struct InlineFootnoteSyntax : public InlineSyntax {
         std::smatch sm;
         std::regex_search(str, sm, rex);
         std::string prefix = sm.format("$1");
-        std::string expr = sm.format("$2");
+        std::string symbol = sm.format("$2");
         std::string suffix = sm.format("$3");
         InlineParser::process(prefix, ast);
-        InlineFootnote node(expr);
+        InlineFootnote node(symbol);
         ast.add_child(std::make_shared<InlineFootnote>(node));
         InlineParser::process(suffix, ast);
     }

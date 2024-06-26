@@ -15,7 +15,7 @@ struct Footnote : public ASTNode {
     }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        return "<li id=\"note_" + tag +"\"><a href=\"#ref_" + tag + "\">^" + tag + "</a>" + childs_html +"</li>";
+        return "<span class=\"footnote_id\"> <li id=\"note_" + tag +"\"><a href=\"#ref_" + tag + "\">^" + tag + "</a>" + childs_html +"</li> </span>";
     }
     std::map<std::string, std::string> get_properties() const override {
         return {
