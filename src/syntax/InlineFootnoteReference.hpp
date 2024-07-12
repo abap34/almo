@@ -29,7 +29,7 @@ struct InlineFootnoteReference : public ASTNode{
     }
 };
 struct InlineFootnoteReferenceSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\[\^(.*?)\](.*?))");
+    static inline const std::regex rex = std::regex(R"((.*?)\[\^(.*?)\](.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
         if (std::regex_search(str, sm, rex)){
