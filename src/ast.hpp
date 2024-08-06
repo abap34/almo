@@ -101,4 +101,20 @@ std::string ASTNode::concatenated_childs_html() const {
     return ret;
 }
 
+
+std::vector<std::string> ASTNode::nodes_byclass(const std::string &classname) const {
+    std::vector<std::string> ret;
+    if (get_classname() == classname){
+        ret.push_back(get_uuid_str());
+    }
+    for (auto child : childs){
+        std::vector<std::string> childs_ret = child->nodes_byclass(classname);
+        for (auto child_ret : childs_ret){
+            ret.push_back(child_ret);
+        }
+    }
+    return ret;
+}
+
+
 } // namespace almo
