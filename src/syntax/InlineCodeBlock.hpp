@@ -1,40 +1,35 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-#include"../utils.hpp"
-
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
 
 namespace almo {
 
 struct InlineCodeBlock : public ASTNode {
-  private:
+   private:
     std::string code;
-  public:
-    InlineCodeBlock(std::string code) : code(code) {
-        set_uuid();
-    }
+
+   public:
+    InlineCodeBlock(std::string code) : code(code) { set_uuid(); }
 
     std::string to_html() const override {
-        return "<span class=\"inline-code\"> <code>" + escape_for_html(code) + "</code> </span>";
+        return "<span class=\"inline-code\"> <code>" + escape_for_html(code) +
+               "</code> </span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-            {"code", code}
-        };
+        return {{"code", code}};
     }
-    std::string get_classname() const override {
-        return "InlineCodeBlock";
-    }
+    std::string get_classname() const override { return "InlineCodeBlock"; }
 };
 
 struct InlineCodeBlockSyntax : public InlineSyntax {
     static inline const std::regex rex = std::regex(R"((.*?)\`(.*?)\`(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
-        if (std::regex_search(str, sm, rex)){
+        if (std::regex_search(str, sm, rex)) {
             return sm.position(2) - 1;
         }
         return std::numeric_limits<int>::max();
@@ -47,9 +42,9 @@ struct InlineCodeBlockSyntax : public InlineSyntax {
         std::string suffix = sm.format("$3");
         InlineParser::process(prefix, ast);
         InlineCodeBlock node(code);
-        ast.add_child(std::make_shared<InlineCodeBlock>(node));
+        ast.pushback_child(std::make_shared<InlineCodeBlock>(node));
         InlineParser::process(suffix, ast);
     }
 };
 
-} // namespace almo
+}  // namespace almo

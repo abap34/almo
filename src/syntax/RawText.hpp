@@ -1,33 +1,26 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-
 #include <limits>
+
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
 
 namespace almo {
 
 struct RawText : public ASTNode {
-  private:
+   private:
     std::string content;
-  public:
-    RawText(std::string _content) : content(_content) {
-        set_uuid();
-    }
 
-    std::string to_html() const override {
-        return content;
-    }
+   public:
+    RawText(std::string _content) : content(_content) { set_uuid(); }
+
+    std::string to_html() const override { return content; }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-            {"content", content}
-        };
+        return {{"content", content}};
     }
-    std::string get_classname() const override {
-        return "RawText";
-    }
+    std::string get_classname() const override { return "RawText"; }
 };
 
 struct RawTextSyntax : InlineSyntax {
@@ -41,8 +34,8 @@ struct RawTextSyntax : InlineSyntax {
     }
     void operator()(const std::string &str, ASTNode &ast) const override {
         RawText node(str);
-        ast.add_child(std::make_shared<RawText>(node));
+        ast.pushback_child(std::make_shared<RawText>(node));
     }
 };
 
-} // namespace almo
+}  // namespace almo

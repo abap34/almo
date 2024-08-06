@@ -1,18 +1,18 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-#include"../utils.hpp"
-
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
 
 namespace almo {
 
 struct InlineUrl : public ASTNode {
-  private:
+   private:
     std::string url;
     std::string alt;
-  public:
+
+   public:
     InlineUrl(std::string url, std::string alt) : url(url), alt(alt) {
         set_uuid();
     }
@@ -22,21 +22,17 @@ struct InlineUrl : public ASTNode {
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-            {"url", url},
-            {"alt", alt}
-        };
+        return {{"url", url}, {"alt", alt}};
     }
-    std::string get_classname() const override {
-        return "InlineUrl";
-    }
+    std::string get_classname() const override { return "InlineUrl"; }
 };
 
 struct InlineUrlSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\[(.*?)\]\((.*?)\)(.*))");
+    static inline const std::regex rex =
+        std::regex(R"((.*?)\[(.*?)\]\((.*?)\)(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
-        if (std::regex_search(str, sm, rex)){
+        if (std::regex_search(str, sm, rex)) {
             return sm.position(2) - 1;
         }
         return std::numeric_limits<int>::max();
@@ -50,9 +46,9 @@ struct InlineUrlSyntax : public InlineSyntax {
         std::string suffix = sm.format("$4");
         InlineParser::process(prefix, ast);
         InlineUrl node(url, alt);
-        ast.add_child(std::make_shared<InlineUrl>(node));
+        ast.pushback_child(std::make_shared<InlineUrl>(node));
         InlineParser::process(suffix, ast);
     }
 };
 
-} // namespace almo
+}  // namespace almo

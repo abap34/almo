@@ -1,34 +1,31 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
 
 namespace almo {
 
 struct InlineOverline : public ASTNode {
-  public:
-    InlineOverline() {
-        set_uuid();
-    }
+   public:
+    InlineOverline() { set_uuid(); }
     std::string to_html() const override {
-        return "<span class=\"overline\"> <s>" + concatenated_childs_html() + "</s> </span>";
+        return "<span class=\"overline\"> <s>" + concatenated_childs_html() +
+               "</s> </span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-        };
+        return {};
     }
-    std::string get_classname() const override {
-        return "InlineOverline";
-    }
+    std::string get_classname() const override { return "InlineOverline"; }
 };
 
 struct InlineOverlineSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\~\~(.*?)\~\~(.*))");
+    static inline const std::regex rex =
+        std::regex(R"((.*?)\~\~(.*?)\~\~(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
-        if (std::regex_search(str, sm, rex)){
+        if (std::regex_search(str, sm, rex)) {
             return sm.position(2) - 2;
         }
         return std::numeric_limits<int>::max();
@@ -42,9 +39,9 @@ struct InlineOverlineSyntax : public InlineSyntax {
         InlineParser::process(prefix, ast);
         InlineOverline node;
         InlineParser::process(content, node);
-        ast.add_child(std::make_shared<InlineOverline>(node));
+        ast.pushback_child(std::make_shared<InlineOverline>(node));
         InlineParser::process(suffix, ast);
     }
 };
 
-} // namespace almo
+}  // namespace almo

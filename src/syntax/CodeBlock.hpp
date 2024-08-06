@@ -1,25 +1,28 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-
-#include"../utils.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
 
 namespace almo {
 
-// コードブロックを表すクラス.  <div class="code-block"> タグで囲まれ、その中に <pre><code> タグが入る.
+// コードブロックを表すクラス.  <div class="code-block"> タグで囲まれ、その中に
+// <pre><code> タグが入る.
 struct CodeBlock : public ASTNode {
-  private:
+   private:
     // コードの中身。
     std::string code;
 
-    // Highlight.js によって正確にハイライトするために、言語を指定する必要がある。
-    // ```python -> python を持っておき、 `to_html` する際に <code class="language-python"> として出力する。
+    // Highlight.js
+    // によって正確にハイライトするために、言語を指定する必要がある。
+    // ```python -> python を持っておき、 `to_html` する際に <code
+    // class="language-python"> として出力する。
     std::string language;
 
-  public:
-    CodeBlock(std::string code, std::string language) : code(code), language(language) {
+   public:
+    CodeBlock(std::string code, std::string language)
+        : code(code), language(language) {
         set_uuid();
     }
 
@@ -32,19 +35,15 @@ struct CodeBlock : public ASTNode {
             code_class = "language-" + language;
         }
 
-        return "<div class=\"code-block\"> <pre><code class=\"" + code_class + "\">" + escape_for_html(code) + "</code></pre> </div>";
+        return "<div class=\"code-block\"> <pre><code class=\"" + code_class +
+               "\">" + escape_for_html(code) + "</code></pre> </div>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-            {"code", code},
-            {"language", language}
-        };
+        return {{"code", code}, {"language", language}};
     }
 
-    std::string get_classname() const override {
-        return "CodeBlock";
-    }
+    std::string get_classname() const override { return "CodeBlock"; }
 };
 
 struct CodeBlockSyntax : public BlockSyntax {
@@ -55,12 +54,12 @@ struct CodeBlockSyntax : public BlockSyntax {
     void operator()(Reader &read, ASTNode &ast) const override {
         // BEGIN : '```(.*)'
         // END   : '```\s*'
-        
+
         std::string language = rtrim(read.get_row().substr(3));
         read.move_next_line();
         std::string code;
-        while (!read.is_eof()){
-            if (rtrim(read.get_row()) == "```"){
+        while (!read.is_eof()) {
+            if (rtrim(read.get_row()) == "```") {
                 read.move_next_line();
                 break;
             }
@@ -69,8 +68,8 @@ struct CodeBlockSyntax : public BlockSyntax {
         }
 
         CodeBlock node(code, language);
-        ast.add_child(std::make_shared<CodeBlock>(node));
+        ast.pushback_child(std::make_shared<CodeBlock>(node));
     }
 };
 
-} // namespace almo
+}  // namespace almo
