@@ -10,6 +10,10 @@ ALMOは、C++製の拡張Markdownパーサ・静的サイトジェネレータ�
 
 WebAssemblyを使って実行・ジャッジ環境同梱のHTMLファイルを作ることができます。
 
+> [!warning]
+> ALMO は開発フェーズのソフトウェアです。致命的なバグが含まれている可能性があり、また頻繁に破壊的な仕様変更が行われます。
+
+
 ## 機能
 
 ALMOは、Markdown記法によって執筆された記事をHTMLファイルに変換することができます。
@@ -137,18 +141,4 @@ docker run abap/almo:latest example.md
 
 ### ビルド
 
-`build.sh` を実行すると、ビルド済みのバイナリが `build/almo` に生成されます。
-
-```bash
-chmod +x build.sh
-./build.sh
-```
-
-
-
-## エコシステム
-
-- https://github.com/abap34/ALMO-extension
-  - ALMO でファイルを編集する際にリアルタイムプレビューを行う VSCode の拡張機能です。
-- https://github.com/abap34/ALMO-blog-template
-  - ALMO を使って簡単にブログを構築するためのテンプレートです。
+`make all` を実行すると、ビルド済みのバイナリが `build/almo` に生成され、 Pythonインターフェースが `almo.so` として生成されます。
