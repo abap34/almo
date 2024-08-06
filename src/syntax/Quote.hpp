@@ -51,7 +51,7 @@ struct QuoteSyntax : public BlockSyntax {
         // uuid order is node --> inner_md
         Quote node;
         Markdown inner_md;
-        MarkdownParser parser(quote_contents, read.meta_data);
+        MarkdownParser parser(quote_contents);
         parser.process(inner_md);
         node.add_child(std::make_shared<Markdown>(inner_md));
         ast.add_child(std::make_shared<Quote>(node));

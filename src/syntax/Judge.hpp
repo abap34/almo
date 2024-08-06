@@ -70,7 +70,6 @@ struct Judge : public ASTNode {
         std::string editor_div = "<div class=\"editor\" id=\"" + uuid_str + "\" rows=\"3\" cols=\"80\"></div> \n";
 
         // ace editor の設定をする.
-        // テーマは meta_data から取得する.
 
         std::string source_code = join(read_file(source), "\n");
 
@@ -249,12 +248,10 @@ struct JudgeSyntax : BlockSyntax {
             judge_info["out"],
             judge_info["judge"],
             judge_info["source"],
-            read.get_meta_data("editor_theme")
+            "{{ editor_theme }}"
         );
 
         ast.add_child(std::make_shared<Judge>(node));
-
-        read.set_meta_data("required_pyodide","true");
     }
 };
 

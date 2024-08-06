@@ -20,7 +20,7 @@ struct InlineParser {
 // parse an entire markdown and detect block syntax
 struct MarkdownParser {
     Reader reader;
-    MarkdownParser(const std::vector<std::string> &lines, std::map<std::string, std::string> &meta_data);
+    MarkdownParser(const std::vector<std::string> &lines);
 
     void process_block(std::string &str_inline, ASTNode &ast);
 

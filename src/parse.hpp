@@ -41,7 +41,7 @@ void InlineParser::process(const std::string &str, ASTNode &ast){
     );
 }
 
-MarkdownParser::MarkdownParser(const std::vector<std::string> &lines, std::map<std::string, std::string> &meta_data) : reader(lines, meta_data) {}
+MarkdownParser::MarkdownParser(const std::vector<std::string> &lines) : reader(lines) {}
 
 void MarkdownParser::process_block(std::string &str_inline, ASTNode &ast){
     if (str_inline != ""){
