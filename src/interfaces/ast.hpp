@@ -7,7 +7,7 @@
 
 namespace almo {
 
-struct ASTNode {
+struct ASTNode : public std::enable_shared_from_this<ASTNode> {
     // html
     virtual std::string to_html() const = 0;
 
@@ -30,7 +30,7 @@ struct ASTNode {
     void set_uuid();
 
     // add child
-    void add_child(std::shared_ptr<ASTNode> child);
+    void pushback_child(std::shared_ptr<ASTNode> child);
 
     // remove child
     void remove_child(std::shared_ptr<ASTNode> child);
@@ -41,7 +41,11 @@ struct ASTNode {
     std::string concatenated_childs_html() const;
 
     // get node's uuid from class name
-    std::vector<std::string> nodes_byclass(const std::string &classname) const;
+    std::vector<std::shared_ptr<ASTNode>> nodes_byclass(
+        const std::string &classname) const;
+
+    void move_node(std::shared_ptr<ASTNode> node,
+                   std::shared_ptr<ASTNode> new_parent);
 
    public:
     std::vector<std::shared_ptr<ASTNode>> childs;
