@@ -1,34 +1,28 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-#include"../utils.hpp"
-
-#include"Item.hpp"
-#include"NewLine.hpp"
-#include"EOF.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
+#include "EOF.hpp"
+#include "Item.hpp"
+#include "NewLine.hpp"
 
 namespace almo {
 
 // 箇条書き(番号なし) を表すクラス
 struct ListBlock : public ASTNode {
-  public:
-    ListBlock() {
-        set_uuid();
-    }
+   public:
+    ListBlock() { set_uuid(); }
 
     std::string to_html() const override {
         return "<ul>" + concatenated_childs_html() + "</ul>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-        };
+        return {};
     }
-    std::string get_classname() const override {
-        return "ListBlock";
-    }
+    std::string get_classname() const override { return "ListBlock"; }
 };
 
 struct ListBlockSyntax : public BlockSyntax {
@@ -61,7 +55,7 @@ struct ListBlockSyntax : public BlockSyntax {
 
         std::string text = "";
 
-        while (true){
+        while (true) {
             // Invariant : read.is_eof() == false
             //             scopes.size() >= 1
             text += remove_listdef(ltrim(read.get_row()));
@@ -70,32 +64,32 @@ struct ListBlockSyntax : public BlockSyntax {
             read.move_next_line();
 
             // END
-            if (EOFSyntax{}(read) || NewLineSyntax{}(read)){
+            if (EOFSyntax{}(read) || NewLineSyntax{}(read)) {
                 Item item;
                 InlineParser::process(text, item);
-                scopes.top()->add_child(std::make_shared<Item>(item));
+                scopes.top()->pushback_child(std::make_shared<Item>(item));
                 text = "";
                 break;
             }
             // same depth
-            if (read.get_row().starts_with(current_prefix)){
+            if (read.get_row().starts_with(current_prefix)) {
                 Item item;
                 InlineParser::process(text, item);
-                scopes.top()->add_child(std::make_shared<Item>(item));
+                scopes.top()->pushback_child(std::make_shared<Item>(item));
                 text = "";
                 continue;
             }
             // +2 depth
-            if (read.get_row().starts_with(INDENT + current_prefix)){
+            if (read.get_row().starts_with(INDENT + current_prefix)) {
                 Item item;
                 InlineParser::process(text, item);
-                scopes.top()->add_child(std::make_shared<Item>(item));
+                scopes.top()->pushback_child(std::make_shared<Item>(item));
                 text = "";
 
                 // nested ListBlock
                 ListBlock new_node;
                 auto new_node_ptr = std::make_shared<ListBlock>(new_node);
-                scopes.top()->add_child(new_node_ptr);
+                scopes.top()->pushback_child(new_node_ptr);
                 scopes.push(new_node_ptr);
 
                 // update prefix
@@ -103,38 +97,45 @@ struct ListBlockSyntax : public BlockSyntax {
                 continue;
             }
             // -2n depth (n >= 1)
-            if ([&]{
-                std::size_t depth = list_depth(read.get_row());
-                if (depth == std::string::npos) return false;
-                std::size_t current = (scopes.size() - 1u) * 2u;
-                // depth == current, depth == current + 2 is already ditected
-                // depth has decreased and the difference is even
-                if (depth < current && (current - depth) % 2 == 0) return true;
-                // ambiguous list definition detected
-                std::cerr << "Warning: ambiguous list\n ... \n" << read.near() << "\n^^^ parsing line" << std::endl;
-                std::cerr << "indent width must be 2. this line is considered as raw text." << std::endl;
-                return false;
-            }()){
-                std::size_t delete_indent = (scopes.size() - 1u) * 2u - list_depth(read.get_row());
+            if ([&] {
+                    std::size_t depth = list_depth(read.get_row());
+                    if (depth == std::string::npos) return false;
+                    std::size_t current = (scopes.size() - 1u) * 2u;
+                    // depth == current, depth == current + 2 is already
+                    // ditected depth has decreased and the difference is even
+                    if (depth < current && (current - depth) % 2 == 0)
+                        return true;
+                    // ambiguous list definition detected
+                    std::cerr << "Warning: ambiguous list\n ... \n"
+                              << read.near() << "\n^^^ parsing line"
+                              << std::endl;
+                    std::cerr << "indent width must be 2. this line is "
+                                 "considered as raw text."
+                              << std::endl;
+                    return false;
+                }()) {
+                std::size_t delete_indent =
+                    (scopes.size() - 1u) * 2u - list_depth(read.get_row());
                 current_prefix = current_prefix.substr(delete_indent);
 
                 Item item;
                 InlineParser::process(text, item);
-                scopes.top()->add_child(std::make_shared<Item>(item));
+                scopes.top()->pushback_child(std::make_shared<Item>(item));
                 text = "";
 
-                for (std::size_t del = 0; del < delete_indent; del += 2u){
+                for (std::size_t del = 0; del < delete_indent; del += 2u) {
                     scopes.pop();
                 }
                 continue;
             }
-            // Ensure : read.get_row() is considered a continuation of the previous item
+            // Ensure : read.get_row() is considered a continuation of the
+            // previous item
         }
-        while (scopes.size() > 1u){
+        while (scopes.size() > 1u) {
             scopes.pop();
         }
-        ast.add_child(scopes.top());
+        ast.pushback_child(scopes.top());
     }
 };
 
-} // namespace almo
+}  // namespace almo

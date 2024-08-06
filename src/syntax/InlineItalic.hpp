@@ -1,35 +1,31 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
 
 namespace almo {
 
 struct InlineItalic : public ASTNode {
-  public:
-    InlineItalic() {
-        set_uuid();
-    }
+   public:
+    InlineItalic() { set_uuid(); }
 
     std::string to_html() const override {
-        return "<span class=\"italic\"> <i>" + concatenated_childs_html() + "</i> </span>";
+        return "<span class=\"italic\"> <i>" + concatenated_childs_html() +
+               "</i> </span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-        };
+        return {};
     }
-    std::string get_classname() const override {
-        return "InlineItalic";
-    }
+    std::string get_classname() const override { return "InlineItalic"; }
 };
 
 struct InlineItalicSyntax : public InlineSyntax {
     static inline const std::regex rex = std::regex(R"((.*?)\*(.*?)\*(.*))");
     int operator()(const std::string &str) const override {
         std::smatch sm;
-        if (std::regex_search(str, sm, rex)){
+        if (std::regex_search(str, sm, rex)) {
             return sm.position(2) - 1;
         }
         return std::numeric_limits<int>::max();
@@ -43,9 +39,9 @@ struct InlineItalicSyntax : public InlineSyntax {
         InlineParser::process(prefix, ast);
         InlineItalic node;
         InlineParser::process(content, node);
-        ast.add_child(std::make_shared<InlineItalic>(node));
+        ast.pushback_child(std::make_shared<InlineItalic>(node));
         InlineParser::process(suffix, ast);
     }
 };
 
-} // namespace almo
+}  // namespace almo

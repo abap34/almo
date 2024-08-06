@@ -90,12 +90,19 @@ std::string ASTNode::get_uuid_str() const { return std::to_string(uuid); }
 
 void ASTNode::set_uuid() { uuid = uuid_gen(); }
 
-void ASTNode::add_child(std::shared_ptr<ASTNode> child) {
+void ASTNode::pushback_child(std::shared_ptr<ASTNode> child) {
     childs.push_back(child);
 }
 
 void ASTNode::remove_child(std::shared_ptr<ASTNode> child) {
-    childs.erase(std::remove(childs.begin(), childs.end(), child), childs.end());
+    for (auto it = childs.begin(); it != childs.end(); it++) {
+        if (*it == child) {
+            childs.erase(it);
+            return;
+        }
+
+        (*it)->remove_child(child);
+    }
 }
 
 std::string ASTNode::concatenated_childs_html() const {
@@ -110,14 +117,15 @@ std::vector<std::shared_ptr<ASTNode>> ASTNode::get_childs() const {
     return childs;
 }
 
-std::vector<std::string> ASTNode::nodes_byclass(
+std::vector<std::shared_ptr<ASTNode>> ASTNode::nodes_byclass(
     const std::string &classname) const {
-    std::vector<std::string> ret;
+    std::vector<std::shared_ptr<ASTNode>> ret;
     if (get_classname() == classname) {
-        ret.push_back(get_uuid_str());
+        ret.push_back(const_cast<ASTNode *>(this)->shared_from_this());
     }
     for (auto child : childs) {
-        std::vector<std::string> childs_ret = child->nodes_byclass(classname);
+        std::vector<std::shared_ptr<ASTNode>> childs_ret =
+            child->nodes_byclass(classname);
         for (auto child_ret : childs_ret) {
             ret.push_back(child_ret);
         }
@@ -125,5 +133,10 @@ std::vector<std::string> ASTNode::nodes_byclass(
     return ret;
 }
 
+void ASTNode::move_node(std::shared_ptr<ASTNode> node,
+                        std::shared_ptr<ASTNode> new_parent) {
+    remove_child(node);
+    new_parent->pushback_child(node);
+}
 
 }  // namespace almo

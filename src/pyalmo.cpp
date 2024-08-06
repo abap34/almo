@@ -32,15 +32,16 @@ PYBIND11_MODULE(almo, m) {
         .def("get_classname", &almo::ASTNode::get_classname)
         .def("get_uuid_str", &almo::ASTNode::get_uuid_str)
         .def("set_uuid", &almo::ASTNode::set_uuid)
-        .def("add_child", &almo::ASTNode::add_child)
+        .def("pushback_child", &almo::ASTNode::pushback_child)
         .def("remove_child", &almo::ASTNode::remove_child)
+        .def("move_node", &almo::ASTNode::move_node)
         .def("concatenated_childs_html",
              &almo::ASTNode::concatenated_childs_html)
         .def("nodes_byclass", &almo::ASTNode::nodes_byclass)
         .def_readwrite("childs", &almo::ASTNode::childs)
         .def("get_childs", &almo::ASTNode::get_childs)
         .def("__repr__", [](const almo::ASTNode &ast_node) {
-            return "<almo" + ast_node.get_classname() +
+            return "<almo." + ast_node.get_classname() +
                    " (uuid: " + ast_node.get_uuid_str() + ")>";
         });
 

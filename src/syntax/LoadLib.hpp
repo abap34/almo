@@ -1,21 +1,20 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-#include"../utils.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
 
 namespace almo {
 
-// ライブラリの読み込みをする独自記法. 
+// ライブラリの読み込みをする独自記法.
 struct LoadLib : public ASTNode {
-  private:
+   private:
     // 読み込むライブラリの名前のリスト
     std::vector<std::string> libs;
-  public:
-    LoadLib(std::vector<std::string> libs) : libs(libs) {
-        set_uuid();
-    }
+
+   public:
+    LoadLib(std::vector<std::string> libs) : libs(libs) { set_uuid(); }
 
     // use_libs に追加しておくと JS側で読み込み処理を行う。
     std::string to_html() const override {
@@ -27,13 +26,9 @@ struct LoadLib : public ASTNode {
     };
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-            {"libs", join(libs)}
-        };
+        return {{"libs", join(libs)}};
     }
-    std::string get_classname() const override {
-        return "LoadLib";
-    }
+    std::string get_classname() const override { return "LoadLib"; }
 };
 
 struct LoadLibSyntax : public BlockSyntax {
@@ -48,12 +43,12 @@ struct LoadLibSyntax : public BlockSyntax {
         // skip :::loadlib
         read.move_next_line();
 
-        if (read.is_eof()){
+        if (read.is_eof()) {
             throw SyntaxError("Empty Library");
         }
 
-        while (!read.is_eof()){
-            if (rtrim(read.get_row()) == ":::"){
+        while (!read.is_eof()) {
+            if (rtrim(read.get_row()) == ":::") {
                 read.move_next_line();
                 break;
             }
@@ -62,8 +57,8 @@ struct LoadLibSyntax : public BlockSyntax {
         }
 
         LoadLib node(libs);
-        ast.add_child(std::make_shared<LoadLib>(node));
+        ast.pushback_child(std::make_shared<LoadLib>(node));
     }
 };
 
-} // namespace almo
+}  // namespace almo

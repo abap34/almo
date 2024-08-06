@@ -1,29 +1,22 @@
 #pragma once
 
-#include"../interfaces/ast.hpp"
-#include"../interfaces/parse.hpp"
-#include"../interfaces/syntax.hpp"
-#include"../utils.hpp"
+#include "../interfaces/ast.hpp"
+#include "../interfaces/parse.hpp"
+#include "../interfaces/syntax.hpp"
+#include "../utils.hpp"
 
 namespace almo {
 
 struct HorizontalLine : public ASTNode {
-  public:
-    HorizontalLine() {
-        set_uuid();
-    }
+   public:
+    HorizontalLine() { set_uuid(); }
 
-    std::string to_html() const override {
-        return "<hr>";
-    }
+    std::string to_html() const override { return "<hr>"; }
 
     std::map<std::string, std::string> get_properties() const override {
-        return {
-        };
+        return {};
     }
-    std::string get_classname() const override {
-        return "HorizontalLine";
-    }
+    std::string get_classname() const override { return "HorizontalLine"; }
 };
 
 struct HorizontalLineSyntax : BlockSyntax {
@@ -36,9 +29,9 @@ struct HorizontalLineSyntax : BlockSyntax {
     }
     void operator()(Reader &read, ASTNode &ast) const override {
         HorizontalLine node;
-        ast.add_child(std::make_shared<HorizontalLine>(node));
+        ast.pushback_child(std::make_shared<HorizontalLine>(node));
         read.move_next_line();
     }
 };
 
-} // namespace almo
+}  // namespace almo
