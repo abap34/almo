@@ -32,13 +32,18 @@ struct ASTNode {
     // add child
     void add_child(std::shared_ptr<ASTNode> child);
 
+    // remove child
+    void remove_child(std::shared_ptr<ASTNode> child);
+
+    std::vector<std::shared_ptr<ASTNode>> get_childs() const;
+
     // child's html
     std::string concatenated_childs_html() const;
 
     // get node's uuid from class name
     std::vector<std::string> nodes_byclass(const std::string &classname) const;
 
-   protected:
+   public:
     std::vector<std::shared_ptr<ASTNode>> childs;
 
    private:
