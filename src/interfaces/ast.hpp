@@ -36,6 +36,9 @@ struct ASTNode {
     // child's html
     std::string concatenated_childs_html() const ;
 
+    // get node's uuid from class name
+    std::vector<std::string> nodes_byclass(const std::string &classname) const ;
+
   protected:
     std::vector<std::shared_ptr<ASTNode>> childs;
   private:

@@ -52,7 +52,7 @@ struct DivBlockSyntax : public BlockSyntax {
             // Invariant : scopes.size() >= 1
             if (rtrim(read.get_row()) == ":::"){
                 Markdown inner_md;
-                MarkdownParser parser(text, read.meta_data);
+                MarkdownParser parser(text);
                 parser.process(inner_md);
                 auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
                 scopes.top()->add_child(inner_md_ptr);
@@ -70,7 +70,7 @@ struct DivBlockSyntax : public BlockSyntax {
             }
             if (read.get_row().starts_with(":::")){
                 Markdown inner_md;
-                MarkdownParser parser(text, read.meta_data);
+                MarkdownParser parser(text);
                 parser.process(inner_md);
                 auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
                 scopes.top()->add_child(inner_md_ptr);
@@ -91,7 +91,7 @@ struct DivBlockSyntax : public BlockSyntax {
         // scopes.empty() iff completed DivBlock
         while (!scopes.empty()){
             Markdown inner_md;
-            MarkdownParser parser(text, read.meta_data);
+            MarkdownParser parser(text);
             parser.process(inner_md);
             auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
             scopes.top()->add_child(inner_md_ptr);

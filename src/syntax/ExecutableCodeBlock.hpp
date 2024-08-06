@@ -88,8 +88,7 @@ struct ExecutableCodeBlockSyntax : public BlockSyntax {
             read.move_next_line();
         }
 
-        ExecutableCodeBlock node(code, read.get_meta_data("editor_theme"));
-        read.set_meta_data("required_pyodide","true");
+        ExecutableCodeBlock node(code, "{{ editor_theme }}");
         ast.add_child(std::make_shared<ExecutableCodeBlock>(node));
     }
 };
