@@ -23,6 +23,13 @@ struct Markdown : public ASTNode {
     std::string get_classname() const override {
         return "Markdown";
     }
+
+    std::string to_dot() const {
+        std::string childs_dot = concatenated_childs_dot();
+        std::string dot = "digraph G {\n graph [labelloc=\"t\"; \n ]\n" + childs_dot + "}";
+        return dot;
+    }
+
 };
 
 } // namespace almo
