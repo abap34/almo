@@ -8,25 +8,24 @@
 namespace almo {
 struct FootnoteDefinition : public ASTNode {
    private:
-    std::string tag;
+    std::string symbol;
 
    public:
-    FootnoteDefinition(std::string tag_) : tag(tag_) { set_uuid(); }
+    FootnoteDefinition(std::string symbol_) : symbol(symbol_) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        return "<span class=\"footnote_def\"> <li id=\"note_" + tag +
-               "\"><a href=\"#ref_" + tag + "\">^" + tag + "</a>" +
-               childs_html + "</li> </span>";
+        return "<span class=\"footnote-def\"><a href=\"#ref_" + symbol + "\">^" +
+               symbol + "</a>" + childs_html + "</span>";
     }
     std::map<std::string, std::string> get_properties() const override {
-        return {{"tag", tag}};
+        return {{"symbol", symbol}};
     }
     std::string get_classname() const override { return "FootnoteDefinition"; }
 };
 
 struct FootnoteDefinitionSyntax : public BlockSyntax {
     /*
-        "[^" + expr + "]: + hoge"
+        "[^" + symbol + "]: + hoge"
     */
     static inline const std::regex rex = std::regex(R"(\[\^(.*?)\]:(.*?))");
     bool operator()(Reader &read) const override {
