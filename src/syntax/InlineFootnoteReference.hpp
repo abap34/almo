@@ -16,9 +16,16 @@ struct InlineFootnoteReference : public ASTNode {
     }
 
     std::string to_html() const override {
-        return "<span class=\"footnote-ref\"> <sup id=\"ref_" + symbol +
-               "\"><a href=\"#note_" + symbol + "\">[" + symbol +
-               "]</a></sup> </span>";
+        // This is correct. 
+        // `label_` is setted in `FootnoteDefinition` (which we have to jump to)
+        std::string label = "ref_" + symbol;
+        std::string jump_to = "label_" + symbol;
+
+        return std::format(
+            "<span class=\"footnote-ref\"><sup id=\"{}\"><a "
+            "href=\"#{}\">[{}]</a>"
+            "</sup></span>",
+            label, jump_to, symbol);
     }
 
     std::map<std::string, std::string> get_properties() const override {
