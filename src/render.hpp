@@ -89,7 +89,23 @@ namespace almo {
         return output_html;
     }
 
+    void move_footnote_definition(Markdown& ast) {
+        std::vector<std::shared_ptr<ASTNode>> footnote_defs = ast.nodes_byclass("FootnoteDefinition");
+
+        std::shared_ptr<DivBlock> footnote_div = std::make_shared<DivBlock>("footnote");
+
+        ast.pushback_child(footnote_div);
+
+        for (auto node : footnote_defs) {
+            ast.move_node(node, footnote_div);
+        }
+    }
+
     std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
+        std::vector<std::shared_ptr<ASTNode>> footnote_defs = ast.nodes_byclass("FootnoteDefinition");
+
+        std::shared_ptr<DivBlock> footnote_div = std::make_shared<DivBlock>("footnote");
+
         std::string content = ast.to_html();
 
         std::string html_template = load_html_template(meta_data["template_file"], meta_data["css_setting"], meta_data["required_pyodide"] == "true");
@@ -148,6 +164,9 @@ namespace almo {
         Markdown ast;
         MarkdownParser parser(md_content);
         parser.process(ast);
+
+        move_footnote_definition(ast);
+
         render(ast, meta_data);
         ParseSummary summary = {
             .ast = ast,
