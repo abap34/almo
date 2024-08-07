@@ -241,7 +241,6 @@ int main(int argc, char* argv[]) {
     meta_data["css_setting"] = config.css_setting;
     meta_data["editor_theme"] = config.editor_theme;
     meta_data["syntax_theme"] = config.syntax_theme;
-    meta_data["required_pyodide"] = "false";
 
     almo::ParseSummary summary = almo::md_to_summary(md_content, meta_data);
 

@@ -111,6 +111,18 @@ void move_footnote_to_end(Markdown& ast) {
     }
 }
 
+bool required_pyodide(Markdown& ast) {
+    if (ast.nodes_byclass("ExecutableCodeBlock").size() > 0) {
+        return true;
+    }
+
+    if (ast.nodes_byclass("Judge").size() > 0) {
+        return true;
+    }
+
+    return false;
+}
+
 std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
     std::vector<std::shared_ptr<ASTNode>> footnote_defs =
         ast.nodes_byclass("FootnoteDefinition");
@@ -122,7 +134,7 @@ std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
 
     std::string html_template =
         load_html_template(meta_data["template_file"], meta_data["css_setting"],
-                           meta_data["required_pyodide"] == "true");
+                           required_pyodide(ast));
 
     std::string output_html =
         replace_template(html_template, meta_data, content);
