@@ -435,3 +435,13 @@ a {
     color: #007bff;
     word-break: break-all;
 }
+
+.footnote {
+    border-top: solid 1px #555;
+    font-style: italic;
+}
+
+.footnote > * {
+    display: block;
+    margin-bottom: 10px;
+}

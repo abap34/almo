@@ -443,3 +443,14 @@ a {
     color: #007bff;
     word-break: break-all;
 }
+
+.footnote {
+    border-top: solid 1px #ddd;
+    font-style: italic;
+    color: #777;
+}
+
+
+.footnote > * {
+    display: block;
+}
