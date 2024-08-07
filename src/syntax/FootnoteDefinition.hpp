@@ -37,8 +37,7 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
     void operator()(Reader &read, ASTNode &ast) const override {
         std::string row = read.get_row();
         std::smatch sm;
-        assert(std::regex_match(row, sm, rex));
-
+        std::regex_search(row, sm, rex);
         std::string symbol = sm.format("$1");
         std::string suffix = sm.format("$2");
         if (symbol.empty()) {
