@@ -14,8 +14,8 @@ struct FootnoteDefinition : public ASTNode {
     FootnoteDefinition(std::string symbol_) : symbol(symbol_) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        return "<span class=\"footnote-def\"><a href=\"#ref_" + symbol + "\">^" +
-               symbol + "</a>" + childs_html + "</span>";
+        return "<span class=\"footnote-def\"><a href=\"#ref_" + symbol +
+               "\">^" + symbol + "</a>" + childs_html + "</span>";
     }
     std::map<std::string, std::string> get_properties() const override {
         return {{"symbol", symbol}};
@@ -27,7 +27,7 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
     /*
         "[^" + symbol + "]: + hoge"
     */
-    static inline const std::regex rex = std::regex(R"(\[\^(.*?)\]:(.*?))");
+    static inline const std::regex rex = std::regex(R"(\[\^(.*)\]:(.*))");
     bool operator()(Reader &read) const override {
         if (!read.is_line_begin()) return false;
         std::string row = read.get_row();
@@ -38,8 +38,18 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
         std::string row = read.get_row();
         std::smatch sm;
         assert(std::regex_match(row, sm, rex));
-        FootnoteDefinition node(sm.format("$1"));
-        InlineParser::process(sm.format("$2"), node);
+
+        std::string symbol = sm.format("$1");
+        std::string suffix = sm.format("$2");
+        if (symbol.empty()) {
+            std::cerr << "Warning: Footnote symbol is empty. This may cause "
+                         "unexpected behavior. \n... \n"
+                      << read.near() << "\n^^^ parsing line" << std::endl;
+        }
+
+        FootnoteDefinition node(symbol);
+        InlineParser::process(suffix, node);
+
         ast.pushback_child(std::make_shared<FootnoteDefinition>(node));
         read.move_next_line();
     }
