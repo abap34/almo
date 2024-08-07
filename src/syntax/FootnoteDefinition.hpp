@@ -14,8 +14,13 @@ struct FootnoteDefinition : public ASTNode {
     FootnoteDefinition(std::string symbol_) : symbol(symbol_) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        return "<span class=\"footnote-def\"><a href=\"#ref_" + symbol +
-               "\">^" + symbol + "</a>" + childs_html + "</span>";
+        std::string label = "label_" + symbol;
+        std::string jump_to = "ref_" + symbol;
+
+        return std::format(
+            "<span class=\"footnote-def\" id=\"{}\"><a "
+            "href=\"#{}\">[{}]</a>{}</span>",
+            label, jump_to, symbol, childs_html);
     }
     std::map<std::string, std::string> get_properties() const override {
         return {{"symbol", symbol}};
