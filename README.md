@@ -105,6 +105,12 @@ out=example/helloalmo/out/*.txt
 
 ## インターフェース
 
+
+> [!warning]
+> 今後、一般ユーザ向けのインターフェースは https://github.com/abap34/almo-cli で実装されていく予定です。そのため、このセクションの内容は v1.0 では廃止される予定です。
+
+
+
 `almo <入力> [オプション]`
 
 
