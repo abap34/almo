@@ -5,17 +5,29 @@
 mode=$(set -o | grep noglob | awk '{print $2}')
 set -f
 
-src_dir="src/"
-build_dir="build/"
+src_dir="src"
+build_dir="build"
 data_petterns=("*.css" "*.html" "*.js")
 verbose=0
 
-
+# 指定された内容を指定色で表示する. 
+# 指定なければ デフォルト、　赤か緑を指定できる
 function vprint() {
     if [ $verbose -eq 1 ]; then
-        echo "$1"
+        if [ $2 ]; then
+            if [ $2 == "green" ]; then
+                echo -e "\033[32m$1\033[0m"
+            elif [ $2 == "red" ]; then
+                echo -e "\033[31m$1\033[0m"
+            else
+                echo -e "\033[31m$1\033[0m"
+            fi
+        else
+            echo $1
+        fi
     fi
 }
+
 
 while getopts "v" opt; do
     case $opt in
@@ -29,26 +41,14 @@ while getopts "v" opt; do
     esac
 done
 
-
-vprint "========================================"
-vprint "Start setup"
-vprint "    src_dir: $src_dir"
-vprint "    build_dir: $build_dir"
-vprint "    data_petterns: ${data_petterns[@]}"
-vprint "========================================"
-
-
 mkdir -p "$build_dir"
-cp -r "$src_dir" "$build_dir"
+cp -r "$src_dir"/. "$build_dir"
 
 
 for file in $(find $build_dir -type f); do  
-    vprint "----------------------------------------"
-    vprint "Check $file for data files"
     for pettern in ${data_petterns[@]}; do
-        vprint  "   Check $pettern"
         if [[ $file == $build_dir/*$pettern ]]; then
-            vprint "$file is matching $pettern"
+            vprint "   Matched! with $pettern => $file" green
             echo "R\"(" > "$file.tmp"
             cat "$file" >> "$file.tmp"
             echo ")\"" >> "$file.tmp"
