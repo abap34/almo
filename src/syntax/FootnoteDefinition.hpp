@@ -17,10 +17,8 @@ struct FootnoteDefinition : public ASTNode {
         std::string label = "label_" + symbol;
         std::string jump_to = "ref_" + symbol;
 
-        return std::format(
-            "<span class=\"footnote-def\" id=\"{}\"><a "
-            "href=\"#{}\">[{}]</a>{}</span>",
-            label, jump_to, symbol, childs_html);
+        return "<span class=\"footnote-def\" id=\"" + label + "\"><a href=\"#" +
+               jump_to + "\">[" + symbol + "]</a>" + childs_html + "</span>";
     }
     std::map<std::string, std::string> get_properties() const override {
         return {{"symbol", symbol}};
