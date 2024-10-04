@@ -145,6 +145,28 @@ docker pull abap/almo:latest
 docker run abap/almo:latest example.md
 ```
 
-### ビルド
+### Nix
+
+nixpkgs、あるいはflakesを有効にしたNixを使ってalmoをインストールできます。
+
+```bash
+nix-shell -p almo # almoを利用可能な適切なチャンネルを事前に設定する必要があります
+nix profile install "github:NixOS/nixpkgs/HEAD#almo" # almo 0.9.5-alpha on nixpkgs-unstable
+nix profile install "github:abap34/almo" # almo 0.9.5-alpha on flakes
+nix profile install "github:abap34/almo#unstable" # almo HEAD on flakes
+```
+
+### Makeによるビルド
 
 `make all` を実行すると、ビルド済みのバイナリが `build/almo` に生成され、 Pythonインターフェースが `almo.so` として生成されます。
+
+### Nixによるビルド
+
+Nixを利用できる環境であれば、以下のコマンドを実行することで`./result/bin`以下にビルド結果を生成できます。
+また、Pythonインターフェース（`almo.so`）は`./result/lib`以下に生成されます。
+
+```bash
+nix build . # almo 0.9.5-alpha
+nix build ".#unstable" # almo HEAD
+```
+
