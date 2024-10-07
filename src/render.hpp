@@ -13,21 +13,6 @@
 #include "utils.hpp"
 
 namespace almo {
-std::string LIGHT_THEME = {
-#include "light.css"
-};
-std::string DARK_THEME = {
-#include "dark.css"
-};
-
-std::string RUNNER = {
-#include "runner.js"
-};
-
-std::string TEMPLATE = {
-#include "template.html"
-};
-
 std::string load_html_template(std::string html_path, std::string css_setting,
                                bool required_pyodide) {
     const std::string pyodide_loader =

@@ -15,7 +15,6 @@ public:
     std::string syntax_theme = "__default__";
     bool plot_graph = false;
     std::string out_path = "__stdout__";
-
     void parse_arguments(int argc, char* argv[]) {
         if (argc < 2) {
             std::cerr << "コマンドライン引数が不足しています。" << std::endl;
@@ -25,6 +24,11 @@ public:
 
         if (argc == 2 && std::string(argv[1]) == "-h") {
             show_help(false);
+            exit(0);
+        }
+
+        if (argc == 2 && std::string(argv[1]) == "-v") {
+            std::cout << "almo " << almo::VERSION << " (" << almo::COMMITHASH << ")" << std::endl;
             exit(0);
         }
 

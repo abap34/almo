@@ -7,7 +7,7 @@ set -f
 
 src_dir="src"
 build_dir="build"
-data_petterns=("*.css" "*.html" "*.js")
+data_petterns=("*.css" "*.html" "*.js" "*.txt")
 verbose=0
 
 # 指定された内容を指定色で表示する. 
@@ -49,7 +49,7 @@ for file in $(find $build_dir -type f); do
     for pettern in ${data_petterns[@]}; do
         if [[ $file == $build_dir/*$pettern ]]; then
             vprint "   Matched! with $pettern => $file" green
-            echo "R\"(" > "$file.tmp"
+            echo -n "R\"(" > "$file.tmp"
             cat "$file" >> "$file.tmp"
             echo ")\"" >> "$file.tmp"
             mv "$file.tmp" "$file"
@@ -59,6 +59,10 @@ for file in $(find $build_dir -type f); do
 
     vprint "$file is not matching any data file"
 done
+
+# バージョン、コミットハッシュの情報を出力
+echo "R\"($(git describe --tags --abbrev=0))\"" > "$build_dir/version.txt"
+echo "R\"($(git show --format='%h' --no-patch))\"" > "$build_dir/commithash.txt"
 
 
 # 元に戻す
