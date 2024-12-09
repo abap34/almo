@@ -2,10 +2,6 @@ import os
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
-os.system("git describe --tags --abbrev=0 > version.txt")
-os.system("git show --format=\"%h\" -s > commithash.txt")
-
-
 with open("version.txt") as f:
     __version__ = f.read().strip()
 
