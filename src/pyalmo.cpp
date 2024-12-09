@@ -23,11 +23,6 @@ PYBIND11_MODULE(almo, m) {
     m.doc() = "almo interface for python.";
 
     m.def("parse", &parse_md, "Parse markdown to AST.");
-    m.def("move_footnote_to_end", &almo::move_footnote_to_end,
-          "Move footnote definition to the end of the document.");
-    m.def("required_pyodide", &almo::required_pyodide,
-          "Check if pyodide is required.");    
-
     py::class_<almo::ASTNode, std::shared_ptr<almo::ASTNode>>(
         m, "ASTNode", py::dynamic_attr())
         .def("to_html", &almo::ASTNode::to_html)
