@@ -2,14 +2,17 @@ import os
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
-os.system("bash scripts/setup.sh")
+os.system("git describe --tags --abbrev=0 > version.txt")
+os.system("git show --format=\"%h\" -s > commithash.txt")
+
+
 with open("version.txt") as f:
     __version__ = f.read().strip()
 
 ext_modules = [
     Pybind11Extension(
         "almo",
-        ["build/pyalmo.cpp"],
+        ["src/pyalmo.cpp"],
         cxx_std=20,
         define_macros=[("VERSION_INFO", "\"" + __version__ + "\"")],
     ),
