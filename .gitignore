@@ -4,3 +4,4 @@ tmp*
 almo.so
 result
 subprojects/*/
+.cache
