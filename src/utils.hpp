@@ -224,6 +224,18 @@ std::string escape_for_html(const std::string& s) {
     return ret;
 }
 
+// 文字列を受け取り、DOT言語に埋め込んでも大丈夫なようにエスケープする.
+//   DOT言語では {, }, |, <, > が特殊文字として扱われるため、エスケープが必要
+std::string escape_for_dot(const std::string& s) {
+    std::string ret = s;
+    ret = std::regex_replace(ret, std::regex("\\{"), "\\\\{");
+    ret = std::regex_replace(ret, std::regex("\\}"), "\\\\}");
+    ret = std::regex_replace(ret, std::regex("\\|"), "\\\\|");
+    ret = std::regex_replace(ret, std::regex("<"), "\\\\<");
+    ret = std::regex_replace(ret, std::regex(">"), "\\\\>");
+    return ret;
+}
+
 // 文字列を受け取り、末尾のスペースを削除する
 std::string rtrim(std::string s) {
     s.erase(s.find_last_not_of(" \n\r\t") + 1);

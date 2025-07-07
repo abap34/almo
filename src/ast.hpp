@@ -57,7 +57,7 @@ std::string ASTNode::concatenated_childs_dot() const {
 
     for (int i = 1; auto property : properties) {
         label += "<f" + std::to_string(i) + "> " + property.first + ": " +
-                 escape(property.second) + " | ";
+                 escape_for_dot(property.second) + " | ";
         i++;
     }
 
