@@ -36,7 +36,7 @@ struct CodeBlock : public ASTNode {
         }
 
         return "<div class=\"code-block\"> <pre><code class=\"" + code_class +
-               "\">" + escape_for_html(code) + "</code></pre> </div>";
+               "\">" + escape(code, EscapeFormat::HTML) + "</code></pre> </div>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
