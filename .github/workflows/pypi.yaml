@@ -22,6 +22,7 @@ jobs:
         - name: Build package
           run: |
             git describe --tags --abbrev=0 > version.txt
+            git show --format=%h -s > commithash.txt
             python setup.py sdist 
 
         - name: Upload package to PyPI

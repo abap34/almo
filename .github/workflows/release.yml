@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+  build-and-upload:
+    name: Build and Upload (${{ matrix.os }})
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_name: almo-linux-x64
+            executable_name: almo
+          - os: macos-latest
+            asset_name: almo-macos-x64
+            executable_name: almo
+          - os: windows-latest
+            asset_name: almo-windows-x64
+            executable_name: almo.exe
+            
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake ninja pkg-config
+        
+    - name: Install system dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install cmake ninja pkgconfiglite
+        
+    - name: Install Meson
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build
+      run: |
+        meson setup builddir --buildtype=release
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run tests
+      run: |
+        meson test -C builddir --verbose
+        
+    - name: Prepare asset (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        mkdir -p release
+        cp builddir/${{ matrix.executable_name }} release/
+        cp README.md release/ || true
+        cp LICENSE release/ || true
+        tar -czf ${{ matrix.asset_name }}.tar.gz -C release .
+        
+    - name: Prepare asset (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        mkdir release
+        copy builddir\\${{ matrix.executable_name }} release\\
+        copy README.md release\\ || echo "No README"
+        copy LICENSE release\\ || echo "No LICENSE"
+        7z a ${{ matrix.asset_name }}.zip release\\*
+        
+    - name: Upload Release Asset (Unix)
+      if: runner.os != 'Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./${{ matrix.asset_name }}.tar.gz
+        asset_name: ${{ matrix.asset_name }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload Release Asset (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./${{ matrix.asset_name }}.zip
+        asset_name: ${{ matrix.asset_name }}.zip
+        asset_content_type: application/zip
+
+  docker-release:
+    name: Docker Release
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Extract tag name
+      id: tag
+      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/almo:latest
+          ${{ secrets.DOCKER_USERNAME }}/almo:${{ steps.tag.outputs.tag }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
