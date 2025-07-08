@@ -197,32 +197,54 @@ std::string _remove_comment(std::string s) {
     return ret;
 }
 
-// 文字列を受け取り、ダブルクオーテーションや改行などをエスケープする
-// https://stackoverflow.com/questions/7724448/simple-json-string-escape-for-c
-std::string escape(const std::string& s) {
-    std::ostringstream o;
-    for (auto c = s.cbegin(); c != s.cend(); c++) {
-        if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
-            o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
-              << static_cast<int>(*c);
-        } else {
-            o << *c;
+// 出力フォーマットを指定するenum
+enum class EscapeFormat {
+    JSON,
+    HTML,
+    DOT
+};
+
+// 文字列を受け取り、指定されたフォーマットに応じてエスケープする
+// JSON: ダブルクオーテーションや改行などをエスケープする
+// HTML: HTMLエンティティにエスケープする
+// DOT: DOT言語の特殊文字をエスケープする
+std::string escape(const std::string& s, EscapeFormat format = EscapeFormat::JSON) {
+    switch (format) {
+        case EscapeFormat::JSON: {
+            std::ostringstream o;
+            for (auto c = s.cbegin(); c != s.cend(); c++) {
+                if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
+                    o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
+                      << static_cast<int>(*c);
+                } else {
+                    o << *c;
+                }
+            }
+            return o.str();
+        }
+        case EscapeFormat::HTML: {
+            std::string ret = s;
+            ret = std::regex_replace(ret, std::regex("&"), "&amp;");
+            ret = std::regex_replace(ret, std::regex("<"), "&lt;");
+            ret = std::regex_replace(ret, std::regex(">"), "&gt;");
+            ret = std::regex_replace(ret, std::regex("\""), "&quot;");
+            ret = std::regex_replace(ret, std::regex("'"), "&#39;");
+            return ret;
+        }
+        case EscapeFormat::DOT: {
+            std::string ret = s;
+            ret = std::regex_replace(ret, std::regex("\\{"), "\\\\{");
+            ret = std::regex_replace(ret, std::regex("\\}"), "\\\\}");
+            ret = std::regex_replace(ret, std::regex("\\|"), "\\\\|");
+            ret = std::regex_replace(ret, std::regex("<"), "\\\\<");
+            ret = std::regex_replace(ret, std::regex(">"), "\\\\>");
+            return ret;
         }
     }
-    return o.str();
+    return s;
 }
 
-// 　文字列を受け取り、 HTMLに埋め込んでも大丈夫なようにエスケープする.
-//   ref: https://github.com/abap34/ALMO/issues/91
-std::string escape_for_html(const std::string& s) {
-    std::string ret = s;
-    ret = std::regex_replace(ret, std::regex("&"), "&amp;");
-    ret = std::regex_replace(ret, std::regex("<"), "&lt;");
-    ret = std::regex_replace(ret, std::regex(">"), "&gt;");
-    ret = std::regex_replace(ret, std::regex("\""), "&quot;");
-    ret = std::regex_replace(ret, std::regex("'"), "&#39;");
-    return ret;
-}
+
 
 // 文字列を受け取り、末尾のスペースを削除する
 std::string rtrim(std::string s) {

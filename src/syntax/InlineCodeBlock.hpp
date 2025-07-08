@@ -15,7 +15,7 @@ struct InlineCodeBlock : public ASTNode {
     InlineCodeBlock(std::string code) : code(code) { set_uuid(); }
 
     std::string to_html() const override {
-        return "<span class=\"inline-code\"> <code>" + escape_for_html(code) +
+        return "<span class=\"inline-code\"> <code>" + escape(code, EscapeFormat::HTML) +
                "</code> </span>";
     }
 
