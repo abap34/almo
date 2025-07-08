@@ -4,3 +4,7 @@ tmp*
 almo.so
 result
 
+# Build artifacts
+dist/
+*.egg-info/
+
