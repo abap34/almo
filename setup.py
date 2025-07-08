@@ -7,8 +7,22 @@ from setuptools import setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
 os.system("bash scripts/setup.sh")
-with open("version.txt") as f:
-    __version__ = f.read().strip()
+
+# Try to read version.txt from build directory if it doesn't exist in root
+version_file = "version.txt"
+if not os.path.exists(version_file):
+    version_file = "build/version.txt"
+
+if os.path.exists(version_file):
+    with open(version_file) as f:
+        __version__ = f.read().strip()
+        # Remove R"(" and ")" wrapper if present
+        if __version__.startswith('R"(') and __version__.endswith(')"'):
+            __version__ = __version__[3:-2]
+        if not __version__:
+            __version__ = "0.1.0.dev0"
+else:
+    __version__ = "0.1.0.dev0"
 
 ext_modules = [
     Pybind11Extension(

@@ -1,4 +1,6 @@
 recursive-include src *
 include scripts/setup.sh
+include scripts/generate_stubs.py
+include scripts/build_with_stubs.sh
 include version.txt
-recursive-include almo-stubs *.pyi
+recursive-include almo-stubs *
