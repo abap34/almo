@@ -18,7 +18,7 @@ struct InlineUrl : public ASTNode {
     }
 
     std::string to_html() const override {
-        return "<url> <a href=\"" + url + "\">" + alt + "</a> </url>";
+        return "<url><a href=\"" + url + "\">" + alt + "</a></url>";
     }
 
     std::map<std::string, std::string> get_properties() const override {

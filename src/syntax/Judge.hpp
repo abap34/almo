@@ -62,8 +62,8 @@ struct Judge : public ASTNode {
 
         // タイトルを作る
         std::string title_h3 =
-            "<h3 class=\"problem_title\"> <div class='badge' id='" + uuid_str +
-            "_status'>WJ</div>   " + title + " </h2>\n";
+            "<h3 class=\"problem_title\"><div class='badge' id='" + uuid_str +
+            "_status'>WJ</div>" + title + "</h2>\n";
 
         // ここから ace editor を作る.
         // まず editor を入れる用の div を作る.

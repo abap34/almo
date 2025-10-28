@@ -10,8 +10,8 @@ struct InlineOverline : public ASTNode {
    public:
     InlineOverline() { set_uuid(); }
     std::string to_html() const override {
-        return "<span class=\"overline\"> <s>" + concatenated_childs_html() +
-               "</s> </span>";
+        return "<span class=\"overline\"><s>" + concatenated_childs_html() +
+               "</s></span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
