@@ -11,8 +11,8 @@ struct InlineItalic : public ASTNode {
     InlineItalic() { set_uuid(); }
 
     std::string to_html() const override {
-        return "<span class=\"italic\"> <i>" + concatenated_childs_html() +
-               "</i> </span>";
+        return "<span class=\"italic\"><i>" + concatenated_childs_html() +
+               "</i></span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {

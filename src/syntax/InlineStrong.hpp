@@ -11,8 +11,8 @@ struct InlineStrong : public ASTNode {
     InlineStrong() { set_uuid(); }
 
     std::string to_html() const override {
-        return "<span class=\"strong\"> <strong>" + concatenated_childs_html() +
-               "</strong> </span>";
+        return "<span class=\"strong\"><strong>" + concatenated_childs_html() +
+               "</strong></span>";
     }
 
     std::map<std::string, std::string> get_properties() const override {

@@ -35,8 +35,8 @@ struct CodeBlock : public ASTNode {
             code_class = "language-" + language;
         }
 
-        return "<div class=\"code-block\"> <pre><code class=\"" + code_class +
-               "\">" + escape(code, EscapeFormat::HTML) + "</code></pre> </div>";
+        return "<div class=\"code-block\"><pre><code class=\"" + code_class +
+               "\">" + escape(code, EscapeFormat::HTML) + "</code></pre></div>";
     }
 
     std::map<std::string, std::string> get_properties() const override {
