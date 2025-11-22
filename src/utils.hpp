@@ -13,22 +13,6 @@
 
 // コンパイル時に埋め込む定数
 namespace almo {
-std::string LIGHT_THEME = {
-#include "light.css"
-};
-
-std::string DARK_THEME = {
-#include "dark.css"
-};
-
-std::string RUNNER = {
-#include "runner.js"
-};
-
-std::string TEMPLATE = {
-#include "template.html"
-};
-
 std::string VERSION = {
 #include "version.txt"
 };
@@ -36,8 +20,6 @@ std::string VERSION = {
 std::string COMMITHASH = {
 #include "commithash.txt"
 };
-
-
 }  // namespace almo
 
 // 文字列の vector を 結合する。第二引数はOptionalで区切り文字。デフォルトは空

@@ -1,0 +1,366 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake ninja pkg-config
+        
+    - name: Install system dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install cmake ninja pkgconfiglite
+        
+    - name: Install Meson
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build
+      run: |
+        meson setup builddir --buildtype=release
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run tests
+      run: |
+        meson test -C builddir --verbose
+        
+    - name: Run benchmarks
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        ./builddir/bench_almo --benchmark_format=json --benchmark_out=benchmark_result.json --benchmark_min_time=0.1s
+        
+    - name: Upload benchmark results
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark_result.json
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: builddir/meson-logs/
+        
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config cppcheck clang-format clang-tidy
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build
+      run: |
+        meson setup builddir --buildtype=debug
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run static analysis (cppcheck)
+      run: |
+        cppcheck --enable=all --error-exitcode=1 --suppressions-list=<(echo "missingIncludeSystem") src/ || true
+        
+    - name: Check code formatting
+      run: |
+        find src/ tests/ -name "*.cpp" -o -name "*.hpp" | xargs clang-format --dry-run --Werror || true
+        
+    - name: Run clang-tidy
+      run: |
+        find src/ tests/ -name "*.cpp" | xargs clang-tidy -p builddir || true
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config gcov lcov
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build with coverage
+      run: |
+        meson setup builddir --buildtype=debug -Db_coverage=true
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run tests
+      run: |
+        meson test -C builddir --verbose
+        
+    - name: Generate coverage report
+      run: |
+        ninja -C builddir coverage-html
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: builddir/meson-logs/coverage.xml
+        fail_ci_if_error: false
+
+  memory-check:
+    name: Memory Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config valgrind
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build
+      run: |
+        meson setup builddir --buildtype=debug
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run memory check
+      run: |
+        valgrind --tool=memcheck --leak-check=full --error-exitcode=1 ./builddir/test_almo || true
+        
+  performance-regression:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 2
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure and build current version
+      run: |
+        meson setup builddir --buildtype=release
+        meson compile -C builddir
+        
+    - name: Run current benchmarks
+      run: |
+        ./builddir/bench_almo --benchmark_format=json --benchmark_out=current_bench.json
+        
+    - name: Checkout previous version
+      run: |
+        git checkout HEAD~1
+        
+    - name: Configure and build previous version
+      run: |
+        rm -rf builddir
+        meson setup builddir --buildtype=release
+        meson compile -C builddir
+        
+    - name: Run previous benchmarks
+      run: |
+        ./builddir/bench_almo --benchmark_format=json --benchmark_out=previous_bench.json || true
+        
+    - name: Compare performance
+      run: |
+        echo "Performance comparison between versions:"
+        echo "Current benchmark results:"
+        head -20 current_bench.json || echo "No current results"
+        echo "Previous benchmark results:"
+        head -20 previous_bench.json || echo "No previous results"
+        
+  docs-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Check README exists
+      run: |
+        test -f README.md
+        
+    - name: Check example directory
+      run: |
+        test -d example
+        
+    - name: Verify example files work
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        python -m pip install --upgrade pip
+        pip install meson
+        meson setup builddir --buildtype=release
+        meson compile -C builddir
+        # Test with example files
+        find example/ -name "*.md" -exec ./builddir/almo {} \; || true
+
+  benchmark-tracking:
+    name: Continuous Benchmark Tracking
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build (Release)
+      run: |
+        meson setup builddir --buildtype=release
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run benchmarks with JSON output
+      run: |
+        ./builddir/bench_almo --benchmark_format=json --benchmark_out=benchmark_result.json --benchmark_min_time=0.3s
+        
+    - name: Download previous benchmark data
+      uses: actions/cache@v3
+      with:
+        path: ./cache
+        key: ${{ runner.os }}-benchmark
+        
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: C++ Benchmark
+        tool: 'googlecpp'
+        output-file-path: benchmark_result.json
+        # Store the data
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        # Show alert with commit comment on detecting possible performance regression
+        alert-threshold: '200%'
+        comment-on-alert: true
+        fail-on-alert: false
+        # Enable Job Summary for PRs
+        summary-always: true
+        
+  benchmark-pr:
+    name: Benchmark PR Comparison
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config
+        python -m pip install --upgrade pip
+        pip install meson
+        
+    - name: Configure build (Release)
+      run: |
+        meson setup builddir --buildtype=release
+        
+    - name: Build project
+      run: |
+        meson compile -C builddir
+        
+    - name: Run benchmarks for PR
+      run: |
+        ./builddir/bench_almo --benchmark_format=json --benchmark_out=pr_benchmark_result.json --benchmark_min_time=0.3s
+        
+    - name: Download previous benchmark data
+      uses: actions/cache@v3
+      with:
+        path: ./cache
+        key: ${{ runner.os }}-benchmark
+        
+    - name: Compare benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: C++ Benchmark
+        tool: 'googlecpp'
+        output-file-path: pr_benchmark_result.json
+        # Compare with main branch data, but don't store
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: false
+        # Show alert with commit comment on detecting possible performance regression
+        alert-threshold: '150%'
+        comment-on-alert: true
+        fail-on-alert: false
+        # Enable Job Summary for PRs
+        summary-always: true

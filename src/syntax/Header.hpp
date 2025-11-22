@@ -14,23 +14,7 @@ struct Header : public ASTNode {
     Header(int _level) : level(_level) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
-        std::string contents_push =
-            ""
-            "<script>"
-            "page_contents.push({\n"
-            "    \"type\":\"H" +
-            std::to_string(level) +
-            "\",\n"
-            "    \"id\":\"" +
-            get_uuid_str() +
-            "\",\n"
-            "    \"title\":\"" +
-            childs_html +
-            "\"\n"
-            "});\n"
-            "</script>\n";
-
-        return contents_push + "<h" + std::to_string(level) + " id=\"" +
+        return "<h" + std::to_string(level) + " id=\"" +
                get_uuid_str() + "\">" + childs_html + "</h" +
                std::to_string(level) + ">";
     }
