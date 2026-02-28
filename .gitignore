@@ -4,3 +4,5 @@ tmp*
 almo.so
 result
 
+/.cache
+/build_wasm
