@@ -57,6 +57,11 @@ jobs:
           test -f site/index.html
           test -f site/dev/bench/index.html
           test -f site/dev/bench/dashboard.json
+          if [ "${ACT}" = "true" ]; then
+            test -f site/dev/coverage/runs/9102/index.html
+          else
+            find site/dev/coverage -name index.html | grep -q .
+          fi
 
       - name: Upload Pages artifact
         if: env.ACT != 'true'

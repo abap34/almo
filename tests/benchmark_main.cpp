@@ -7,6 +7,7 @@
 #include <map>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -136,6 +137,20 @@ void print_human_readable(const std::vector<BenchmarkResult>& results) {
     }
 }
 
+int parse_iterations(const std::string& value) {
+    try {
+        const int iterations = std::stoi(value);
+        if (iterations < 1) {
+            throw std::out_of_range("iterations must be positive");
+        }
+        return iterations;
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "Invalid value for --iterations: expected an integer >= 1"
+        );
+    }
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -148,7 +163,12 @@ int main(int argc, char* argv[]) {
         if (arg == "--json") {
             json_output = true;
         } else if (arg == "--iterations" && i + 1 < argc) {
-            iterations = std::stoi(argv[++i]);
+            try {
+                iterations = parse_iterations(argv[++i]);
+            } catch (const std::runtime_error& error) {
+                std::cerr << error.what() << '\n';
+                return 1;
+            }
         } else if (arg == "--output" && i + 1 < argc) {
             output_path = argv[++i];
         } else {

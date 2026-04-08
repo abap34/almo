@@ -110,7 +110,8 @@ code {
 .section-head,
 .chart-head,
 .pr-header,
-.pr-title-row {
+.pr-title-row,
+.link-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -404,7 +405,7 @@ code {
 
 @media (max-width: 640px) {
   .page-shell {
-    width: min(100vw - 20px, 1180px);
+    width: min(1180px, calc(100vw - 20px));
     padding-top: 16px;
   }
 
@@ -420,7 +421,8 @@ code {
   .section-head,
   .chart-head,
   .pr-header,
-  .pr-title-row {
+  .pr-title-row,
+  .link-row {
     flex-direction: column;
     align-items: flex-start;
   }

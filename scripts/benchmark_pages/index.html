@@ -44,6 +44,9 @@
               `main` ブランチの成功 run をベースラインとして時系列で表示します。
             </div>
           </div>
+          <a id="main-coverage-link" class="run-link hidden" href="#" target="_blank" rel="noreferrer">
+            Open coverage
+          </a>
         </div>
         <div id="main-benchmark-tabs" class="tab-row"></div>
         <div class="chart-head">
@@ -91,9 +94,14 @@
                 <div>
                   <div class="pr-title-row">
                     <div class="section-title" id="pr-title"></div>
-                    <a id="pr-run-link" class="run-link" href="#" target="_blank" rel="noreferrer">
-                      Open run
-                    </a>
+                    <div class="link-row">
+                      <a id="pr-run-link" class="run-link" href="#" target="_blank" rel="noreferrer">
+                        Open run
+                      </a>
+                      <a id="pr-coverage-link" class="run-link hidden" href="#" target="_blank" rel="noreferrer">
+                        Open coverage
+                      </a>
+                    </div>
                   </div>
                   <div class="section-caption" id="pr-meta"></div>
                 </div>

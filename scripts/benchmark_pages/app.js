@@ -116,6 +116,17 @@ function setText(id, value) {
   document.getElementById(id).textContent = value;
 }
 
+function setLink(id, href) {
+  const element = document.getElementById(id);
+  if (!href) {
+    element.classList.add("hidden");
+    element.removeAttribute("href");
+    return;
+  }
+  element.classList.remove("hidden");
+  element.href = href;
+}
+
 function updateUrl(state) {
   const url = new URL(window.location.href);
   if (state.selectedPrNumber) {
@@ -241,6 +252,10 @@ function renderMeta(payload, mainRunEntries, prGroups) {
   setText("generated-at", formatTimestamp(payload.generated_at));
   setText("main-run-count", String(mainRunEntries.length));
   setText("pr-count", String(prGroups.length));
+}
+
+function renderMainCoverageLink(entry) {
+  setLink("main-coverage-link", entry?.summary?.coverage_url || null);
 }
 
 function renderPrList(groups, selectedPrNumber, onSelect) {
@@ -373,7 +388,8 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
   document.getElementById("pr-meta").textContent = `${latest.branch} · latest ${formatTimestamp(
     latest.updated_at || latest.created_at
   )} · ${group.entries.length} run(s)`;
-  document.getElementById("pr-run-link").href = latest.run_url;
+  setLink("pr-run-link", latest.run_url);
+  setLink("pr-coverage-link", latest.summary?.coverage_url || null);
 
   renderStatusBadges(latest);
 
@@ -411,6 +427,7 @@ function renderDashboard(payload) {
 
     updateUrl(state);
     renderMeta(payload, mainRunEntries, prGroups);
+    renderMainCoverageLink(latestMain);
     renderTabs("main-benchmark-tabs", availableNames, state.selectedBenchmark, (name) => {
       state.selectedBenchmark = name;
       render();
