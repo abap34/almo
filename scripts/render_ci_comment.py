@@ -21,6 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-id", type=int)
     parser.add_argument("--run-url")
     parser.add_argument("--pr-number", type=int)
+    parser.add_argument("--preview-url")
     parser.add_argument("--dashboard-json")
     return parser.parse_args()
 
@@ -88,6 +89,7 @@ def build_dashboard_entry(
             "run_id": args.run_id,
             "run_url": args.run_url,
             "pr_number": args.pr_number if args.pr_number and args.pr_number > 0 else None,
+            "preview_url": args.preview_url,
         },
     }
     return entry
@@ -146,6 +148,8 @@ def main() -> int:
         print()
 
     print(f"Benchmark dashboard: {args.pages_url}")
+    if args.preview_url:
+        print(f"PR preview: {args.preview_url}")
 
     return 0
 

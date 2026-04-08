@@ -389,6 +389,7 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
     latest.updated_at || latest.created_at
   )} · ${group.entries.length} run(s)`;
   setLink("pr-run-link", latest.run_url);
+  setLink("pr-preview-link", latest.summary?.preview_url || null);
   setLink("pr-coverage-link", latest.summary?.coverage_url || null);
 
   renderStatusBadges(latest);
@@ -405,6 +406,15 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
 
 function renderDashboard(payload) {
   const allEntries = payload.entries || [];
+  if (allEntries.length === 0) {
+    setText("repo-name", payload.repo || "Unknown");
+    setText("generated-at", formatTimestamp(payload.generated_at || new Date().toISOString()));
+    setText("main-run-count", "0");
+    setText("pr-count", "0");
+    renderMainCoverageLink(null);
+    renderPrDetail(null, null, null, () => {});
+    return;
+  }
   const mainRunEntries = mainEntries(allEntries);
   const prGroups = pullRequestGroups(allEntries);
   const mainNames = benchmarkNames(mainRunEntries);

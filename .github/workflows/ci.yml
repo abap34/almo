@@ -89,8 +89,10 @@ jobs:
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           REPO_NAME_LOWER="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
           PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/bench/"
+          PREVIEW_URL=""
           if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
             PAGES_URL="${PAGES_URL}?pr=${PR_NUMBER}"
+            PREVIEW_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/previews/pr-${PR_NUMBER}/"
           fi
           python3 scripts/render_ci_comment.py \
             --test-status "$TEST_STATUS" \
@@ -106,6 +108,7 @@ jobs:
             --run-id "$GITHUB_RUN_ID" \
             --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --pr-number "${PR_NUMBER:-0}" \
+            --preview-url "$PREVIEW_URL" \
             --dashboard-json .ci/dashboard-entry.json \
             > .ci/ci-comment.md
           cat .ci/ci-comment.md >> "$GITHUB_STEP_SUMMARY"
@@ -116,6 +119,22 @@ jobs:
         with:
           name: dashboard-entry
           path: .ci/dashboard-entry.json
+
+      - name: Build preview site
+        if: always()
+        run: |
+          python3 scripts/build_benchmark_dashboard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --out-dir .ci/preview-site \
+            --entry-json .ci/dashboard-entry.json \
+            --coverage-html-dir build/coverage/html
+
+      - name: Upload preview site
+        if: always() && env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-site
+          path: .ci/preview-site
 
       - name: Comment on pull request
         if: always() && env.ACT != 'true' && github.event_name == 'pull_request'
