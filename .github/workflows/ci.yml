@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ lcov python3
+
+      - name: Prepare CI workspace
+        run: mkdir -p .ci
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          make test 2>&1 | tee .ci/test.log
+
+      - name: Run benchmarks
+        id: bench
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          make bench BENCH_ARGS="--json --output .ci/benchmark.json --iterations 5" 2>&1 | tee .ci/benchmark.log
+
+      - name: Run coverage
+        id: coverage
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          make coverage 2>&1 | tee .ci/coverage.log
+
+      - name: Upload benchmark artifacts
+        if: always() && env.ACT != 'true' && steps.bench.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            .ci/benchmark.json
+            .ci/benchmark.log
+
+      - name: Upload coverage artifacts
+        if: always() && env.ACT != 'true' && steps.coverage.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            build/coverage
+            .ci/coverage.log
+
+      - name: Upload test logs
+        if: always() && env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: .ci/test.log
+
+      - name: Build PR summary
+        if: always()
+        env:
+          TEST_STATUS: ${{ steps.tests.outcome }}
+          BENCH_STATUS: ${{ steps.bench.outcome }}
+          COVERAGE_STATUS: ${{ steps.coverage.outcome }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          REPO_NAME_LOWER="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
+          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/bench/"
+          PREVIEW_URL=""
+          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
+            PAGES_URL="${PAGES_URL}?pr=${PR_NUMBER}"
+            PREVIEW_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/previews/pr-${PR_NUMBER}/"
+          fi
+          python3 scripts/render_ci_comment.py \
+            --test-status "$TEST_STATUS" \
+            --bench-status "$BENCH_STATUS" \
+            --coverage-status "$COVERAGE_STATUS" \
+            --test-log .ci/test.log \
+            --benchmark-json .ci/benchmark.json \
+            --coverage-log .ci/coverage.log \
+            --pages-url "$PAGES_URL" \
+            --event-name "$EVENT_NAME" \
+            --branch "$HEAD_BRANCH" \
+            --commit "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --pr-number "${PR_NUMBER:-0}" \
+            --preview-url "$PREVIEW_URL" \
+            --dashboard-json .ci/dashboard-entry.json \
+            > .ci/ci-comment.md
+          cat .ci/ci-comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dashboard summary
+        if: always() && env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-entry
+          path: .ci/dashboard-entry.json
+
+      - name: Build preview site
+        if: always()
+        run: |
+          python3 scripts/build_benchmark_dashboard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --out-dir .ci/preview-site \
+            --entry-json .ci/dashboard-entry.json \
+            --coverage-html-dir build/coverage/html
+
+      - name: Upload preview site
+        if: always() && env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-site
+          path: .ci/preview-site
+
+      - name: Comment on pull request
+        if: always() && env.ACT != 'true' && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ci-summary
+          path: .ci/ci-comment.md
+
+      - name: Fail if any quality gate failed
+        if: always()
+        env:
+          TEST_STATUS: ${{ steps.tests.outcome }}
+          BENCH_STATUS: ${{ steps.bench.outcome }}
+          COVERAGE_STATUS: ${{ steps.coverage.outcome }}
+        run: |
+          if [ "$TEST_STATUS" != "success" ] || [ "$BENCH_STATUS" != "success" ] || [ "$COVERAGE_STATUS" != "success" ]; then
+            echo "tests=$TEST_STATUS bench=$BENCH_STATUS coverage=$COVERAGE_STATUS"
+            exit 1
+          fi

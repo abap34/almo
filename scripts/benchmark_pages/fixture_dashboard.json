@@ -1,0 +1,246 @@
+{
+  "repo": "abap34/almo",
+  "generated_at": "2026-04-08T15:00:00Z",
+  "entries": [
+    {
+      "run_id": 9101,
+      "run_url": "https://github.com/abap34/almo/actions/runs/9101",
+      "title": "Main benchmark refresh",
+      "event": "push",
+      "branch": "main",
+      "commit": "1111111aaaa2222bbbb3333cccc4444dddd5555",
+      "created_at": "2026-04-05T09:00:00Z",
+      "updated_at": "2026-04-05T09:08:00Z",
+      "conclusion": "success",
+      "pr_number": null,
+      "summary": {
+        "test_status": "success",
+        "bench_status": "success",
+        "coverage_status": "success",
+        "tests": {
+          "passed": 4,
+          "failed": 0
+        },
+        "coverage_summary": "44.0% (605 of 1375 lines)",
+        "benchmarks": [
+          {
+            "name": "parse_small_document",
+            "iterations": 5,
+            "work_units": 111,
+            "min_ms": 9.010,
+            "mean_ms": 9.441,
+            "max_ms": 9.830
+          },
+          {
+            "name": "parse_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 148.202,
+            "mean_ms": 149.318,
+            "max_ms": 151.001
+          },
+          {
+            "name": "render_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 171.731,
+            "mean_ms": 172.884,
+            "max_ms": 174.120
+          }
+        ]
+      }
+    },
+    {
+      "run_id": 9102,
+      "run_url": "https://github.com/abap34/almo/actions/runs/9102",
+      "title": "Main benchmark refresh",
+      "event": "push",
+      "branch": "main",
+      "commit": "2222222aaaa3333bbbb4444cccc5555dddd6666",
+      "created_at": "2026-04-07T09:00:00Z",
+      "updated_at": "2026-04-07T09:07:00Z",
+      "conclusion": "success",
+      "pr_number": null,
+      "summary": {
+        "test_status": "success",
+        "bench_status": "success",
+        "coverage_status": "success",
+        "tests": {
+          "passed": 4,
+          "failed": 0
+        },
+        "coverage_summary": "44.1% (606 of 1375 lines)",
+        "benchmarks": [
+          {
+            "name": "parse_small_document",
+            "iterations": 5,
+            "work_units": 111,
+            "min_ms": 8.890,
+            "mean_ms": 9.105,
+            "max_ms": 9.298
+          },
+          {
+            "name": "parse_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 144.012,
+            "mean_ms": 144.887,
+            "max_ms": 145.762
+          },
+          {
+            "name": "render_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 162.116,
+            "mean_ms": 163.402,
+            "max_ms": 164.008
+          }
+        ]
+      }
+    },
+    {
+      "run_id": 9201,
+      "run_url": "https://github.com/abap34/almo/actions/runs/9201",
+      "title": "CI に品質レポートとベンチマークダッシュボードを追加",
+      "event": "pull_request",
+      "branch": "ci/quality-dashboard",
+      "commit": "3333333aaaa4444bbbb5555cccc6666dddd7777",
+      "created_at": "2026-04-08T05:30:00Z",
+      "updated_at": "2026-04-08T05:36:00Z",
+      "conclusion": "success",
+      "pr_number": 174,
+      "summary": {
+        "test_status": "success",
+        "bench_status": "success",
+        "coverage_status": "success",
+        "tests": {
+          "passed": 4,
+          "failed": 0
+        },
+        "coverage_summary": "44.1% (606 of 1375 lines)",
+        "benchmarks": [
+          {
+            "name": "parse_small_document",
+            "iterations": 5,
+            "work_units": 111,
+            "min_ms": 9.404,
+            "mean_ms": 9.655,
+            "max_ms": 10.012
+          },
+          {
+            "name": "parse_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 146.320,
+            "mean_ms": 147.245,
+            "max_ms": 149.020
+          },
+          {
+            "name": "render_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 165.408,
+            "mean_ms": 166.031,
+            "max_ms": 167.552
+          }
+        ]
+      }
+    },
+    {
+      "run_id": 9202,
+      "run_url": "https://github.com/abap34/almo/actions/runs/9202",
+      "title": "CI に品質レポートとベンチマークダッシュボードを追加",
+      "event": "pull_request",
+      "branch": "ci/quality-dashboard",
+      "commit": "4444444aaaa5555bbbb6666cccc7777dddd8888",
+      "created_at": "2026-04-08T10:10:00Z",
+      "updated_at": "2026-04-08T10:16:00Z",
+      "conclusion": "success",
+      "pr_number": 174,
+      "summary": {
+        "test_status": "success",
+        "bench_status": "success",
+        "coverage_status": "success",
+        "tests": {
+          "passed": 4,
+          "failed": 0
+        },
+        "coverage_summary": "44.1% (606 of 1375 lines)",
+        "benchmarks": [
+          {
+            "name": "parse_small_document",
+            "iterations": 5,
+            "work_units": 111,
+            "min_ms": 9.122,
+            "mean_ms": 9.330,
+            "max_ms": 9.611
+          },
+          {
+            "name": "parse_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 145.510,
+            "mean_ms": 146.104,
+            "max_ms": 146.992
+          },
+          {
+            "name": "render_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 163.882,
+            "mean_ms": 164.420,
+            "max_ms": 165.004
+          }
+        ]
+      }
+    },
+    {
+      "run_id": 9301,
+      "run_url": "https://github.com/abap34/almo/actions/runs/9301",
+      "title": "Bundle assets for offline output",
+      "event": "pull_request",
+      "branch": "feat/offline-assets",
+      "commit": "5555555aaaa6666bbbb7777cccc8888dddd9999",
+      "created_at": "2026-04-08T11:20:00Z",
+      "updated_at": "2026-04-08T11:28:00Z",
+      "conclusion": "failure",
+      "pr_number": 173,
+      "summary": {
+        "test_status": "success",
+        "bench_status": "success",
+        "coverage_status": "failure",
+        "tests": {
+          "passed": 4,
+          "failed": 0
+        },
+        "coverage_summary": "Unavailable",
+        "benchmarks": [
+          {
+            "name": "parse_small_document",
+            "iterations": 5,
+            "work_units": 111,
+            "min_ms": 8.760,
+            "mean_ms": 8.991,
+            "max_ms": 9.205
+          },
+          {
+            "name": "parse_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 143.112,
+            "mean_ms": 143.990,
+            "max_ms": 144.804
+          },
+          {
+            "name": "render_large_document",
+            "iterations": 5,
+            "work_units": 2201,
+            "min_ms": 161.225,
+            "mean_ms": 161.880,
+            "max_ms": 162.447
+          }
+        ]
+      }
+    }
+  ]
+}

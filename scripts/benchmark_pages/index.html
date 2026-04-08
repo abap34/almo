@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALMO Benchmark Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="eyebrow">ALMO / Quality Dashboard</div>
+        <h1>Main の推移と PR ごとの確認を、同じページで見られるようにする。</h1>
+        <p class="hero-copy">
+          `main` のベンチマーク推移、最近の PR の最新結果、PR ごとの再実行履歴と
+          `main` との差分をまとめて確認できます。
+        </p>
+      </header>
+
+      <section class="meta-grid">
+        <article class="meta-card">
+          <div class="meta-label">Repository</div>
+          <div class="meta-value" id="repo-name">Loading...</div>
+        </article>
+        <article class="meta-card">
+          <div class="meta-label">Generated</div>
+          <div class="meta-value" id="generated-at">Loading...</div>
+        </article>
+        <article class="meta-card">
+          <div class="meta-label">Main Runs</div>
+          <div class="meta-value" id="main-run-count">0</div>
+        </article>
+        <article class="meta-card">
+          <div class="meta-label">Tracked PRs</div>
+          <div class="meta-value" id="pr-count">0</div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Main Trend</div>
+            <div class="section-caption">
+              `main` ブランチの成功 run をベースラインとして時系列で表示します。
+            </div>
+          </div>
+          <a id="main-coverage-link" class="run-link hidden" href="#" target="_blank" rel="noreferrer">
+            Open coverage
+          </a>
+        </div>
+        <div id="main-benchmark-tabs" class="tab-row"></div>
+        <div class="chart-head">
+          <div class="chart-title" id="main-chart-title">Loading...</div>
+          <div class="chart-caption" id="main-chart-caption"></div>
+        </div>
+        <svg id="main-chart" viewBox="0 0 960 340" preserveAspectRatio="none"></svg>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th>Mean (ms)</th>
+              <th>Min (ms)</th>
+              <th>Max (ms)</th>
+              <th>Iterations</th>
+            </tr>
+          </thead>
+          <tbody id="main-latest-table"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <div class="section-title">PR Explorer</div>
+            <div class="section-caption">
+              PR ごとの最新 run と再実行の推移、`main` との差分を確認できます。
+            </div>
+          </div>
+        </div>
+
+        <div class="pr-layout">
+          <aside class="pr-list-panel">
+            <div class="pr-list-title">Recent Pull Requests</div>
+            <div id="pr-list" class="pr-list"></div>
+          </aside>
+
+          <div class="pr-detail-panel">
+            <div id="pr-empty" class="empty-state">
+              PR data is not available yet.
+            </div>
+
+            <div id="pr-detail" class="pr-detail hidden">
+              <div class="pr-header">
+                <div>
+                  <div class="pr-title-row">
+                    <div class="section-title" id="pr-title"></div>
+                    <div class="link-row">
+                      <a id="pr-run-link" class="run-link" href="#" target="_blank" rel="noreferrer">
+                        Open run
+                      </a>
+                      <a id="pr-preview-link" class="run-link hidden" href="#" target="_blank" rel="noreferrer">
+                        Open preview
+                      </a>
+                      <a id="pr-coverage-link" class="run-link hidden" href="#" target="_blank" rel="noreferrer">
+                        Open coverage
+                      </a>
+                    </div>
+                  </div>
+                  <div class="section-caption" id="pr-meta"></div>
+                </div>
+                <div id="pr-statuses" class="status-row"></div>
+              </div>
+
+              <div id="pr-benchmark-tabs" class="tab-row"></div>
+
+              <div class="chart-head">
+                <div class="chart-title" id="pr-chart-title"></div>
+                <div class="chart-caption" id="pr-chart-caption"></div>
+              </div>
+              <svg id="pr-chart" viewBox="0 0 960 320" preserveAspectRatio="none"></svg>
+
+              <div class="detail-grid">
+                <section class="subpanel">
+                  <div class="subpanel-title">Delta vs latest main</div>
+                  <table class="data-table compact">
+                    <thead>
+                      <tr>
+                        <th>Benchmark</th>
+                        <th>Main</th>
+                        <th>PR</th>
+                        <th>Delta</th>
+                        <th>Delta %</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pr-compare-table"></tbody>
+                  </table>
+                </section>
+
+                <section class="subpanel">
+                  <div class="subpanel-title">PR run history</div>
+                  <div id="pr-run-history" class="run-history"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
