@@ -1,8 +1,6 @@
 async function loadDashboard() {
   const response = await fetch("./dashboard.json", { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error("Failed to load dashboard data");
-  }
+  if (!response.ok) throw new Error("Failed to load dashboard data");
   return response.json();
 }
 
@@ -11,56 +9,56 @@ function shortCommit(commit) {
 }
 
 function formatMs(value) {
-  return `${value.toFixed(3)} ms`;
+  return `${value.toFixed(3)}`;
 }
 
 function formatDelta(value) {
   const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(3)} ms`;
+  return `${sign}${value.toFixed(3)}`;
 }
 
 function formatDeltaPercent(value) {
-  if (!Number.isFinite(value)) {
-    return "n/a";
-  }
+  if (!Number.isFinite(value)) return "n/a";
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(1)}%`;
 }
 
 function formatTimestamp(value) {
-  return new Date(value).toLocaleString();
+  const d = new Date(value);
+  return d.toLocaleString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
 }
 
-function statusTone(status) {
-  return {
-    success: "success",
-    failure: "failure",
-    cancelled: "muted",
-    skipped: "muted",
-  }[status] || "muted";
+function formatDate(value) {
+  const d = new Date(value);
+  return d.toLocaleString("en-US", { month: "short", day: "numeric" });
+}
+
+function statusClass(status) {
+  return { success: "success", failure: "failure", cancelled: "muted", skipped: "muted" }[status] || "muted";
 }
 
 function benchmarkNames(entries) {
   const names = new Set();
-  entries.forEach((entry) => {
-    (entry.summary?.benchmarks || []).forEach((benchmark) => names.add(benchmark.name));
-  });
+  entries.forEach((e) => (e.summary?.benchmarks || []).forEach((b) => names.add(b.name)));
   return Array.from(names);
 }
 
 function benchmarkSeries(entries, benchmarkName) {
   return entries
     .map((entry) => {
-      const benchmark = (entry.summary?.benchmarks || []).find((item) => item.name === benchmarkName);
-      if (!benchmark) {
-        return null;
-      }
+      const b = (entry.summary?.benchmarks || []).find((x) => x.name === benchmarkName);
+      if (!b) return null;
       return {
         label: shortCommit(entry.commit),
+        date: formatDate(entry.updated_at || entry.created_at),
         timestamp: entry.updated_at || entry.created_at,
         href: entry.run_url,
-        value: benchmark.mean_ms,
-        meta: entry,
+        value: b.mean_ms,
+        min: b.min_ms,
+        max: b.max_ms,
       };
     })
     .filter(Boolean);
@@ -68,180 +66,188 @@ function benchmarkSeries(entries, benchmarkName) {
 
 function latestBenchmarkMap(entry) {
   const map = new Map();
-  (entry?.summary?.benchmarks || []).forEach((benchmark) => {
-    map.set(benchmark.name, benchmark);
-  });
+  (entry?.summary?.benchmarks || []).forEach((b) => map.set(b.name, b));
   return map;
 }
 
 function mainEntries(entries) {
   return entries.filter(
-    (entry) =>
-      entry.event === "push" &&
-      entry.branch === "main" &&
-      entry.summary?.bench_status === "success" &&
-      (entry.summary?.benchmarks || []).length > 0
+    (e) =>
+      e.event === "push" &&
+      e.branch === "main" &&
+      e.summary?.bench_status === "success" &&
+      (e.summary?.benchmarks || []).length > 0
   );
 }
 
 function pullRequestGroups(entries) {
   const groups = new Map();
-
   entries
-    .filter((entry) => entry.pr_number)
-    .forEach((entry) => {
-      if (!groups.has(entry.pr_number)) {
-        groups.set(entry.pr_number, []);
-      }
-      groups.get(entry.pr_number).push(entry);
+    .filter((e) => e.pr_number)
+    .forEach((e) => {
+      if (!groups.has(e.pr_number)) groups.set(e.pr_number, []);
+      groups.get(e.pr_number).push(e);
     });
 
   return Array.from(groups.entries())
     .map(([number, groupEntries]) => ({
       number,
       entries: groupEntries.sort(
-        (left, right) =>
-          new Date(left.updated_at || left.created_at) - new Date(right.updated_at || right.created_at)
+        (a, b) => new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at)
       ),
     }))
-    .sort((left, right) => {
-      const leftLatest = left.entries[left.entries.length - 1];
-      const rightLatest = right.entries[right.entries.length - 1];
-      return new Date(rightLatest.updated_at || rightLatest.created_at) -
-        new Date(leftLatest.updated_at || leftLatest.created_at);
+    .sort((a, b) => {
+      const al = a.entries[a.entries.length - 1];
+      const bl = b.entries[b.entries.length - 1];
+      return new Date(bl.updated_at || bl.created_at) - new Date(al.updated_at || al.created_at);
     });
 }
 
 function setText(id, value) {
-  document.getElementById(id).textContent = value;
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
 function setLink(id, href) {
-  const element = document.getElementById(id);
+  const el = document.getElementById(id);
+  if (!el) return;
   if (!href) {
-    element.classList.add("hidden");
-    element.removeAttribute("href");
-    return;
+    el.classList.add("hidden");
+    el.removeAttribute("href");
+  } else {
+    el.classList.remove("hidden");
+    el.href = href;
   }
-  element.classList.remove("hidden");
-  element.href = href;
 }
 
 function updateUrl(state) {
   const url = new URL(window.location.href);
-  if (state.selectedPrNumber) {
-    url.searchParams.set("pr", String(state.selectedPrNumber));
-  } else {
-    url.searchParams.delete("pr");
-  }
-  if (state.selectedBenchmark) {
-    url.searchParams.set("benchmark", state.selectedBenchmark);
-  } else {
-    url.searchParams.delete("benchmark");
-  }
+  state.selectedPrNumber
+    ? url.searchParams.set("pr", String(state.selectedPrNumber))
+    : url.searchParams.delete("pr");
+  state.selectedBenchmark
+    ? url.searchParams.set("benchmark", state.selectedBenchmark)
+    : url.searchParams.delete("benchmark");
   window.history.replaceState({}, "", url);
 }
 
 function renderTabs(containerId, names, selectedName, onSelect) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = "";
-
   names.forEach((name) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `tab${name === selectedName ? " active" : ""}`;
-    button.textContent = name;
-    button.addEventListener("click", () => onSelect(name));
-    container.appendChild(button);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `tab${name === selectedName ? " active" : ""}`;
+    btn.textContent = name;
+    btn.addEventListener("click", () => onSelect(name));
+    container.appendChild(btn);
   });
 }
 
 function renderChart(svgId, series, captionId) {
   const svg = document.getElementById(svgId);
   const caption = document.getElementById(captionId);
+  if (!svg) return;
 
   if (series.length === 0) {
     svg.innerHTML = "";
-    caption.textContent = "No data available";
+    if (caption) caption.textContent = "No data";
     return;
   }
 
-  caption.textContent = `${series.length} run(s) tracked`;
+  if (caption) caption.textContent = `${series.length} run${series.length !== 1 ? "s" : ""}`;
 
-  const width = 960;
-  const height = 340;
-  const margin = { top: 24, right: 24, bottom: 48, left: 64 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const W = 960;
+  const H = 260;
+  const pad = { top: 28, right: 32, bottom: 44, left: 72 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
 
-  const values = series.map((point) => point.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(max - min, 1);
-  const labelStep = Math.max(1, Math.ceil(series.length / 6));
+  const values = series.map((p) => p.value);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const span = Math.max(rawMax - rawMin, 0.1);
+  const yMin = rawMin - span * 0.15;
+  const yMax = rawMax + span * 0.15;
+  const ySpan = yMax - yMin;
 
-  const x = (index) =>
-    margin.left + (series.length === 1 ? innerWidth / 2 : (innerWidth * index) / (series.length - 1));
-  const y = (value) =>
-    margin.top + innerHeight - ((value - min) / span) * innerHeight;
+  const xPos = (i) =>
+    pad.left + (series.length === 1 ? iW / 2 : (iW * i) / (series.length - 1));
+  const yPos = (v) =>
+    pad.top + iH - ((v - yMin) / ySpan) * iH;
 
-  const path = series
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${x(index)} ${y(point.value)}`)
-    .join(" ");
+  // grid & axis labels
+  const gridCount = 4;
+  let gridLines = "";
+  let yLabels = "";
+  for (let i = 0; i <= gridCount; i++) {
+    const ratio = i / gridCount;
+    const y = pad.top + iH * ratio;
+    const val = yMax - (yMax - yMin) * ratio;
+    gridLines += `<line class="chart-grid-line" x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" />`;
+    yLabels += `<text class="chart-axis-label" x="${pad.left - 8}" y="${y + 4}" text-anchor="end">${val.toFixed(2)}</text>`;
+  }
 
-  const grid = [0, 0.25, 0.5, 0.75, 1]
-    .map((ratio) => {
-      const yPos = margin.top + innerHeight * ratio;
-      return `<line class="chart-grid" x1="${margin.left}" y1="${yPos}" x2="${width - margin.right}" y2="${yPos}" />`;
-    })
-    .join("");
+  // x-axis labels — show up to 8
+  const labelStep = Math.max(1, Math.ceil(series.length / 8));
+  let xLabels = "";
+  series.forEach((p, i) => {
+    if (i % labelStep !== 0 && i !== series.length - 1) return;
+    xLabels += `<text class="chart-tick" x="${xPos(i)}" y="${H - 6}" text-anchor="middle">${p.label}</text>`;
+  });
 
-  const labels = series
-    .map((point, index) => {
-      if (index % labelStep !== 0 && index !== series.length - 1) {
-        return "";
-      }
-      return `<text class="chart-label" x="${x(index)}" y="${height - 14}" text-anchor="middle">${point.label}</text>`;
-    })
-    .join("");
+  // line path
+  const linePath = series.map((p, i) => `${i === 0 ? "M" : "L"}${xPos(i)},${yPos(p.value)}`).join(" ");
 
-  const points = series
-    .map((point, index) => {
-      const xPos = x(index);
-      const yPos = y(point.value);
-      return `
-        <a href="${point.href}" target="_blank" rel="noreferrer">
-          <circle class="chart-point" cx="${xPos}" cy="${yPos}" r="5" />
-        </a>
-        <text class="chart-value" x="${xPos}" y="${yPos - 12}" text-anchor="middle">${point.value.toFixed(2)}</text>
-      `;
-    })
-    .join("");
+  // area path (closes at bottom)
+  const areaPath =
+    linePath +
+    ` L${xPos(series.length - 1)},${pad.top + iH} L${xPos(0)},${pad.top + iH} Z`;
+
+  // dots + value labels (only for small series or last point)
+  const showAllLabels = series.length <= 8;
+  let dots = "";
+  series.forEach((p, i) => {
+    const cx = xPos(i);
+    const cy = yPos(p.value);
+    const isLast = i === series.length - 1;
+    dots += `
+      <a href="${p.href}" target="_blank" rel="noreferrer">
+        <circle class="chart-dot" cx="${cx}" cy="${cy}" r="4">
+          <title>${p.date}: ${p.value.toFixed(3)} ms</title>
+        </circle>
+      </a>`;
+    if (showAllLabels || isLast) {
+      const anchor = cx < pad.left + 40 ? "start" : cx > W - pad.right - 40 ? "end" : "middle";
+      dots += `<text class="chart-value-label" x="${cx}" y="${cy - 10}" text-anchor="${anchor}">${p.value.toFixed(2)}</text>`;
+    }
+  });
 
   svg.innerHTML = `
-    ${grid}
-    <line class="chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}" />
-    <line class="chart-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}" />
-    <path class="chart-line" d="${path}" />
-    ${points}
-    ${labels}
-    <text class="chart-label" x="${margin.left}" y="${margin.top - 8}">${formatMs(max)}</text>
-    <text class="chart-label" x="${margin.left}" y="${height - margin.bottom + 18}">${formatMs(min)}</text>
+    ${gridLines}
+    <line class="chart-axis-line" x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + iH}" />
+    <line class="chart-axis-line" x1="${pad.left}" y1="${pad.top + iH}" x2="${W - pad.right}" y2="${pad.top + iH}" />
+    <path class="chart-area" d="${areaPath}" />
+    <path class="chart-line" d="${linePath}" />
+    ${dots}
+    ${yLabels}
+    ${xLabels}
   `;
 }
 
 function renderMainLatestTable(entry) {
   const tbody = document.getElementById("main-latest-table");
+  if (!tbody) return;
   tbody.innerHTML = "";
-
-  (entry?.summary?.benchmarks || []).forEach((benchmark) => {
+  (entry?.summary?.benchmarks || []).forEach((b) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${benchmark.name}</td>
-      <td>${benchmark.mean_ms.toFixed(3)}</td>
-      <td>${benchmark.min_ms.toFixed(3)}</td>
-      <td>${benchmark.max_ms.toFixed(3)}</td>
-      <td>${benchmark.iterations}</td>
+      <td>${b.name}</td>
+      <td class="mono">${b.mean_ms.toFixed(3)}</td>
+      <td class="mono">${b.min_ms.toFixed(3)}</td>
+      <td class="mono">${b.max_ms.toFixed(3)}</td>
+      <td class="mono">${b.iterations}</td>
     `;
     tbody.appendChild(row);
   });
@@ -249,90 +255,103 @@ function renderMainLatestTable(entry) {
 
 function renderMeta(payload, mainRunEntries, prGroups) {
   setText("repo-name", payload.repo);
-  setText("generated-at", formatTimestamp(payload.generated_at));
+  setText("generated-at", `Updated ${formatTimestamp(payload.generated_at)}`);
   setText("main-run-count", String(mainRunEntries.length));
   setText("pr-count", String(prGroups.length));
-}
-
-function renderMainCoverageLink(entry) {
-  setLink("main-coverage-link", entry?.summary?.coverage_url || null);
+  const names = benchmarkNames(mainRunEntries.concat(...prGroups.map((g) => g.entries)));
+  setText("bench-count", String(names.length));
 }
 
 function renderPrList(groups, selectedPrNumber, onSelect) {
   const container = document.getElementById("pr-list");
+  if (!container) return;
   container.innerHTML = "";
+
+  if (groups.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "padding:24px 16px;color:var(--text-muted);font-size:13px;";
+    empty.textContent = "No pull requests yet.";
+    container.appendChild(empty);
+    return;
+  }
 
   groups.forEach((group) => {
     const latest = group.entries[group.entries.length - 1];
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `pr-item${group.number === selectedPrNumber ? " active" : ""}`;
-    button.addEventListener("click", () => onSelect(group.number));
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `pr-item${group.number === selectedPrNumber ? " active" : ""}`;
+    btn.addEventListener("click", () => onSelect(group.number));
+
+    const num = document.createElement("div");
+    num.className = "pr-item-number";
+    num.textContent = `#${group.number}`;
 
     const title = document.createElement("div");
     title.className = "pr-item-title";
-    title.textContent = `#${group.number} ${latest.title}`;
+    title.textContent = latest.title || latest.branch;
 
-    const meta = document.createElement("div");
-    meta.className = "pr-item-meta";
-    meta.textContent = `${latest.branch} · ${shortCommit(latest.commit)} · ${formatTimestamp(
-      latest.updated_at || latest.created_at
-    )}`;
+    const foot = document.createElement("div");
+    foot.className = "pr-item-foot";
 
-    const tone = statusTone(latest.summary?.coverage_status === "failure" ? "failure" : latest.conclusion);
+    const time = document.createElement("span");
+    time.className = "pr-item-time";
+    time.textContent = formatDate(latest.updated_at || latest.created_at);
+
+    const tone = statusClass(
+      latest.summary?.coverage_status === "failure" ? "failure" : latest.conclusion
+    );
     const badge = document.createElement("span");
-    badge.className = `status-badge ${tone}`;
-    badge.textContent = latest.summary?.coverage_status === "failure" ? "coverage failed" : latest.conclusion;
+    badge.className = `inline-badge ${tone}`;
+    badge.textContent =
+      latest.summary?.coverage_status === "failure" ? "cov failed" : latest.conclusion;
 
-    button.appendChild(title);
-    button.appendChild(meta);
-    button.appendChild(badge);
-    container.appendChild(button);
+    foot.appendChild(time);
+    foot.appendChild(badge);
+    btn.appendChild(num);
+    btn.appendChild(title);
+    btn.appendChild(foot);
+    container.appendChild(btn);
   });
 }
 
 function renderStatusBadges(entry) {
   const container = document.getElementById("pr-statuses");
+  if (!container) return;
   container.innerHTML = "";
 
-  const badges = [
-    ["tests", entry.summary?.test_status, `${entry.summary?.tests?.passed || 0} passed`],
-    ["bench", entry.summary?.bench_status, `${(entry.summary?.benchmarks || []).length} benchmarks`],
-    ["coverage", entry.summary?.coverage_status, entry.summary?.coverage_summary || "Unavailable"],
+  const items = [
+    ["Tests", entry.summary?.test_status, `${entry.summary?.tests?.passed || 0} passed`],
+    ["Bench", entry.summary?.bench_status, `${(entry.summary?.benchmarks || []).length} benchmarks`],
+    ["Coverage", entry.summary?.coverage_status, entry.summary?.coverage_summary || "Unavailable"],
   ];
 
-  badges.forEach(([label, status, detail]) => {
+  items.forEach(([label, status, detail]) => {
     const badge = document.createElement("div");
-    badge.className = `status-card ${statusTone(status)}`;
-    const name = document.createElement("div");
-    name.className = "status-name";
-    name.textContent = label;
-    const value = document.createElement("div");
-    value.className = "status-detail";
-    value.textContent = detail;
-    badge.appendChild(name);
-    badge.appendChild(value);
+    badge.className = `status-badge ${statusClass(status)}`;
+    badge.innerHTML = `<span class="badge-label">${label}</span><span class="badge-value">${detail}</span>`;
     container.appendChild(badge);
   });
 }
 
 function renderComparisonTable(prEntry, mainEntry) {
   const tbody = document.getElementById("pr-compare-table");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   const baseline = latestBenchmarkMap(mainEntry);
-  (prEntry.summary?.benchmarks || []).forEach((benchmark) => {
-    const base = baseline.get(benchmark.name);
-    const delta = base ? benchmark.mean_ms - base.mean_ms : NaN;
-    const deltaPercent = base ? (delta / base.mean_ms) * 100 : NaN;
+  (prEntry.summary?.benchmarks || []).forEach((b) => {
+    const base = baseline.get(b.name);
+    const delta = base ? b.mean_ms - base.mean_ms : NaN;
+    const pct = base ? (delta / base.mean_ms) * 100 : NaN;
+    const deltaClass = !base ? "" : delta > 0 ? " class=\"positive\"" : delta < 0 ? " class=\"negative\"" : "";
 
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${benchmark.name}</td>
-      <td>${base ? base.mean_ms.toFixed(3) : "n/a"}</td>
-      <td>${benchmark.mean_ms.toFixed(3)}</td>
-      <td>${base ? formatDelta(delta) : "n/a"}</td>
-      <td>${base ? formatDeltaPercent(deltaPercent) : "n/a"}</td>
+      <td>${b.name}</td>
+      <td class="mono">${base ? base.mean_ms.toFixed(3) : "n/a"}</td>
+      <td class="mono">${b.mean_ms.toFixed(3)}</td>
+      <td class="mono"${deltaClass}>${base ? formatDelta(delta) : "n/a"}</td>
+      <td class="mono"${deltaClass}>${base ? formatDeltaPercent(pct) : "n/a"}</td>
     `;
     tbody.appendChild(row);
   });
@@ -340,6 +359,7 @@ function renderComparisonTable(prEntry, mainEntry) {
 
 function renderRunHistory(entries) {
   const container = document.getElementById("pr-run-history");
+  if (!container) return;
   container.innerHTML = "";
 
   entries
@@ -347,25 +367,38 @@ function renderRunHistory(entries) {
     .reverse()
     .forEach((entry) => {
       const item = document.createElement("a");
-      item.className = "history-item";
+      item.className = "run-history-item";
       item.href = entry.run_url;
       item.target = "_blank";
       item.rel = "noreferrer";
 
-      const top = document.createElement("div");
-      top.className = "history-top";
-      top.textContent = `${shortCommit(entry.commit)} · ${formatTimestamp(
-        entry.updated_at || entry.created_at
-      )}`;
+      const commit = document.createElement("span");
+      commit.className = "run-history-commit";
+      commit.textContent = shortCommit(entry.commit);
 
-      const bottom = document.createElement("div");
-      bottom.className = "history-bottom";
-      bottom.textContent = `${entry.summary?.tests?.passed || 0} tests passed · ${
-        entry.summary?.coverage_summary || "coverage unavailable"
+      const info = document.createElement("div");
+      info.className = "run-history-info";
+
+      const time = document.createElement("div");
+      time.className = "run-history-time";
+      time.textContent = formatTimestamp(entry.updated_at || entry.created_at);
+
+      const stats = document.createElement("div");
+      stats.className = "run-history-stats";
+      stats.textContent = `${entry.summary?.tests?.passed || 0} passed · ${
+        entry.summary?.coverage_summary || "coverage n/a"
       }`;
 
-      item.appendChild(top);
-      item.appendChild(bottom);
+      const tone = statusClass(entry.conclusion);
+      const badge = document.createElement("span");
+      badge.className = `inline-badge ${tone}`;
+      badge.textContent = entry.conclusion;
+
+      info.appendChild(time);
+      info.appendChild(stats);
+      item.appendChild(commit);
+      item.appendChild(info);
+      item.appendChild(badge);
       container.appendChild(item);
     });
 }
@@ -373,6 +406,7 @@ function renderRunHistory(entries) {
 function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) {
   const empty = document.getElementById("pr-empty");
   const detail = document.getElementById("pr-detail");
+  if (!empty || !detail) return;
 
   if (!group) {
     empty.classList.remove("hidden");
@@ -384,10 +418,13 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
   detail.classList.remove("hidden");
 
   const latest = group.entries[group.entries.length - 1];
-  document.getElementById("pr-title").textContent = `#${group.number} ${latest.title}`;
-  document.getElementById("pr-meta").textContent = `${latest.branch} · latest ${formatTimestamp(
-    latest.updated_at || latest.created_at
-  )} · ${group.entries.length} run(s)`;
+  setText("pr-title", `#${group.number} ${latest.title || latest.branch}`);
+  setText(
+    "pr-meta",
+    `${latest.branch} · ${shortCommit(latest.commit)} · ${formatTimestamp(
+      latest.updated_at || latest.created_at
+    )} · ${group.entries.length} run${group.entries.length !== 1 ? "s" : ""}`
+  );
   setLink("pr-run-link", latest.run_url);
   setLink("pr-preview-link", latest.summary?.preview_url || null);
   setLink("pr-coverage-link", latest.summary?.coverage_url || null);
@@ -398,7 +435,7 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
   const benchmark = names.includes(selectedBenchmark) ? selectedBenchmark : names[0];
   renderTabs("pr-benchmark-tabs", names, benchmark, onSelectBenchmark);
 
-  document.getElementById("pr-chart-title").textContent = benchmark;
+  setText("pr-chart-title", benchmark || "—");
   renderChart("pr-chart", benchmarkSeries(group.entries, benchmark), "pr-chart-caption");
   renderComparisonTable(latest, mainEntry);
   renderRunHistory(group.entries);
@@ -406,15 +443,18 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
 
 function renderDashboard(payload) {
   const allEntries = payload.entries || [];
+
   if (allEntries.length === 0) {
     setText("repo-name", payload.repo || "Unknown");
-    setText("generated-at", formatTimestamp(payload.generated_at || new Date().toISOString()));
+    setText("generated-at", `Updated ${formatTimestamp(payload.generated_at || new Date().toISOString())}`);
     setText("main-run-count", "0");
     setText("pr-count", "0");
-    renderMainCoverageLink(null);
+    setText("bench-count", "0");
+    setLink("main-coverage-link", null);
     renderPrDetail(null, null, null, () => {});
     return;
   }
+
   const mainRunEntries = mainEntries(allEntries);
   const prGroups = pullRequestGroups(allEntries);
   const mainNames = benchmarkNames(mainRunEntries);
@@ -427,9 +467,9 @@ function renderDashboard(payload) {
 
   function render() {
     const latestMain = mainRunEntries[mainRunEntries.length - 1];
-    const selectedPrGroup = prGroups.find((group) => group.number === state.selectedPrNumber) || null;
-    const prBenchmarkNames = selectedPrGroup ? benchmarkNames(selectedPrGroup.entries) : [];
-    const availableNames = mainNames.length > 0 ? mainNames : prBenchmarkNames;
+    const selectedPrGroup = prGroups.find((g) => g.number === state.selectedPrNumber) || null;
+    const prBenchNames = selectedPrGroup ? benchmarkNames(selectedPrGroup.entries) : [];
+    const availableNames = mainNames.length > 0 ? mainNames : prBenchNames;
 
     if (!availableNames.includes(state.selectedBenchmark)) {
       state.selectedBenchmark = availableNames[0];
@@ -437,18 +477,15 @@ function renderDashboard(payload) {
 
     updateUrl(state);
     renderMeta(payload, mainRunEntries, prGroups);
-    renderMainCoverageLink(latestMain);
+    setLink("main-coverage-link", latestMain?.summary?.coverage_url || null);
+
     renderTabs("main-benchmark-tabs", availableNames, state.selectedBenchmark, (name) => {
       state.selectedBenchmark = name;
       render();
     });
 
-    document.getElementById("main-chart-title").textContent = state.selectedBenchmark || "No benchmark";
-    renderChart(
-      "main-chart",
-      benchmarkSeries(mainRunEntries, state.selectedBenchmark),
-      "main-chart-caption"
-    );
+    setText("main-chart-title", state.selectedBenchmark || "No benchmark data");
+    renderChart("main-chart", benchmarkSeries(mainRunEntries, state.selectedBenchmark), "main-chart-caption");
     renderMainLatestTable(latestMain);
 
     renderPrList(prGroups, state.selectedPrNumber, (number) => {
@@ -468,5 +505,8 @@ function renderDashboard(payload) {
 loadDashboard()
   .then(renderDashboard)
   .catch((error) => {
-    document.body.innerHTML = `<pre>${error.message}</pre>`;
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:monospace;color:#555;">
+        Failed to load dashboard: ${error.message}
+      </div>`;
   });
