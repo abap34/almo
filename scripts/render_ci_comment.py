@@ -15,6 +15,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--benchmark-json", required=True)
     parser.add_argument("--coverage-log", required=True)
     parser.add_argument("--pages-url", required=True)
+    parser.add_argument("--event-name")
+    parser.add_argument("--branch")
+    parser.add_argument("--commit")
+    parser.add_argument("--run-id", type=int)
+    parser.add_argument("--run-url")
+    parser.add_argument("--pr-number", type=int)
+    parser.add_argument("--dashboard-json")
     return parser.parse_args()
 
 
@@ -57,6 +64,43 @@ def parse_benchmarks(path: str) -> list[dict]:
     return payload.get("benchmarks", [])
 
 
+def build_dashboard_entry(
+    args: argparse.Namespace,
+    passed: int,
+    failed: int,
+    coverage_summary: str,
+    benchmarks: list[dict],
+) -> dict:
+    entry = {
+        "test_status": args.test_status,
+        "bench_status": args.bench_status,
+        "coverage_status": args.coverage_status,
+        "tests": {
+            "passed": passed,
+            "failed": failed,
+        },
+        "coverage_summary": coverage_summary,
+        "benchmarks": benchmarks,
+        "context": {
+            "event_name": args.event_name,
+            "branch": args.branch,
+            "commit": args.commit,
+            "run_id": args.run_id,
+            "run_url": args.run_url,
+            "pr_number": args.pr_number if args.pr_number and args.pr_number > 0 else None,
+        },
+    }
+    return entry
+
+
+def write_dashboard_entry(path: str, payload: dict) -> None:
+    file_path = Path(path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    with file_path.open("w") as outfile:
+        json.dump(payload, outfile, indent=2)
+        outfile.write("\n")
+
+
 def main() -> int:
     args = parse_args()
 
@@ -66,6 +110,12 @@ def main() -> int:
 
     passed, failed = parse_test_summary(test_log)
     coverage_summary = parse_coverage_summary(coverage_log)
+    dashboard_entry = build_dashboard_entry(
+        args, passed, failed, coverage_summary, benchmarks
+    )
+
+    if args.dashboard_json:
+        write_dashboard_entry(args.dashboard_json, dashboard_entry)
 
     print("## CI Summary")
     print()
@@ -95,7 +145,7 @@ def main() -> int:
             )
         print()
 
-    print(f"Benchmark history: {args.pages_url}")
+    print(f"Benchmark dashboard: {args.pages_url}")
 
     return 0
 

@@ -1,74 +1,82 @@
 name: Benchmark Pages
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
-  contents: write
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: benchmark-pages
+  cancel-in-progress: true
 
 jobs:
-  publish-benchmarks:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++ python3
+          sudo apt-get install -y python3
 
-      - name: Prepare workspace
-        run: mkdir -p .ci
-
-      - name: Run benchmarks
-        run: |
-          make bench BENCH_ARGS="--json --output .ci/benchmark.json --iterations 5"
-
-      - name: Check out gh-pages
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages
-          fetch-depth: 0
-
-      - name: Update dashboard files
-        run: |
-          mkdir -p gh-pages/dev/bench
-          python3 scripts/update_benchmark_history.py \
-            --benchmark-json .ci/benchmark.json \
-            --history-json gh-pages/dev/bench/history.json \
-            --repo "$GITHUB_REPOSITORY" \
-            --commit "$GITHUB_SHA" \
-            --branch "$GITHUB_REF_NAME" \
-            --timestamp "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          cp scripts/benchmark_pages/index.html gh-pages/dev/bench/index.html
-          cp scripts/benchmark_pages/styles.css gh-pages/dev/bench/styles.css
-          cp scripts/benchmark_pages/app.js gh-pages/dev/bench/app.js
-
-      - name: Upload generated benchmark site
+      - name: Configure Pages
         if: env.ACT != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-site
-          path: gh-pages/dev/bench
+        uses: actions/configure-pages@v5
 
-      - name: Commit benchmark site
-        if: env.ACT != 'true'
+      - name: Build dashboard site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          cd gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dev/bench
-          if git diff --cached --quiet; then
-            echo "No benchmark page changes"
-            exit 0
+          if [ "${ACT}" = "true" ]; then
+            python3 scripts/build_benchmark_dashboard.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow ci.yml \
+              --out-dir site \
+              --fixture-json scripts/benchmark_pages/fixture_dashboard.json
+          else
+            python3 scripts/build_benchmark_dashboard.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow ci.yml \
+              --out-dir site \
+              --token "$GITHUB_TOKEN"
           fi
-          git commit -m "Update benchmark dashboard for ${GITHUB_SHA::7}"
-          git push origin HEAD:gh-pages
+
+      - name: Inspect generated site
+        run: |
+          test -f site/index.html
+          test -f site/dev/bench/index.html
+          test -f site/dev/bench/dashboard.json
+
+      - name: Upload Pages artifact
+        if: env.ACT != 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Skip deploy on act
+        if: env.ACT == 'true'
+        run: echo "Skipping Pages deploy under act"
+
+      - name: Deploy to GitHub Pages
+        if: env.ACT != 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4

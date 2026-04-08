@@ -82,9 +82,16 @@ jobs:
           TEST_STATUS: ${{ steps.tests.outcome }}
           BENCH_STATUS: ${{ steps.bench.outcome }}
           COVERAGE_STATUS: ${{ steps.coverage.outcome }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}/dev/bench/"
+          REPO_NAME_LOWER="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
+          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/bench/"
+          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
+            PAGES_URL="${PAGES_URL}?pr=${PR_NUMBER}"
+          fi
           python3 scripts/render_ci_comment.py \
             --test-status "$TEST_STATUS" \
             --bench-status "$BENCH_STATUS" \
@@ -93,8 +100,22 @@ jobs:
             --benchmark-json .ci/benchmark.json \
             --coverage-log .ci/coverage.log \
             --pages-url "$PAGES_URL" \
+            --event-name "$EVENT_NAME" \
+            --branch "$HEAD_BRANCH" \
+            --commit "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --pr-number "${PR_NUMBER:-0}" \
+            --dashboard-json .ci/dashboard-entry.json \
             > .ci/ci-comment.md
           cat .ci/ci-comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dashboard summary
+        if: always() && env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-entry
+          path: .ci/dashboard-entry.json
 
       - name: Comment on pull request
         if: always() && env.ACT != 'true' && github.event_name == 'pull_request'
