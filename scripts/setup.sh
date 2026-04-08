@@ -51,7 +51,7 @@ for file in $(find $build_dir -type f); do
             vprint "   Matched! with $pettern => $file" green
             echo -n "R\"(" > "$file.tmp"
             cat "$file" >> "$file.tmp"
-            echo ")\"" >> "$file.tmp"
+            printf '\n)"\n' >> "$file.tmp"
             mv "$file.tmp" "$file"
             continue 2
         fi

@@ -1,0 +1,74 @@
+name: Benchmark Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ python3
+
+      - name: Prepare workspace
+        run: mkdir -p .ci
+
+      - name: Run benchmarks
+        run: |
+          make bench BENCH_ARGS="--json --output .ci/benchmark.json --iterations 5"
+
+      - name: Check out gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 0
+
+      - name: Update dashboard files
+        run: |
+          mkdir -p gh-pages/dev/bench
+          python3 scripts/update_benchmark_history.py \
+            --benchmark-json .ci/benchmark.json \
+            --history-json gh-pages/dev/bench/history.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME" \
+            --timestamp "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          cp scripts/benchmark_pages/index.html gh-pages/dev/bench/index.html
+          cp scripts/benchmark_pages/styles.css gh-pages/dev/bench/styles.css
+          cp scripts/benchmark_pages/app.js gh-pages/dev/bench/app.js
+
+      - name: Upload generated benchmark site
+        if: env.ACT != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-site
+          path: gh-pages/dev/bench
+
+      - name: Commit benchmark site
+        if: env.ACT != 'true'
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dev/bench
+          if git diff --cached --quiet; then
+            echo "No benchmark page changes"
+            exit 0
+          fi
+          git commit -m "Update benchmark dashboard for ${GITHUB_SHA::7}"
+          git push origin HEAD:gh-pages
