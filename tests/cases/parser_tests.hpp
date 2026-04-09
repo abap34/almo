@@ -83,6 +83,48 @@ inline void register_parser_tests(std::vector<TestCase>& tests) {
     });
 
     tests.push_back({
+        "headers horizontal lines and plain code blocks",
+        []() {
+            const auto marker_summary =
+                summarize_markdown(header_horizontal_rule_document());
+
+            expect_eq(marker_summary.ast.nodes_byclass("Header").size(),
+                      static_cast<std::size_t>(2),
+                      "Multiple headers should be parsed");
+            expect_eq(marker_summary.ast.nodes_byclass("HorizontalLine").size(),
+                      static_cast<std::size_t>(1),
+                      "Horizontal rules should be parsed");
+            expect_eq(marker_summary.ast.nodes_byclass("InlineItalic").size(),
+                      static_cast<std::size_t>(1),
+                      "Inline italic syntax should be parsed");
+            expect_contains(marker_summary.html, "<hr>",
+                            "Horizontal rules should render as hr");
+            expect_contains(marker_summary.html, "<h2",
+                            "Level 2 headers should render");
+            expect_contains(marker_summary.html, "<h3",
+                            "Level 3 headers should render");
+
+            const auto code_summary =
+                summarize_markdown(plain_code_escape_document());
+            expect_eq(code_summary.ast.nodes_byclass("CodeBlock").size(),
+                      static_cast<std::size_t>(1),
+                      "Plain code blocks should be parsed");
+            expect_eq(code_summary.ast.nodes_byclass("InlineCodeBlock").size(),
+                      static_cast<std::size_t>(1),
+                      "Inline code should still be parsed outside code blocks");
+            expect_contains(code_summary.html, "language-plaintext",
+                            "Code blocks without an explicit language should default to plaintext");
+            expect_contains(code_summary.html, "&lt;tag&gt;",
+                            "Code blocks should HTML-escape angle brackets");
+            expect_contains(code_summary.html, "&amp;&amp;",
+                            "Code blocks should HTML-escape ampersands");
+            expect_contains(code_summary.html,
+                            "<span class=\"inline-code\"><code>x &lt; y</code></span>",
+                            "Inline code blocks should HTML-escape their contents");
+        },
+    });
+
+    tests.push_back({
         "div quote and math blocks",
         []() {
             const auto lines = nested_div_quote_math_document();

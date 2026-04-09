@@ -24,9 +24,19 @@ inline void register_error_tests(std::vector<TestCase>& tests) {
                 []() { parse_markdown(judge_document_missing_required_arg()); },
                 "Missing judge arguments should be rejected", "out");
 
+            expect_throws<SyntaxError>(
+                []() { parse_markdown(judge_document_missing_equals()); },
+                "Judge options without '=' should be rejected",
+                "judge option must be separated with '='");
+
             expect_throws<ParseError>(
                 []() { parse_markdown(judge_document_with_invalid_type()); },
                 "Invalid judge types should be rejected", "Invalid judge type");
+
+            expect_throws<SyntaxError>(
+                []() { parse_markdown(invalid_table_alignment_document()); },
+                "Tables with mismatched alignment columns should be rejected",
+                "Number of columns of Table must be same");
 
             expect_throws<InvalidCommandLineArgumentsError>(
                 []() { almo::load_html_template("__default__", "sepia", false); },

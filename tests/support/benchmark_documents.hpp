@@ -43,6 +43,42 @@ inline std::vector<std::string> build_inline_heavy_document(
     return markdown_lines(oss.str());
 }
 
+inline std::vector<std::string> build_table_heavy_document(std::size_t sections,
+                                                           std::size_t rows) {
+    std::ostringstream oss;
+
+    for (std::size_t i = 0; i < sections; ++i) {
+        oss << "## Table " << i << "\n\n";
+        oss << "| Name | Score | Ref | Notes |\n";
+        oss << "| :--- | :-: | ---: | :--- |\n";
+        for (std::size_t row = 0; row < rows; ++row) {
+            oss << "| item-" << i << "-" << row << " | $" << row
+                << "$ | [ref](https://example.com/" << i << "/" << row
+                << ") | **bold** and `code` |\n";
+        }
+        oss << "\n";
+    }
+
+    return markdown_lines(oss.str());
+}
+
+inline std::vector<std::string> build_footnote_heavy_document(
+    std::size_t paragraphs) {
+    std::ostringstream oss;
+
+    for (std::size_t i = 0; i < paragraphs; ++i) {
+        oss << "Paragraph " << i << " with note[^" << i << "] and math $x_"
+            << i << "$.\n\n";
+    }
+
+    for (std::size_t i = 0; i < paragraphs; ++i) {
+        oss << "[^" << i << "]: footnote " << i << '\n';
+    }
+
+    oss << '\n';
+    return markdown_lines(oss.str());
+}
+
 inline std::vector<std::string> build_structured_document(std::size_t sections) {
     std::ostringstream oss;
 

@@ -11,6 +11,8 @@ inline std::vector<BenchmarkScenario> make_benchmark_scenarios() {
     const auto small_document = build_basic_document(10);
     const auto large_document = build_basic_document(200);
     const auto inline_heavy_document = build_inline_heavy_document(120);
+    const auto table_heavy_document = build_table_heavy_document(30, 24);
+    const auto footnote_heavy_document = build_footnote_heavy_document(160);
     const auto structured_document = build_structured_document(60);
     const auto interactive_document = build_interactive_document(25);
     const auto judge_document = build_judge_document(8);
@@ -20,9 +22,18 @@ inline std::vector<BenchmarkScenario> make_benchmark_scenarios() {
         make_parse_scenario("parse_large_document", large_document),
         make_parse_scenario("parse_inline_heavy_document",
                             inline_heavy_document),
+        make_parse_scenario("parse_table_heavy_document", table_heavy_document),
+        make_parse_scenario("parse_footnote_heavy_document",
+                            footnote_heavy_document),
         make_parse_scenario("parse_structured_document", structured_document),
+        make_parse_scenario("parse_judge_document", judge_document),
         make_render_scenario("render_small_document", small_document),
         make_render_scenario("render_large_document", large_document),
+        make_render_scenario("render_structured_document", structured_document),
+        make_render_scenario("render_table_heavy_document",
+                             table_heavy_document),
+        make_render_scenario("render_footnote_heavy_document",
+                             footnote_heavy_document),
         make_render_scenario(
             "render_interactive_document", interactive_document,
             [](const almo::ParseSummary& summary) {
@@ -39,6 +50,8 @@ inline std::vector<BenchmarkScenario> make_benchmark_scenarios() {
                         "judge HTML must include sample runners");
                 }
             }),
+        make_summary_scenario("summary_inline_heavy_document",
+                              inline_heavy_document),
         make_summary_scenario("summary_large_document", structured_document),
     };
 }

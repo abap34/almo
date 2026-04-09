@@ -9,6 +9,18 @@ namespace almo_test {
 
 inline void register_render_tests(std::vector<TestCase>& tests) {
     tests.push_back({
+        "plain documents skip pyodide",
+        []() {
+            const auto summary = summarize_markdown(plain_render_document());
+
+            expect_not_contains(summary.html, "pyodide.js",
+                                "Plain documents should not include the Pyodide loader");
+            expect_not_contains(summary.html, "runBlock(",
+                                "Plain documents should not render executable controls");
+        },
+    });
+
+    tests.push_back({
         "loadlib and executable blocks",
         []() {
             const auto summary =
@@ -62,6 +74,7 @@ inline void register_render_tests(std::vector<TestCase>& tests) {
         "judge rendering",
         []() {
             const auto summary = summarize_markdown(judge_document());
+            const auto err_summary = summarize_markdown(judge_err_type_document());
 
             expect_eq(summary.ast.nodes_byclass("Judge").size(),
                       static_cast<std::size_t>(1),
@@ -80,6 +93,8 @@ inline void register_render_tests(std::vector<TestCase>& tests) {
                             "Judge blocks should expose the judge type to JS");
             expect_contains(summary.html, "pyodide.js",
                             "Judge blocks should require Pyodide");
+            expect_contains(err_summary.html, "err_1e-9",
+                            "Error-tolerance judge types should be propagated to the output");
         },
     });
 

@@ -1,0 +1,9 @@
+:::judge
+title=Approx Judge
+sample_in=example/helloalmo/in/sample.txt
+sample_out=example/helloalmo/out/sample.txt
+in=example/helloalmo/in/*.txt
+out=example/helloalmo/out/*.txt
+judge=err_1e-9
+source=example/input.py
+:::
