@@ -23,6 +23,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pr-number", type=int)
     parser.add_argument("--preview-url")
     parser.add_argument("--dashboard-json")
+    parser.add_argument("--base-benchmark-json")
+    parser.add_argument("--base-branch")
     return parser.parse_args()
 
 
@@ -63,6 +65,50 @@ def parse_benchmarks(path: str) -> list[dict]:
     with file_path.open() as infile:
         payload = json.load(infile)
     return payload.get("benchmarks", [])
+
+
+def benchmark_deltas(
+    benchmarks: list[dict], base_benchmarks: list[dict]
+) -> list[dict]:
+    base_by_name = {benchmark["name"]: benchmark for benchmark in base_benchmarks}
+    deltas = []
+
+    for benchmark in benchmarks:
+        base = base_by_name.get(benchmark["name"])
+        if not base:
+            continue
+
+        base_mean = base.get("mean_ms")
+        current_mean = benchmark.get("mean_ms")
+        if not isinstance(base_mean, (int, float)) or not isinstance(
+            current_mean, (int, float)
+        ):
+            continue
+        if base_mean <= 0:
+            continue
+
+        delta_ms = current_mean - base_mean
+        delta_pct = (delta_ms / base_mean) * 100.0
+
+        if delta_pct <= -1.0:
+            change_label = f"✅ {abs(delta_pct):.1f}% speed up"
+        elif delta_pct >= 1.0:
+            change_label = f"⚠️ {delta_pct:.1f}% slow down"
+        else:
+            change_label = f"➖ {abs(delta_pct):.1f}% change"
+
+        deltas.append(
+            {
+                "name": benchmark["name"],
+                "base_mean_ms": base_mean,
+                "current_mean_ms": current_mean,
+                "delta_ms": delta_ms,
+                "delta_pct": delta_pct,
+                "change_label": change_label,
+            }
+        )
+
+    return deltas
 
 
 def build_dashboard_entry(
@@ -109,6 +155,12 @@ def main() -> int:
     test_log = read_text(args.test_log)
     coverage_log = read_text(args.coverage_log)
     benchmarks = parse_benchmarks(args.benchmark_json)
+    base_benchmarks = (
+        parse_benchmarks(args.base_benchmark_json)
+        if args.base_benchmark_json
+        else []
+    )
+    deltas = benchmark_deltas(benchmarks, base_benchmarks)
 
     passed, failed = parse_test_summary(test_log)
     coverage_summary = parse_coverage_summary(coverage_log)
@@ -143,6 +195,20 @@ def main() -> int:
             print(
                 "| {name} | {mean_ms:.3f} | {min_ms:.3f} | {max_ms:.3f} | {iterations} |".format(
                     **benchmark
+                )
+            )
+        print()
+
+    if deltas:
+        base_branch = args.base_branch or "base branch"
+        print(f"### Benchmark Diff vs {base_branch}")
+        print()
+        print("| Benchmark | Base Mean (ms) | PR Mean (ms) | Delta (ms) | Change |")
+        print("| --- | ---: | ---: | ---: | --- |")
+        for delta in deltas:
+            print(
+                "| {name} | {base_mean_ms:.3f} | {current_mean_ms:.3f} | {delta_ms:+.3f} | {change_label} |".format(
+                    **delta
                 )
             )
         print()
