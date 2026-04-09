@@ -83,6 +83,49 @@ inline void register_parser_tests(std::vector<TestCase>& tests) {
     });
 
     tests.push_back({
+        "realistic article fixture",
+        []() {
+            const auto summary =
+                summarize_markdown(realistic_article_document());
+
+            expect_eq(summary.ast.nodes_byclass("Header").size(),
+                      static_cast<std::size_t>(5),
+                      "Realistic articles should preserve section headers");
+            expect_eq(summary.ast.nodes_byclass("ListBlock").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve unordered lists");
+            expect_eq(summary.ast.nodes_byclass("Quote").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve quotes");
+            expect_eq(summary.ast.nodes_byclass("Table").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve tables");
+            expect_eq(summary.ast.nodes_byclass("MathBlock").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve display math");
+            expect_eq(summary.ast.nodes_byclass("CodeBlock").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve code blocks");
+            expect_eq(summary.ast.nodes_byclass("InlineImage").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve inline images");
+            expect_eq(summary.ast.nodes_byclass("InlineUrl").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve inline links");
+            expect_eq(summary.ast.nodes_byclass("FootnoteDefinition").size(),
+                      static_cast<std::size_t>(1),
+                      "Realistic articles should preserve footnotes");
+
+            expect_contains(summary.html, "language-cpp",
+                            "Realistic articles should render fenced code blocks");
+            expect_contains(summary.html, "class=\"footnote\"",
+                            "Realistic articles should move footnotes to the end");
+            expect_not_contains(summary.html, "pyodide.js",
+                                "Normal articles should not pull in Pyodide");
+        },
+    });
+
+    tests.push_back({
         "headers horizontal lines and plain code blocks",
         []() {
             const auto marker_summary =

@@ -9,6 +9,35 @@ namespace almo_test {
 
 inline void register_render_tests(std::vector<TestCase>& tests) {
     tests.push_back({
+        "release notes fixture",
+        []() {
+            const auto summary = summarize_markdown(release_notes_document());
+
+            expect_eq(summary.ast.nodes_byclass("HorizontalLine").size(),
+                      static_cast<std::size_t>(1),
+                      "Release notes should preserve horizontal rules");
+            expect_eq(summary.ast.nodes_byclass("Quote").size(),
+                      static_cast<std::size_t>(1),
+                      "Release notes should preserve quotes");
+            expect_eq(summary.ast.nodes_byclass("Table").size(),
+                      static_cast<std::size_t>(1),
+                      "Release notes should preserve compatibility tables");
+
+            expect_contains(summary.html, "<ul>",
+                            "Release notes should render bullet lists");
+            expect_contains(summary.html, "<ol>",
+                            "Release notes should render ordered lists");
+            expect_contains(summary.html, "<hr>",
+                            "Release notes should render horizontal rules");
+            expect_contains(summary.html,
+                            "https://example.com/issues/fixtures",
+                            "Release notes should preserve external links");
+            expect_not_contains(summary.html, "pyodide.js",
+                                "Release notes should not require Pyodide");
+        },
+    });
+
+    tests.push_back({
         "plain documents skip pyodide",
         []() {
             const auto summary = summarize_markdown(plain_render_document());
@@ -17,6 +46,28 @@ inline void register_render_tests(std::vector<TestCase>& tests) {
                                 "Plain documents should not include the Pyodide loader");
             expect_not_contains(summary.html, "runBlock(",
                                 "Plain documents should not render executable controls");
+        },
+    });
+
+    tests.push_back({
+        "svg heavy fixture",
+        []() {
+            const auto summary = summarize_markdown(huge_svg_report_document());
+
+            expect_contains(summary.html, "<svg",
+                            "SVG-heavy fixtures should preserve raw SVG");
+            expect_contains(summary.html, "viewBox=\"0 0 1600 900\"",
+                            "SVG-heavy fixtures should preserve the SVG viewport");
+            expect_contains(summary.html, "latency-gradient",
+                            "SVG-heavy fixtures should preserve defs and gradients");
+            expect_contains(summary.html, "<rect x=\"40\" y=\"120\"",
+                            "SVG-heavy fixtures should preserve chart geometry");
+            expect_not_contains(summary.html, "&lt;svg",
+                                "Raw SVG should not be HTML-escaped");
+            expect_not_contains(summary.html, "pyodide.js",
+                                "SVG-heavy documents should not require Pyodide");
+            expect_true(summary.html.size() > 7000,
+                        "SVG-heavy fixtures should exercise large rendered output");
         },
     });
 

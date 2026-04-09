@@ -9,6 +9,14 @@
 
 namespace almo_test {
 
+inline std::vector<std::string> load_realistic_article_fixture_document() {
+    return load_fixture_lines("markdown/realistic_article.md");
+}
+
+inline std::vector<std::string> load_release_notes_fixture_document() {
+    return load_fixture_lines("markdown/release_notes.md");
+}
+
 inline std::vector<std::string> build_basic_document(std::size_t sections) {
     std::ostringstream oss;
 

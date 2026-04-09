@@ -11,6 +11,18 @@ inline std::vector<std::string> basic_parser_document() {
     return load_fixture_lines("markdown/basic_parser.md");
 }
 
+inline std::vector<std::string> realistic_article_document() {
+    return load_fixture_lines("markdown/realistic_article.md");
+}
+
+inline std::vector<std::string> release_notes_document() {
+    return load_fixture_lines("markdown/release_notes.md");
+}
+
+inline std::vector<std::string> huge_svg_report_document() {
+    return load_fixture_lines("markdown/huge_svg_report.md");
+}
+
 inline std::vector<std::string> table_with_inline_syntax_document() {
     return load_fixture_lines("markdown/table_with_inline_syntax.md");
 }
