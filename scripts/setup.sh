@@ -41,6 +41,7 @@ while getopts "v" opt; do
     esac
 done
 
+rm -rf "$build_dir"
 mkdir -p "$build_dir"
 cp -r "$src_dir"/. "$build_dir"
 
