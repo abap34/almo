@@ -43,6 +43,22 @@ jobs:
           set -o pipefail
           make bench BENCH_ARGS="--json --output .ci/benchmark.json --iterations 5" 2>&1 | tee .ci/benchmark.log
 
+      - name: Run base benchmarks
+        id: base_bench
+        if: always() && env.ACT != 'true' && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -o pipefail
+          cleanup() {
+            git worktree remove .ci/base --force || true
+          }
+          trap cleanup EXIT
+          git worktree add .ci/base "$GITHUB_BASE_SHA"
+          make -C .ci/base bench BENCH_ARGS="--json --output ../base-benchmark.json --iterations 5" 2>&1 | tee .ci/base-benchmark.log
+
       - name: Run coverage
         id: coverage
         continue-on-error: true
@@ -85,14 +101,18 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           REPO_NAME_LOWER="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
           PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/bench/"
           PREVIEW_URL=""
+          BASE_BENCHMARK_JSON=""
           if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_NUMBER" ]; then
             PAGES_URL="${PAGES_URL}?pr=${PR_NUMBER}"
             PREVIEW_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME_LOWER}/dev/previews/pr-${PR_NUMBER}/"
+            BASE_BENCHMARK_JSON=".ci/base-benchmark.json"
           fi
           python3 scripts/render_ci_comment.py \
             --test-status "$TEST_STATUS" \
@@ -109,6 +129,8 @@ jobs:
             --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --pr-number "${PR_NUMBER:-0}" \
             --preview-url "$PREVIEW_URL" \
+            --base-branch "$BASE_BRANCH" \
+            --base-benchmark-json "$BASE_BENCHMARK_JSON" \
             --dashboard-json .ci/dashboard-entry.json \
             > .ci/ci-comment.md
           cat .ci/ci-comment.md >> "$GITHUB_STEP_SUMMARY"
