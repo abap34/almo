@@ -4,6 +4,7 @@
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
 #include "../utils.hpp"
+#include "inline_match_utils.hpp"
 
 namespace almo {
 struct InlineFootnoteReference : public ASTNode {
@@ -11,7 +12,7 @@ struct InlineFootnoteReference : public ASTNode {
     std::string symbol;
 
    public:
-    InlineFootnoteReference(std::string _symbol) : symbol(_symbol) {
+    InlineFootnoteReference(std::string_view _symbol) : symbol(_symbol) {
         set_uuid();
     }
 
@@ -34,24 +35,20 @@ struct InlineFootnoteReference : public ASTNode {
     }
 };
 struct InlineFootnoteReferenceSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\[\^(.*?)\](.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 1;
+    int operator()(std::string_view str) const override {
+        inline_match::DelimitedMatch match;
+        if (inline_match::find_delimited(str, "[^", "]", match)) {
+            return static_cast<int>(match.start);
         }
         return std::numeric_limits<int>::max();
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string symbol = sm.format("$2");
-        std::string suffix = sm.format("$3");
-        InlineParser::process(prefix, ast);
-        InlineFootnoteReference node(symbol);
+    void operator()(std::string_view str, ASTNode &ast) const override {
+        inline_match::DelimitedMatch match;
+        inline_match::find_delimited(str, "[^", "]", match);
+        InlineParser::process(match.prefix, ast);
+        InlineFootnoteReference node(match.content);
         ast.pushback_child(std::make_shared<InlineFootnoteReference>(node));
-        InlineParser::process(suffix, ast);
+        InlineParser::process(match.suffix, ast);
     }
 };
 }  // namespace almo

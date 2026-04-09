@@ -3,6 +3,7 @@
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
+#include "inline_match_utils.hpp"
 
 namespace almo {
 
@@ -21,26 +22,21 @@ struct InlineOverline : public ASTNode {
 };
 
 struct InlineOverlineSyntax : public InlineSyntax {
-    static inline const std::regex rex =
-        std::regex(R"((.*?)\~\~(.*?)\~\~(.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 2;
+    int operator()(std::string_view str) const override {
+        inline_match::DelimitedMatch match;
+        if (inline_match::find_delimited(str, "~~", "~~", match)) {
+            return static_cast<int>(match.start);
         }
         return std::numeric_limits<int>::max();
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string content = sm.format("$2");
-        std::string suffix = sm.format("$3");
-        InlineParser::process(prefix, ast);
+    void operator()(std::string_view str, ASTNode &ast) const override {
+        inline_match::DelimitedMatch match;
+        inline_match::find_delimited(str, "~~", "~~", match);
+        InlineParser::process(match.prefix, ast);
         InlineOverline node;
-        InlineParser::process(content, node);
+        InlineParser::process(match.content, node);
         ast.pushback_child(std::make_shared<InlineOverline>(node));
-        InlineParser::process(suffix, ast);
+        InlineParser::process(match.suffix, ast);
     }
 };
 

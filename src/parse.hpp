@@ -8,13 +8,13 @@
 namespace almo {
 
 template<class Syntax>
-void InlineParser::process_inline(const std::string &str, ASTNode &ast, Syntax&& syn, int pos){
+void InlineParser::process_inline(std::string_view str, ASTNode &ast, Syntax&& syn, int pos){
     std::invoke(syn, str, ast);
 }
 
 // syn has matched at position pos
 template<class Syntax, class HeadSyntax, class... TailSyntax>
-void InlineParser::process_inline(const std::string &str, ASTNode &ast, Syntax&& syn, int pos, HeadSyntax&& hsyn, TailSyntax&&... tsyn){
+void InlineParser::process_inline(std::string_view str, ASTNode &ast, Syntax&& syn, int pos, HeadSyntax&& hsyn, TailSyntax&&... tsyn){
     int newpos = std::invoke(hsyn, str);
     if (newpos < pos){
         // syntax with nearer match detected
@@ -25,8 +25,8 @@ void InlineParser::process_inline(const std::string &str, ASTNode &ast, Syntax&&
     }
 }
 
-void InlineParser::process(const std::string &str, ASTNode &ast){
-    if (str == "") return ;
+void InlineParser::process(std::string_view str, ASTNode &ast){
+    if (str.empty()) return ;
     process_inline(
         str, ast,
         RawTextSyntax{}, std::numeric_limits<int>::max(),

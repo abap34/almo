@@ -1,9 +1,9 @@
 #pragma once
 
+#include <limits>
 #include "../reader.hpp"
 #include "ast.hpp"
-#include <regex>
-#include <limits>
+#include <string_view>
 
 namespace almo {
 
@@ -25,11 +25,11 @@ struct InlineSyntax {
     //   ---> substring located at [2,7) detected : '$c+d$'
     //   ---> return 2
     // ( ---> captured substring is located at [3,6) : 'c+d' )
-    virtual int operator()(const std::string &str) const = 0;
+    virtual int operator()(std::string_view str) const = 0;
 
     // update read and ast
     // assume that the string matches as the syntax
-    virtual void operator()(const std::string &str, ASTNode &ast) const = 0;
+    virtual void operator()(std::string_view str, ASTNode &ast) const = 0;
 };
 
 } // namespace almo

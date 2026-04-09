@@ -5,6 +5,22 @@
 
 namespace almo {
 
+namespace detail {
+
+inline void collect_nodes_byclass(
+    const ASTNode& node, const std::string& classname,
+    std::vector<std::shared_ptr<ASTNode>>& out) {
+    if (node.get_classname() == classname) {
+        out.push_back(const_cast<ASTNode&>(node).shared_from_this());
+    }
+
+    for (const auto& child : node.childs) {
+        collect_nodes_byclass(*child, classname, out);
+    }
+}
+
+}  // namespace detail
+
 struct uuid_gen_ {
     int operator()() {
         static int uuid = 0;
@@ -120,16 +136,7 @@ std::vector<std::shared_ptr<ASTNode>> ASTNode::get_childs() const {
 std::vector<std::shared_ptr<ASTNode>> ASTNode::nodes_byclass(
     const std::string &classname) const {
     std::vector<std::shared_ptr<ASTNode>> ret;
-    if (get_classname() == classname) {
-        ret.push_back(const_cast<ASTNode *>(this)->shared_from_this());
-    }
-    for (auto child : childs) {
-        std::vector<std::shared_ptr<ASTNode>> childs_ret =
-            child->nodes_byclass(classname);
-        for (auto child_ret : childs_ret) {
-            ret.push_back(child_ret);
-        }
-    }
+    detail::collect_nodes_byclass(*this, classname, ret);
     return ret;
 }
 

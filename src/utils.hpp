@@ -10,6 +10,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 // コンパイル時に埋め込む定数
 namespace almo {
@@ -50,6 +51,20 @@ std::string join(std::vector<std::string> v, std::string sep = "") {
         }
     }
     return ss.str();
+}
+
+std::string replace_all(std::string text, std::string_view from,
+                        std::string_view to) {
+    if (from.empty()) {
+        return text;
+    }
+
+    std::size_t pos = 0;
+    while ((pos = text.find(from, pos)) != std::string::npos) {
+        text.replace(pos, from.size(), to);
+        pos += to.size();
+    }
+    return text;
 }
 
 // 文字列を sep で分割する
@@ -223,21 +238,50 @@ std::string escape(const std::string& s, EscapeFormat format = EscapeFormat::JSO
             return o.str();
         }
         case EscapeFormat::HTML: {
-            std::string ret = s;
-            ret = std::regex_replace(ret, std::regex("&"), "&amp;");
-            ret = std::regex_replace(ret, std::regex("<"), "&lt;");
-            ret = std::regex_replace(ret, std::regex(">"), "&gt;");
-            ret = std::regex_replace(ret, std::regex("\""), "&quot;");
-            ret = std::regex_replace(ret, std::regex("'"), "&#39;");
+            std::string ret;
+            ret.reserve(s.size());
+            for (char ch : s) {
+                switch (ch) {
+                    case '&':
+                        ret += "&amp;";
+                        break;
+                    case '<':
+                        ret += "&lt;";
+                        break;
+                    case '>':
+                        ret += "&gt;";
+                        break;
+                    case '"':
+                        ret += "&quot;";
+                        break;
+                    case '\'':
+                        ret += "&#39;";
+                        break;
+                    default:
+                        ret += ch;
+                        break;
+                }
+            }
             return ret;
         }
         case EscapeFormat::DOT: {
-            std::string ret = s;
-            ret = std::regex_replace(ret, std::regex("\\{"), "\\\\{");
-            ret = std::regex_replace(ret, std::regex("\\}"), "\\\\}");
-            ret = std::regex_replace(ret, std::regex("\\|"), "\\\\|");
-            ret = std::regex_replace(ret, std::regex("<"), "\\\\<");
-            ret = std::regex_replace(ret, std::regex(">"), "\\\\>");
+            std::string ret;
+            ret.reserve(s.size());
+            for (char ch : s) {
+                switch (ch) {
+                    case '{':
+                    case '}':
+                    case '|':
+                    case '<':
+                    case '>':
+                        ret += '\\';
+                        ret += ch;
+                        break;
+                    default:
+                        ret += ch;
+                        break;
+                }
+            }
             return ret;
         }
     }
