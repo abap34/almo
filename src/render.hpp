@@ -4,7 +4,6 @@
 #include <functional>
 #include <iostream>
 #include <map>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -13,6 +12,25 @@
 #include "utils.hpp"
 
 namespace almo {
+
+namespace detail {
+
+inline bool has_node_class(const ASTNode& node, const std::string& classname) {
+    if (node.get_classname() == classname) {
+        return true;
+    }
+
+    for (const auto& child : node.childs) {
+        if (has_node_class(*child, classname)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+}  // namespace detail
+
 std::string load_html_template(std::string html_path, std::string css_setting,
                                bool required_pyodide) {
     const std::string pyodide_loader =
@@ -31,15 +49,15 @@ std::string load_html_template(std::string html_path, std::string css_setting,
     std::string result;
     if (css_setting == "light") {
         std::string css = "<style>" + LIGHT_THEME + "</style>";
-        result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
+        result = replace_all(html, "{{style}}", css);
     } else if (css_setting == "dark") {
         std::string css = "<style>" + DARK_THEME + "</style>";
-        result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
+        result = replace_all(html, "{{style}}", css);
     } else if (css_setting.ends_with(".css")) {
         std::string css =
             "<style>" + join(read_file(css_setting), "\n") + "</style>";
 
-        result = std::regex_replace(html, std::regex("\\{\\{style\\}\\}"), css);
+        result = replace_all(html, "{{style}}", css);
     } else {
         throw InvalidCommandLineArgumentsError(
             "不正なCSSの設定です。 `light`, `dark` もしくは `.css` "
@@ -55,8 +73,7 @@ std::string load_html_template(std::string html_path, std::string css_setting,
         runner = "<!-- Runner is not required. Skip this. -->";
     }
     // runner を挿入
-    result =
-        std::regex_replace(result, std::regex("\\{\\{runner\\}\\}"), runner);
+    result = replace_all(result, "{{runner}}", runner);
 
     return result;
 }
@@ -67,17 +84,13 @@ std::string replace_template(std::string html_template,
     std::string output_html = html_template;
 
     for (auto [key, value] : meta_data) {
-        std::string replace_key = "\\{\\{" + key + "\\}\\}";
-        output_html =
-            std::regex_replace(output_html, std::regex(replace_key), value);
+        output_html = replace_all(output_html, "{{" + key + "}}", value);
     }
 
     std::string syntax_theme = meta_data["syntax_theme"];
 
-    output_html = std::regex_replace(
-        output_html, std::regex("\\{\\{syntax_theme\\}\\}"), syntax_theme);
-    output_html = std::regex_replace(
-        output_html, std::regex("\\{\\{contents\\}\\}"), content);
+    output_html = replace_all(output_html, "{{syntax_theme}}", syntax_theme);
+    output_html = replace_all(output_html, "{{contents}}", content);
 
     return output_html;
 }
@@ -97,11 +110,11 @@ void move_footnote_to_end(Markdown& ast) {
 }
 
 bool required_pyodide(Markdown& ast) {
-    if (ast.nodes_byclass("ExecutableCodeBlock").size() > 0) {
+    if (detail::has_node_class(ast, "ExecutableCodeBlock")) {
         return true;
     }
 
-    if (ast.nodes_byclass("Judge").size() > 0) {
+    if (detail::has_node_class(ast, "Judge")) {
         return true;
     }
 
@@ -109,12 +122,6 @@ bool required_pyodide(Markdown& ast) {
 }
 
 std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
-    std::vector<std::shared_ptr<ASTNode>> footnote_defs =
-        ast.nodes_byclass("FootnoteDefinition");
-
-    std::shared_ptr<DivBlock> footnote_div =
-        std::make_shared<DivBlock>("footnote");
-
     std::string content = ast.to_html();
 
     std::string html_template =
@@ -185,7 +192,6 @@ ParseSummary md_to_summary(const std::vector<std::string>& md_content,
 
     move_footnote_to_end(ast);
 
-    render(ast, meta_data);
     ParseSummary summary = {
         .ast = ast,
         .html = render(ast, meta_data),

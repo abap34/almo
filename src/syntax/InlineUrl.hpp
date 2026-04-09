@@ -4,6 +4,7 @@
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
 #include "../utils.hpp"
+#include "inline_match_utils.hpp"
 
 namespace almo {
 
@@ -13,7 +14,7 @@ struct InlineUrl : public ASTNode {
     std::string alt;
 
    public:
-    InlineUrl(std::string url, std::string alt) : url(url), alt(alt) {
+    InlineUrl(std::string_view url, std::string_view alt) : url(url), alt(alt) {
         set_uuid();
     }
 
@@ -28,26 +29,20 @@ struct InlineUrl : public ASTNode {
 };
 
 struct InlineUrlSyntax : public InlineSyntax {
-    static inline const std::regex rex =
-        std::regex(R"((.*?)\[(.*?)\]\((.*?)\)(.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 1;
+    int operator()(std::string_view str) const override {
+        inline_match::LinkMatch match;
+        if (inline_match::find_link(str, "[", match)) {
+            return static_cast<int>(match.start);
         }
         return std::numeric_limits<int>::max();
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string alt = sm.format("$2");
-        std::string url = sm.format("$3");
-        std::string suffix = sm.format("$4");
-        InlineParser::process(prefix, ast);
-        InlineUrl node(url, alt);
+    void operator()(std::string_view str, ASTNode &ast) const override {
+        inline_match::LinkMatch match;
+        inline_match::find_link(str, "[", match);
+        InlineParser::process(match.prefix, ast);
+        InlineUrl node(match.target, match.label);
         ast.pushback_child(std::make_shared<InlineUrl>(node));
-        InlineParser::process(suffix, ast);
+        InlineParser::process(match.suffix, ast);
     }
 };
 

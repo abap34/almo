@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include "../reader.hpp"
 #include "ast.hpp"
 
@@ -9,12 +10,12 @@ namespace almo {
 // parse a line contain only inline syntax
 struct InlineParser {
     template<class Syntax>
-    static void process_inline(const std::string &str, ASTNode &ast, Syntax&& syn, int pos);
+    static void process_inline(std::string_view str, ASTNode &ast, Syntax&& syn, int pos);
 
     template<class Syntax, class HeadSyntax, class... TailSyntax>
-    static void process_inline(const std::string &str, ASTNode &ast, Syntax&& syn, int pos, HeadSyntax&& hsyn, TailSyntax&&... tsyn);
+    static void process_inline(std::string_view str, ASTNode &ast, Syntax&& syn, int pos, HeadSyntax&& hsyn, TailSyntax&&... tsyn);
 
-    static void process(const std::string &str, ASTNode &ast);
+    static void process(std::string_view str, ASTNode &ast);
 };
 
 // parse an entire markdown and detect block syntax

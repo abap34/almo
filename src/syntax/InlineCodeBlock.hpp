@@ -4,6 +4,7 @@
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
 #include "../utils.hpp"
+#include "inline_match_utils.hpp"
 
 namespace almo {
 
@@ -12,7 +13,7 @@ struct InlineCodeBlock : public ASTNode {
     std::string code;
 
    public:
-    InlineCodeBlock(std::string code) : code(code) { set_uuid(); }
+    InlineCodeBlock(std::string_view code) : code(code) { set_uuid(); }
 
     std::string to_html() const override {
         return "<span class=\"inline-code\"><code>" + escape(code, EscapeFormat::HTML) +
@@ -26,24 +27,20 @@ struct InlineCodeBlock : public ASTNode {
 };
 
 struct InlineCodeBlockSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\`(.*?)\`(.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 1;
+    int operator()(std::string_view str) const override {
+        inline_match::DelimitedMatch match;
+        if (inline_match::find_delimited(str, "`", "`", match)) {
+            return static_cast<int>(match.start);
         }
         return std::numeric_limits<int>::max();
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string code = sm.format("$2");
-        std::string suffix = sm.format("$3");
-        InlineParser::process(prefix, ast);
-        InlineCodeBlock node(code);
+    void operator()(std::string_view str, ASTNode &ast) const override {
+        inline_match::DelimitedMatch match;
+        inline_match::find_delimited(str, "`", "`", match);
+        InlineParser::process(match.prefix, ast);
+        InlineCodeBlock node(match.content);
         ast.pushback_child(std::make_shared<InlineCodeBlock>(node));
-        InlineParser::process(suffix, ast);
+        InlineParser::process(match.suffix, ast);
     }
 };
 

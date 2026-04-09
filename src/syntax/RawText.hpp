@@ -13,7 +13,7 @@ struct RawText : public ASTNode {
     std::string content;
 
    public:
-    RawText(std::string _content) : content(_content) { set_uuid(); }
+    RawText(std::string_view _content) : content(_content) { set_uuid(); }
 
     std::string to_html() const override { return content; }
 
@@ -29,10 +29,10 @@ struct RawTextSyntax : InlineSyntax {
     // because Rawtext syntax is weakest.
     // If the string matches other Inline syntax
     // RawText does not match it.
-    int operator()(const std::string &str) const override {
+    int operator()(std::string_view str) const override {
         return std::numeric_limits<int>::max();
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
+    void operator()(std::string_view str, ASTNode &ast) const override {
         RawText node(str);
         ast.pushback_child(std::make_shared<RawText>(node));
     }
