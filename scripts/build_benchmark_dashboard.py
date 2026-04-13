@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import io
 import json
@@ -39,6 +41,11 @@ def github_request(url: str, token: str | None) -> dict:
         return json.load(response)
 
 
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def download_artifact(url: str, token: str | None) -> bytes:
     request = urllib.request.Request(url)
     request.add_header("Accept", "application/vnd.github+json")
@@ -46,7 +53,21 @@ def download_artifact(url: str, token: str | None) -> bytes:
     if token:
         request.add_header("Authorization", f"Bearer {token}")
 
-    with urllib.request.urlopen(request) as response:
+    opener = urllib.request.build_opener(NoRedirectHandler)
+    try:
+        with opener.open(request) as response:
+            return response.read()
+    except urllib.error.HTTPError as error:
+        if error.code not in {301, 302, 303, 307, 308}:
+            raise
+        redirect_url = error.headers.get("Location")
+        if not redirect_url:
+            raise
+
+    # GitHub artifact downloads redirect to a signed object-storage URL.
+    # Sending the GitHub Authorization header there makes the storage request
+    # fail with 401, so follow the signed URL without GitHub API headers.
+    with urllib.request.urlopen(redirect_url) as response:
         return response.read()
 
 
