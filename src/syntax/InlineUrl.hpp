@@ -8,6 +8,11 @@
 namespace almo {
 
 struct InlineUrl : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<InlineUrl>();
+    }
+
    private:
     std::string url;
     std::string alt;

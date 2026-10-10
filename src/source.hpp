@@ -14,6 +14,11 @@ struct SourceRange {
     bool operator==(const SourceRange&) const = default;
 };
 
+struct TextEdit {
+    SourceRange range;
+    std::string replacement;
+};
+
 enum class DiagnosticSeverity { Warning, Error };
 
 struct Diagnostic {

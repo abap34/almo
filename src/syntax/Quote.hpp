@@ -11,6 +11,10 @@ namespace almo {
 // 引用を表すクラス
 struct Quote : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<Quote>();
+    }
+
     Quote() { set_uuid(); }
 
     std::string to_html() const override {

@@ -8,6 +8,10 @@ namespace almo {
 
 struct InlineItalic : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<InlineItalic>();
+    }
+
     InlineItalic() { set_uuid(); }
 
     std::string to_html() const override {

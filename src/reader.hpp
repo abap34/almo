@@ -22,6 +22,8 @@ struct Reader {
     std::vector<SourceLine> lines;
     int row = 0, col = 0;
     bool eof_read_flg = false;
+    mutable std::size_t inspected_end = 0;  // exclusive line index
+    mutable bool inspected_eof = false;
     std::vector<Diagnostic>* diagnostics = nullptr;
 
     // Compatibility constructor. Copies are owned together so views stay valid.
@@ -65,9 +67,18 @@ struct Reader {
 
     bool is_line_begin() const { return col == 0; }
     bool is_line_end() const { return col == static_cast<int>(line().text.size()); }
-    bool is_eof() const { return static_cast<std::size_t>(row) == lines.size(); }
+    bool is_eof() const {
+        if (static_cast<std::size_t>(row) == lines.size()) {
+            inspected_eof = true;
+            return true;
+        }
+        // Testing for EOF also depends on this row existing.
+        inspected_end = std::max(inspected_end, static_cast<std::size_t>(row) + 1);
+        return false;
+    }
     const SourceLine& line() const {
         assert(static_cast<std::size_t>(row) < lines.size());
+        inspected_end = std::max(inspected_end, static_cast<std::size_t>(row) + 1);
         return lines[row];
     }
     std::string get_row() const { return std::string(line().text); }

@@ -10,6 +10,11 @@ namespace almo {
 // コードブロックを表すクラス.  <div class="code-block"> タグで囲まれ、その中に
 // <pre><code> タグが入る.
 struct CodeBlock : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<CodeBlock>();
+    }
+
    private:
     // コードの中身。
     std::string code;

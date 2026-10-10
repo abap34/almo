@@ -9,6 +9,11 @@ namespace almo {
 
 // ライブラリの読み込みをする独自記法.
 struct LoadLib : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<LoadLib>();
+    }
+
    private:
     // 読み込むライブラリの名前のリスト
     std::vector<std::string> libs;

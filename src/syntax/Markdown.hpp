@@ -8,6 +8,10 @@ namespace almo {
 
 struct Markdown : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<Markdown>();
+    }
+
     Markdown() { set_uuid(); }
 
     std::string to_html() const override { return concatenated_childs_html(); }

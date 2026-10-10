@@ -8,6 +8,11 @@
 namespace almo {
 
 struct InlineCodeBlock : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<InlineCodeBlock>();
+    }
+
    private:
     std::string code;
 

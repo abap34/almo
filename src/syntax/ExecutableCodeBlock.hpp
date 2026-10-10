@@ -10,6 +10,11 @@ namespace almo {
 // 実行可能なコードブロックを表すクラス.
 // `Judge` と異なり、こちらはジャッジを提供せず、単に実行のみを行う。
 struct ExecutableCodeBlock : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<ExecutableCodeBlock>();
+    }
+
    private:
     std::string code;
     std::string editor_theme;

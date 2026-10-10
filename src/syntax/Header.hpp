@@ -7,6 +7,11 @@
 namespace almo {
 
 struct Header : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<Header>();
+    }
+
    private:
     int level;
 

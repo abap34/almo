@@ -15,6 +15,10 @@ namespace almo {
 // 箇条書き(番号なし) を表すクラス
 struct ListBlock : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<ListBlock>();
+    }
+
     ListBlock() { set_uuid(); }
 
     std::string to_html() const override {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "interfaces/ast.hpp"
 #include "utils.hpp"
 
@@ -7,8 +9,8 @@ namespace almo {
 
 struct uuid_gen_ {
     int operator()() {
-        static int uuid = 0;
-        return uuid++;
+        static std::atomic<int> uuid{0};
+        return uuid.fetch_add(1, std::memory_order_relaxed);
     }
 } uuid_gen;
 

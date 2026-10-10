@@ -8,6 +8,10 @@ namespace almo {
 
 struct InlineOverline : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<InlineOverline>();
+    }
+
     InlineOverline() { set_uuid(); }
     std::string to_html() const override {
         return "<span class=\"overline\"><s>" + concatenated_childs_html() +

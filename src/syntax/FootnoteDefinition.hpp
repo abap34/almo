@@ -7,6 +7,11 @@
 
 namespace almo {
 struct FootnoteDefinition : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<FootnoteDefinition>();
+    }
+
    private:
     std::string symbol;
 

@@ -10,6 +10,11 @@ namespace almo {
 // 数式ブロック. 内容はMathJaxでレンダリングされる. 内容は `math-block`
 // というクラスが付与されたdivタグで囲まれる
 struct MathBlock : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<MathBlock>();
+    }
+
    private:
     // markdownで渡された式をそのまま string で持つ。
     std::string expression;

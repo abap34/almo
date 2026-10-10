@@ -10,6 +10,10 @@ namespace almo {
 // 箇条書きの要素を表すクラス
 struct Item : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<Item>();
+    }
+
     Item() { set_uuid(); }
 
     std::string to_html() const override {

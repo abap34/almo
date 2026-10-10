@@ -11,6 +11,11 @@
 namespace almo {
 
 struct DivBlock : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<DivBlock>();
+    }
+
    private:
     std::string div_class;
 

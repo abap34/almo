@@ -11,6 +11,15 @@
 namespace almo {
 
 struct Table : public ASTNode {
+   public:
+    std::shared_ptr<ASTNode> clone() const override {
+        auto copy = clone_as<Table>();
+        copy->columns.clear();
+        for (const auto& column : columns)
+            copy->columns.push_back(std::static_pointer_cast<Markdown>(column->clone()));
+        return copy;
+    }
+
    private:
     std::vector<std::shared_ptr<Markdown>> columns;
     int n_row;

@@ -15,6 +15,10 @@ namespace almo {
 // 番号付き箇条書きを表すクラス
 struct EnumerateBlock : public ASTNode {
    public:
+    std::shared_ptr<ASTNode> clone() const override {
+        return clone_as<EnumerateBlock>();
+    }
+
     EnumerateBlock() { set_uuid(); }
 
     std::string to_html() const override {

@@ -8,6 +8,9 @@
 namespace almo {
 
 struct ASTNode : public std::enable_shared_from_this<ASTNode> {
+    virtual ~ASTNode() = default;
+    virtual std::shared_ptr<ASTNode> clone() const = 0;
+
     // html
     virtual std::string to_html() const = 0;
 
@@ -49,6 +52,16 @@ struct ASTNode : public std::enable_shared_from_this<ASTNode> {
 
    public:
     std::vector<std::shared_ptr<ASTNode>> childs;
+
+   protected:
+    template<class Node>
+    std::shared_ptr<Node> clone_as() const {
+        auto copy = std::make_shared<Node>(static_cast<const Node&>(*this));
+        copy->childs.clear();
+        copy->childs.reserve(childs.size());
+        for (const auto& child : childs) copy->childs.push_back(child->clone());
+        return copy;
+    }
 
    private:
     int uuid;
