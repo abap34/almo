@@ -16,7 +16,7 @@ struct FootnoteDefinition : public ASTNode {
     std::string symbol;
 
    public:
-    FootnoteDefinition(std::string symbol_) : symbol(symbol_) { set_uuid(); }
+    FootnoteDefinition(std::string symbol_) : symbol(std::move(symbol_)) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
         std::string label = "label_" + symbol;
@@ -38,9 +38,9 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
     static inline const std::regex rex = std::regex(R"(\[\^(.*)\]:(.*))");
     std::optional<BlockMatch> match(const Reader& read) const override {
         if (!read.is_line_begin()) return std::nullopt;
-        const std::string row = read.get_row();
-        std::smatch found;
-        if (!std::regex_match(row, found, rex)) return std::nullopt;
+        const auto row = read.line().text;
+        std::match_results<std::string_view::const_iterator> found;
+        if (!std::regex_match(row.begin(), row.end(), found, rex)) return std::nullopt;
         return BlockMatch{{found[1].str(), found[2].str()}};
     }
     void parse(Reader& read, ASTNode& ast, const BlockMatch& matched) const override {
@@ -49,10 +49,10 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
         if (symbol.empty())
             read.warn("Footnote symbol is empty. This may cause unexpected behavior.");
 
-        FootnoteDefinition node(symbol);
-        InlineParser::process(suffix, node);
+        auto node = std::make_shared<FootnoteDefinition>(symbol);
+        InlineParser::process(suffix, *node);
 
-        ast.pushback_child(std::make_shared<FootnoteDefinition>(node));
+        ast.pushback_child(std::move(node));
         read.move_next_line();
     }
 };

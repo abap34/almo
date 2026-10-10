@@ -30,7 +30,7 @@ struct Quote : public ASTNode {
 struct QuoteSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        return block_match(read.get_row().starts_with("> "));
+        return block_match(read.line().text.starts_with("> "));
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '> .*'
@@ -48,12 +48,12 @@ struct QuoteSyntax : public BlockSyntax {
         }
 
         // uuid order is node --> inner_md
-        Quote node;
-        Markdown inner_md;
+        auto node = std::make_shared<Quote>();
+        auto inner_md = std::make_shared<Markdown>();
         auto nested = read.nested(std::move(quote_contents));
-        detail::parse_into(nested, inner_md);
-        node.pushback_child(std::make_shared<Markdown>(inner_md));
-        ast.pushback_child(std::make_shared<Quote>(node));
+        detail::parse_into(nested, *inner_md);
+        node->pushback_child(std::move(inner_md));
+        ast.pushback_child(std::move(node));
     }
 };
 

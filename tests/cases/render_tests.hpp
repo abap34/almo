@@ -4,10 +4,70 @@
 
 #include "../support/almo_test_support.hpp"
 #include "../support/test_documents.hpp"
+#include "parser_api_tests.hpp"
 
 namespace almo_test {
 
 inline void register_render_tests(std::vector<TestCase>& tests) {
+    tests.push_back({"template replacement preserves regex replacement behavior", [] {
+        const std::string input = "prefix {{title}} {{title}} {{contents}} {{syntax_theme}} {{customXkey}} suffix";
+        const char embedded[] = "before\0after";
+        for (const auto& value : std::vector<std::string>{
+                 "plain 日本語😀", "", "{{title}} {{contents}}", "${expression} $x $",
+                 "$$ $& $0 $1 $99 $` $'", std::string(embedded, sizeof(embedded) - 1)}) {
+            auto meta = default_meta();
+            meta["title"] = value;
+            meta["custom.key"] = value;
+            const std::string content = "<code>" + value + "</code>";
+            auto expected = input;
+            for (const auto& [key, replacement] : meta)
+                expected = std::regex_replace(expected, std::regex("\\{\\{" + key + "\\}\\}"), replacement);
+            expected = std::regex_replace(expected, std::regex("\\{\\{syntax_theme\\}\\}"), meta["syntax_theme"]);
+            expected = std::regex_replace(expected, std::regex("\\{\\{contents\\}\\}"), content);
+            expect_eq(almo::replace_template(input, meta, content), expected,
+                      "Template fast path must preserve old formatting and metadata order: " + escape(value));
+        }
+        for (const auto& theme : {std::string("light"), std::string("dark")}) {
+            for (const bool pyodide : {false, true}) {
+                const auto css = "<style>" + (theme == "light" ? almo::LIGHT_THEME : almo::DARK_THEME) + "</style>";
+                auto expected = std::regex_replace(almo::TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
+                const auto runner = pyodide
+                    ? "<script src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></script><script>" + almo::RUNNER + "</script>"
+                    : "<!-- Runner is not required. Skip this. -->";
+                expected = std::regex_replace(expected, std::regex("\\{\\{runner\\}\\}"), runner);
+                expect_eq(almo::load_html_template("__default__", theme, pyodide), expected,
+                          "Builtin templates must remain byte-for-byte identical");
+            }
+        }
+    }});
+
+    tests.push_back({"footnote extraction preserves order and nested AST structure", [] {
+        auto compare = [](const almo::Markdown& original) {
+            auto actual = *std::static_pointer_cast<almo::Markdown>(original.clone());
+            auto expected = *std::static_pointer_cast<almo::Markdown>(original.clone());
+            for (int pass = 0; pass < 2; ++pass) {
+                const auto definitions = expected.nodes_byclass("FootnoteDefinition");
+                auto container = std::make_shared<almo::DivBlock>("footnote");
+                expected.pushback_child(container);
+                for (const auto& definition : definitions) expected.move_node(definition, container);
+                almo::move_footnote_to_end(actual);
+                expect_same_tree(actual, expected);
+                expect_eq(actual.to_html(), expected.to_html(), "Footnote HTML and ordering must be unchanged");
+            }
+        };
+        compare(parse_markdown("plain"));
+        compare(parse_markdown(":::outer\n[^a]: first\n> [^b]: second\n:::inner\n[^c]: third\n:::\n:::\n\n[^z]: last"));
+        almo::Markdown custom;
+        auto outer = std::make_shared<almo::FootnoteDefinition>("outer");
+        outer->pushback_child(std::make_shared<almo::RawText>("before"));
+        outer->pushback_child(std::make_shared<almo::FootnoteDefinition>("inner"));
+        outer->pushback_child(std::make_shared<almo::RawText>("after"));
+        custom.pushback_child(outer);
+        custom.pushback_child(std::make_shared<almo::RawText>("body"));
+        custom.pushback_child(std::make_shared<almo::FootnoteDefinition>("last"));
+        compare(custom);
+    }});
+
     tests.push_back({
         "release notes fixture",
         []() {

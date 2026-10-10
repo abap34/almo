@@ -20,7 +20,7 @@ struct MathBlock : public ASTNode {
     std::string expression;
 
    public:
-    MathBlock(std::string expression) : expression(expression) { set_uuid(); }
+    MathBlock(std::string expression) : expression(std::move(expression)) { set_uuid(); }
 
     // mathjax の　複数行数式用に \[ \] で囲む
     std::string to_html() const override {
@@ -37,7 +37,7 @@ struct MathBlock : public ASTNode {
 struct MathBlockSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        return block_match(read.get_row().starts_with("$$"));
+        return block_match(read.line().text.starts_with("$$"));
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '$$.*'
@@ -50,18 +50,19 @@ struct MathBlockSyntax : public BlockSyntax {
         read.move_next_char(2);
 
         while (!read.is_eof()) {
-            if (rtrim(read.get_rest_row()).ends_with("$$")) {
-                std::string tail = rtrim(read.get_rest_row());
+            const auto rest = read.line().text.substr(read.col);
+            const auto tail = detail::rtrim_view(rest);
+            if (tail.ends_with("$$")) {
                 expression += tail.substr(0, tail.size() - 2u);
                 read.move_next_line();
                 break;
             }
-            expression += read.get_rest_row() + "\n";
+            expression += rest;
+            expression += '\n';
             read.move_next_line();
         }
 
-        MathBlock node(expression);
-        ast.pushback_child(std::make_shared<MathBlock>(node));
+        ast.pushback_child(std::make_shared<MathBlock>(std::move(expression)));
     }
 };
 

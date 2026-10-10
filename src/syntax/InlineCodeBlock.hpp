@@ -1,5 +1,7 @@
 #pragma once
 
+#include "inline_match.hpp"
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -17,7 +19,7 @@ struct InlineCodeBlock : public ASTNode {
     std::string code;
 
    public:
-    InlineCodeBlock(std::string code) : code(code) { set_uuid(); }
+    InlineCodeBlock(std::string code) : code(std::move(code)) { set_uuid(); }
 
     std::string to_html() const override {
         return "<span class=\"inline-code\"><code>" + escape(code, EscapeFormat::HTML) +
@@ -33,7 +35,7 @@ struct InlineCodeBlock : public ASTNode {
 struct InlineCodeBlockSyntax : public InlineSyntax {
     static inline const std::regex rex{R"(\`(.*?)\`)"};
     std::optional<InlineMatch> find(std::string_view source) const override {
-        return find_inline(source, rex);
+        return detail::find_delimited_inline(source, "`", "`");
     }
     void parse(const InlineMatch& matched, ASTNode& ast) const override {
         ast.pushback_child(std::make_shared<InlineCodeBlock>(matched.captures[0]));

@@ -21,7 +21,7 @@ struct ExecutableCodeBlock : public ASTNode {
 
    public:
     ExecutableCodeBlock(std::string code, std::string editor_theme)
-        : code(code), editor_theme(editor_theme) {
+        : code(std::move(code)), editor_theme(std::move(editor_theme)) {
         set_uuid();
     }
 
@@ -92,7 +92,7 @@ struct ExecutableCodeBlock : public ASTNode {
 struct ExecutableCodeBlockSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        if (rtrim(read.get_row()) == ":::code") return block_match(true);
+        if (detail::rtrim_view(read.line().text) == ":::code") return block_match(true);
         return block_match(false);
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
@@ -102,16 +102,17 @@ struct ExecutableCodeBlockSyntax : public BlockSyntax {
         read.move_next_line();
 
         while (!read.is_eof()) {
-            if (rtrim(read.get_row()) == ":::") {
+            if (detail::rtrim_view(read.line().text) == ":::") {
                 read.move_next_line();
                 break;
             }
-            code += read.get_row() + "\n";
+            code += read.line().text;
+            code += '\n';
             read.move_next_line();
         }
 
-        ExecutableCodeBlock node(code, "{{ editor_theme }}");
-        ast.pushback_child(std::make_shared<ExecutableCodeBlock>(node));
+        ast.pushback_child(std::make_shared<ExecutableCodeBlock>(
+            std::move(code), "{{ editor_theme }}"));
     }
 };
 

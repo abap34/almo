@@ -10,6 +10,26 @@
 
 namespace almo {
 
+namespace detail {
+
+// Preserve the former \|[^\|]+ matches: empty cells are skipped and text
+// before the first pipe is ignored. Views avoid copying the remaining row for
+// every cell, which made wide rows particularly expensive.
+inline std::vector<std::string_view> table_cells(std::string_view line) {
+    std::vector<std::string_view> cells;
+    auto pipe = line.find('|');
+    while (pipe != line.npos) {
+        const auto begin = pipe + 1;
+        const auto next = line.find('|', begin);
+        const auto end = next == line.npos ? line.size() : next;
+        if (begin != end) cells.push_back(line.substr(begin, end - begin));
+        pipe = next;
+    }
+    return cells;
+}
+
+}  // namespace detail
+
 struct Table : public ASTNode {
    public:
     std::shared_ptr<ASTNode> clone() const override {
@@ -33,11 +53,11 @@ struct Table : public ASTNode {
    public:
     Table(std::vector<std::shared_ptr<Markdown>> columns, int n_row, int n_col,
           std::vector<std::string> col_names, std::vector<int> col_format)
-        : columns(columns),
+        : columns(std::move(columns)),
           n_row(n_row),
           n_col(n_col),
-          col_names(col_names),
-          col_format(col_format) {
+          col_names(std::move(col_names)),
+          col_format(std::move(col_format)) {
         set_uuid();
     }
 
@@ -76,17 +96,19 @@ struct Table : public ASTNode {
 
     std::string to_html() const override {
         std::vector<std::string> columns_html;
-        for (auto child : columns) {
+        columns_html.reserve(columns.size());
+        for (const auto& child : columns) {
             columns_html.push_back(child->to_html());
         }
 
         std::vector<std::string> contents_html;
+        contents_html.reserve(childs.size());
 
-        for (auto child : childs) {
+        for (const auto& child : childs) {
             contents_html.push_back(child->to_html());
         }
 
-        return to_html(columns_html, contents_html);
+        return to_html(std::move(columns_html), std::move(contents_html));
     }
 
     std::map<std::string, std::string> get_properties() const override {
@@ -121,51 +143,40 @@ struct TableSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
         static const std::regex pattern(R"((\|[^\|]+).+\|)");
-        if (std::regex_match(rtrim(read.get_row()), pattern))
+        const auto line = detail::rtrim_view(read.line().text);
+        if (std::regex_match(line.begin(), line.end(), pattern))
             return block_match(true);
         return block_match(false);
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : R"((\|[^\|]+).+\|)"
         // END   : EOF or NewLine
-        const std::regex each_col_regex(R"(\|[^\|]+)");
-
-        int n_col = 0;
         std::vector<std::string> col_names;
-        std::smatch sm;
-
-        std::string line = read.get_row();
-
-        while (std::regex_search(line, sm, each_col_regex)) {
-            col_names.push_back(sm[0].str().substr(1));
-            line = sm.suffix();
-            n_col++;
-        }
+        for (const auto cell : detail::table_cells(read.line().text))
+            col_names.emplace_back(cell);
+        const int n_col = static_cast<int>(col_names.size());
 
         // 0 --> left (default), 1 --> center, 2 --> right
         std::vector<int> col_format;
-        std::regex Lrex(R"(\|\s*:-+\s*)");
-        std::regex Crex(R"(\|\s*:-+:\s*)");
-        std::regex Rrex(R"(\|\s*-+:\s*)");
+        col_format.reserve(n_col);
+        static const std::regex Lrex(R"(\s*:-+\s*)");
+        static const std::regex Crex(R"(\s*:-+:\s*)");
+        static const std::regex Rrex(R"(\s*-+:\s*)");
 
         read.move_next_line();
 
         if (read.is_eof())
             throw SyntaxError("Table alignment row is missing");
-        line = read.get_row();
-
-        while (std::regex_search(line, sm, each_col_regex)) {
-            if (std::regex_match(sm[0].str(), Lrex)) {
+        for (const auto cell : detail::table_cells(read.line().text)) {
+            if (std::regex_match(cell.begin(), cell.end(), Lrex)) {
                 col_format.emplace_back(0);
-            } else if (std::regex_match(sm[0].str(), Crex)) {
+            } else if (std::regex_match(cell.begin(), cell.end(), Crex)) {
                 col_format.emplace_back(1);
-            } else if (std::regex_match(sm[0].str(), Rrex)) {
+            } else if (std::regex_match(cell.begin(), cell.end(), Rrex)) {
                 col_format.emplace_back(2);
             } else {
                 col_format.emplace_back(0);
             }
-
-            line = sm.suffix();
         }
 
         if (col_names.size() != col_format.size()) {
@@ -175,38 +186,39 @@ struct TableSyntax : public BlockSyntax {
         read.move_next_line();
 
         int n_row = 0;
-        std::vector<std::string> table;
+        std::vector<std::string_view> table;
 
         while (true) {
             if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) break;
             n_row++;
-            line = read.get_row();
-            while (std::regex_search(line, sm, each_col_regex)) {
-                table.push_back(sm[0].str().substr(1));
-                line = sm.suffix();
-            }
+            const auto cells = detail::table_cells(read.line().text);
+            table.insert(table.end(), cells.begin(), cells.end());
             if (table.size() != static_cast<std::size_t>(n_row * n_col))
                 throw SyntaxError("Number of columns of Table must be same");
             read.move_next_line();
         }
 
         std::vector<std::shared_ptr<Markdown>> columns_markdowns;
+        columns_markdowns.reserve(n_col);
 
         for (int i = 0; i < n_col; i++) {
-            Markdown inner_md;
-            InlineParser::process(col_names[i], inner_md);
-            columns_markdowns.push_back(std::make_shared<Markdown>(inner_md));
+            auto inner_md = std::make_shared<Markdown>();
+            InlineParser::process(col_names[i], *inner_md);
+            columns_markdowns.push_back(std::move(inner_md));
         }
 
-        Table node(columns_markdowns, n_row, n_col, col_names, col_format);
+        auto node = std::make_shared<Table>(
+            std::move(columns_markdowns), n_row, n_col,
+            std::move(col_names), std::move(col_format));
+        node->childs.reserve(table.size());
 
         for (auto cell : table) {
-            Markdown inner_md;
-            InlineParser::process(cell, inner_md);
-            node.pushback_child(std::make_shared<Markdown>(inner_md));
+            auto inner_md = std::make_shared<Markdown>();
+            InlineParser::process(std::string(cell), *inner_md);
+            node->pushback_child(std::move(inner_md));
         }
 
-        ast.pushback_child(std::make_shared<Table>(node));
+        ast.pushback_child(std::move(node));
     }
 };
 

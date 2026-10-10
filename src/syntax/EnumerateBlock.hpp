@@ -1,5 +1,6 @@
 #pragma once
 
+#include <locale>
 #include <stack>
 
 #include "../interfaces/ast.hpp"
@@ -35,19 +36,40 @@ struct EnumerateBlockSyntax : public BlockSyntax {
     static inline const std::regex rex = std::regex(R"(\d+\. (.*))");
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        return block_match(std::regex_match(read.get_row(), rex));
+        const auto line = read.line().text;
+        return block_match(std::regex_match(line.begin(), line.end(), rex));
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : rex match
         // END   : NewLine or EOF
 
         std::stack<std::shared_ptr<EnumerateBlock>> scopes;
-        EnumerateBlock root_enum;
-        scopes.push(std::make_shared<EnumerateBlock>(root_enum));
+        scopes.push(std::make_shared<EnumerateBlock>());
 
         std::string current_match = R"(\d+\. (.*))";
         // width : 3
         const std::string INDENT = "   ";
+        // These patterns change only when entering or leaving a nested scope.
+        // Compiling them for each item dominated parsing of long flat lists.
+        std::regex current_rex(current_match);
+        std::regex nested_rex(INDENT + current_match);
+        const bool literal_matching = current_rex.getloc() == std::locale::classic();
+        auto item_content = [literal_matching](std::string_view line, std::size_t indent)
+            -> std::optional<std::string_view> {
+            if (!literal_matching || line.find_first_not_of(' ') != indent)
+                return std::nullopt;
+            auto end = indent;
+            while (end < line.size() && line[end] >= '0' && line[end] <= '9') ++end;
+            if (end == indent || line.substr(end, 2) != ". ") return std::nullopt;
+            const auto content = line.substr(end + 2);
+            if (content.find_first_of("\r\n") != content.npos) return std::nullopt;
+            return content;
+        };
+        auto matches_item = [&](std::string_view line, std::size_t indent,
+                                const std::regex& pattern) {
+            return item_content(line, indent).has_value() ||
+                   std::regex_match(line.begin(), line.end(), pattern);
+        };
 
         // if s is considered a enum definition, return its depth"
         // otherwise return std::string::npos
@@ -66,50 +88,56 @@ struct EnumerateBlockSyntax : public BlockSyntax {
         while (true) {
             // Invariant : read.is_eof() == false
             //             scopes.size() >= 1
-            text += [&] {
-                std::smatch sm;
-                // smatch manage an iterator of the matched string `line`
-                // --> the string should not be a temporary object
-                std::string line = read.get_row();
-                std::regex_search(line, sm, std::regex(current_match));
-                return sm.format("$1");
-            }();
+            const auto indent = (scopes.size() - 1u) * 3u;
+            if (const auto content = item_content(read.line().text, indent)) {
+                text += *content;
+            } else {
+                // Continuations may contain an unanchored match or CR/LF.
+                // Preserve the original regex search for those cases.
+                text += [&] {
+                    std::smatch sm;
+                    // smatch manages iterators into the matched string.
+                    const std::string line = read.get_row();
+                    std::regex_search(line, sm, current_rex);
+                    return sm.format("$1");
+                }();
+            }
 
             // within while loop, read changes only here
             read.move_next_line();
 
             // END
             if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 break;
             }
             // same depth
-            if (std::regex_match(read.get_row(), std::regex(current_match))) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+            if (matches_item(read.line().text, indent, current_rex)) {
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 continue;
             }
             // +3 depth
-            if (std::regex_match(read.get_row(),
-                                 std::regex(INDENT + current_match))) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+            if (matches_item(read.line().text, indent + 3u, nested_rex)) {
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 // nested EnumerateBlock
-                EnumerateBlock new_node;
-                auto new_node_ptr = std::make_shared<EnumerateBlock>(new_node);
+                auto new_node_ptr = std::make_shared<EnumerateBlock>();
                 scopes.top()->pushback_child(new_node_ptr);
                 scopes.push(new_node_ptr);
 
                 // update match
                 current_match = INDENT + current_match;
+                current_rex = std::move(nested_rex);
+                nested_rex = std::regex(INDENT + current_match);
                 continue;
             }
             // -3n depth (n >= 1)
@@ -130,10 +158,12 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                 std::size_t delete_indent =
                     (scopes.size() - 1u) * 3u - enum_depth(read.get_row());
                 current_match = current_match.substr(delete_indent);
+                current_rex = std::regex(current_match);
+                nested_rex = std::regex(INDENT + current_match);
 
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 for (std::size_t del = 0; del < delete_indent; del += 3u) {

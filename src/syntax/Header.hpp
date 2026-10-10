@@ -49,26 +49,28 @@ struct Header : public ASTNode {
 struct HeaderSyntax : BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        if (read.get_row().starts_with("# ")) return block_match(true);
-        if (read.get_row().starts_with("## ")) return block_match(true);
-        if (read.get_row().starts_with("### ")) return block_match(true);
-        if (read.get_row().starts_with("#### ")) return block_match(true);
-        if (read.get_row().starts_with("##### ")) return block_match(true);
-        if (read.get_row().starts_with("###### ")) return block_match(true);
+        const auto line = read.line().text;
+        if (line.starts_with("# ")) return block_match(true);
+        if (line.starts_with("## ")) return block_match(true);
+        if (line.starts_with("### ")) return block_match(true);
+        if (line.starts_with("#### ")) return block_match(true);
+        if (line.starts_with("##### ")) return block_match(true);
+        if (line.starts_with("###### ")) return block_match(true);
         return block_match(false);
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         int level = 0;
-        if (read.get_row().starts_with("# ")) level = 1;
-        if (read.get_row().starts_with("## ")) level = 2;
-        if (read.get_row().starts_with("### ")) level = 3;
-        if (read.get_row().starts_with("#### ")) level = 4;
-        if (read.get_row().starts_with("##### ")) level = 5;
-        if (read.get_row().starts_with("###### ")) level = 6;
+        const auto line = read.line().text;
+        if (line.starts_with("# ")) level = 1;
+        if (line.starts_with("## ")) level = 2;
+        if (line.starts_with("### ")) level = 3;
+        if (line.starts_with("#### ")) level = 4;
+        if (line.starts_with("##### ")) level = 5;
+        if (line.starts_with("###### ")) level = 6;
         assert(1 <= level && level <= 6);
-        Header node(level);
-        InlineParser::process(read.get_row().substr(level + 1), node);
-        ast.pushback_child(std::make_shared<Header>(node));
+        auto node = std::make_shared<Header>(level);
+        InlineParser::process(std::string(line.substr(level + 1)), *node);
+        ast.pushback_child(std::move(node));
         read.move_next_line();
     }
 };

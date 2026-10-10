@@ -21,6 +21,12 @@ inline void register_parser_api_tests(std::vector<TestCase>& tests) {
         auto second = parser.parse("second");
         expect_contains(first.ast.to_html(), "first", "AST must own source text");
         expect_eq(second.ast.to_html(), std::string("second"), "Parser must not retain cursor state");
+        std::string table_source = "| **owned heading** |\n| :---: |\n| owned cell with enough text to allocate |";
+        const auto table = parser.parse(table_source);
+        const auto table_html = table.ast.to_html();
+        table_source.assign(4096, 'x');
+        expect_eq(table.ast.to_html(), table_html, "Table scanning views must not escape into the AST");
+        expect_contains(table_html, "owned cell", "Table cells must retain their source text");
         for (const std::string text : {"", "\n", "text\n", "text\r\n\r\n# title\r\n"}) {
             auto result = parser.parse(text);
             expect_same_tree(result.ast, parse_markdown(text));

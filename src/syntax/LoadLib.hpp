@@ -19,12 +19,12 @@ struct LoadLib : public ASTNode {
     std::vector<std::string> libs;
 
    public:
-    LoadLib(std::vector<std::string> libs) : libs(libs) { set_uuid(); }
+    LoadLib(std::vector<std::string> libs) : libs(std::move(libs)) { set_uuid(); }
 
     // use_libs に追加しておくと JS側で読み込み処理を行う。
     std::string to_html() const override {
         std::string output = "";
-        for (std::string lib : libs) {
+        for (const auto& lib : libs) {
             output += "<script> use_libs.push(\"" + lib + "\"); </script>";
         }
         return output;
@@ -39,7 +39,7 @@ struct LoadLib : public ASTNode {
 struct LoadLibSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        if (rtrim(read.get_row()) == ":::loadlib") return block_match(true);
+        if (detail::rtrim_view(read.line().text) == ":::loadlib") return block_match(true);
         return block_match(false);
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
@@ -61,8 +61,7 @@ struct LoadLibSyntax : public BlockSyntax {
             read.move_next_line();
         }
 
-        LoadLib node(libs);
-        ast.pushback_child(std::make_shared<LoadLib>(node));
+        ast.pushback_child(std::make_shared<LoadLib>(std::move(libs)));
     }
 };
 

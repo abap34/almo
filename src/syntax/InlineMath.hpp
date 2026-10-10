@@ -1,5 +1,7 @@
 #pragma once
 
+#include "inline_match.hpp"
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -17,7 +19,7 @@ struct InlineMath : public ASTNode {
     std::string expr;
 
    public:
-    InlineMath(std::string _expr) : expr(_expr) { set_uuid(); }
+    InlineMath(std::string _expr) : expr(std::move(_expr)) { set_uuid(); }
 
     // mathjax の　インライン数式用に \( \) で囲む
     std::string to_html() const override {
@@ -33,7 +35,7 @@ struct InlineMath : public ASTNode {
 struct InlineMathSyntax : public InlineSyntax {
     static inline const std::regex rex{R"(\$(.*?)\$)"};
     std::optional<InlineMatch> find(std::string_view source) const override {
-        return find_inline(source, rex);
+        return detail::find_delimited_inline(source, "$", "$");
     }
     void parse(const InlineMatch& matched, ASTNode& ast) const override {
         ast.pushback_child(std::make_shared<InlineMath>(matched.captures[0]));

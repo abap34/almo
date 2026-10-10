@@ -27,7 +27,7 @@ struct CodeBlock : public ASTNode {
 
    public:
     CodeBlock(std::string code, std::string language)
-        : code(code), language(language) {
+        : code(std::move(code)), language(std::move(language)) {
         set_uuid();
     }
 
@@ -54,26 +54,27 @@ struct CodeBlock : public ASTNode {
 struct CodeBlockSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        return block_match(read.get_row().starts_with("```"));
+        return block_match(read.line().text.starts_with("```"));
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '```(.*)'
         // END   : '```\s*'
 
-        std::string language = rtrim(read.get_row().substr(3));
+        std::string language(detail::rtrim_view(read.line().text.substr(3)));
         read.move_next_line();
         std::string code;
         while (!read.is_eof()) {
-            if (rtrim(read.get_row()) == "```") {
+            if (detail::rtrim_view(read.line().text) == "```") {
                 read.move_next_line();
                 break;
             }
-            code += read.get_row() + "\n";
+            code += read.line().text;
+            code += '\n';
             read.move_next_line();
         }
 
-        CodeBlock node(code, language);
-        ast.pushback_child(std::make_shared<CodeBlock>(node));
+        ast.pushback_child(std::make_shared<CodeBlock>(
+            std::move(code), std::move(language)));
     }
 };
 

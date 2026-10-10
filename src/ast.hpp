@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <iterator>
 
 #include "interfaces/ast.hpp"
 #include "utils.hpp"
@@ -26,15 +27,18 @@ std::string ASTNode::to_json() const {
     json += "\"uuid\":\"" + escape(get_uuid_str()) + "\",";
 
     // add other properties
-    for (auto property : properties) {
-        json +=
-            "\"" + property.first + "\":\"" + escape(property.second) + "\",";
+    for (const auto& property : properties) {
+        json += '"';
+        json += property.first;
+        json += "\":\"";
+        json += escape(property.second);
+        json += "\",";
     }
 
     // has childs
     if (!childs.empty()) {
         json += "\"childs\":[";
-        for (auto child : childs) {
+        for (const auto& child : childs) {
             json += child->to_json();
             json += ',';
         }
@@ -57,7 +61,7 @@ std::string ASTNode::concatenated_childs_dot() const {
     std::string node = get_uuid_str();
     std::string label = "";
 
-    for (int i = 1; auto property : properties) {
+    for (int i = 1; const auto& property : properties) {
         label += "<f" + std::to_string(i) + "> " + property.first + ": " +
                  escape(property.second, EscapeFormat::DOT) + " | ";
         i++;
@@ -71,13 +75,13 @@ std::string ASTNode::concatenated_childs_dot() const {
 
     // add child node
     std::string childs_dot = "";
-    for (auto child : childs) {
+    for (const auto& child : childs) {
         childs_dot += child->concatenated_childs_dot();
     }
 
     // connect child node
     std::string edges = "";
-    for (auto child : childs) {
+    for (const auto& child : childs) {
         edges += node + ":f" + std::to_string(edges.length()) + " -> " +
                  child->get_uuid_str() + "\n";
     }
@@ -93,7 +97,7 @@ std::string ASTNode::get_uuid_str() const { return std::to_string(uuid); }
 void ASTNode::set_uuid() { uuid = uuid_gen(); }
 
 void ASTNode::pushback_child(std::shared_ptr<ASTNode> child) {
-    childs.push_back(child);
+    childs.push_back(std::move(child));
 }
 
 void ASTNode::remove_child(std::shared_ptr<ASTNode> child) {
@@ -109,7 +113,7 @@ void ASTNode::remove_child(std::shared_ptr<ASTNode> child) {
 
 std::string ASTNode::concatenated_childs_html() const {
     std::string ret = "";
-    for (auto child : childs) {
+    for (const auto& child : childs) {
         ret += child->to_html();
     }
     return ret;
@@ -125,12 +129,11 @@ std::vector<std::shared_ptr<ASTNode>> ASTNode::nodes_byclass(
     if (get_classname() == classname) {
         ret.push_back(const_cast<ASTNode *>(this)->shared_from_this());
     }
-    for (auto child : childs) {
+    for (const auto& child : childs) {
         std::vector<std::shared_ptr<ASTNode>> childs_ret =
             child->nodes_byclass(classname);
-        for (auto child_ret : childs_ret) {
-            ret.push_back(child_ret);
-        }
+        ret.insert(ret.end(), std::make_move_iterator(childs_ret.begin()),
+                   std::make_move_iterator(childs_ret.end()));
     }
     return ret;
 }
