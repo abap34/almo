@@ -141,6 +141,8 @@ struct TableSyntax : public BlockSyntax {
 
         read.move_next_line();
 
+        if (read.is_eof())
+            throw SyntaxError("Table alignment row is missing");
         line = read.get_row();
 
         while (std::regex_search(line, sm, each_col_regex)) {
@@ -174,6 +176,8 @@ struct TableSyntax : public BlockSyntax {
                 table.push_back(sm[0].str().substr(1));
                 line = sm.suffix();
             }
+            if (table.size() != static_cast<std::size_t>(n_row * n_col))
+                throw SyntaxError("Number of columns of Table must be same");
             read.move_next_line();
         }
 

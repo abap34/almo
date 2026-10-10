@@ -38,6 +38,18 @@ inline void register_error_tests(std::vector<TestCase>& tests) {
                 "Tables with mismatched alignment columns should be rejected",
                 "Number of columns of Table must be same");
 
+            expect_throws<SyntaxError>(
+                []() { parse_markdown("| a | b |"); },
+                "Tables without an alignment row should be rejected", "alignment row is missing");
+
+            expect_throws<SyntaxError>(
+                []() { parse_markdown("| a | b |\n| - | - |\n| one |"); },
+                "Short table rows should be rejected", "Number of columns");
+
+            expect_throws<SyntaxError>(
+                []() { parse_markdown("| a | b |\n| - | - |\n| one | two | three |"); },
+                "Long table rows should be rejected", "Number of columns");
+
             expect_throws<InvalidCommandLineArgumentsError>(
                 []() { almo::load_html_template("__default__", "sepia", false); },
                 "Unknown CSS settings should be rejected", "不正なCSS");
