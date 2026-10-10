@@ -45,14 +45,14 @@ struct DivBlockSyntax : public BlockSyntax {
         scopes.push(std::make_shared<DivBlock>(root_div));
 
         read.move_next_line();
-        std::vector<std::string> text;
+        std::vector<SourceLine> text;
 
         while (!read.is_eof()) {
             // Invariant : scopes.size() >= 1
             if (rtrim(read.get_row()) == ":::") {
                 Markdown inner_md;
-                MarkdownParser parser(text);
-                parser.process(inner_md);
+                auto nested = read.nested(text);
+                detail::parse_into(nested, inner_md);
                 auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
                 scopes.top()->pushback_child(inner_md_ptr);
 
@@ -69,8 +69,8 @@ struct DivBlockSyntax : public BlockSyntax {
             }
             if (read.get_row().starts_with(":::")) {
                 Markdown inner_md;
-                MarkdownParser parser(text);
-                parser.process(inner_md);
+                auto nested = read.nested(text);
+                detail::parse_into(nested, inner_md);
                 auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
                 scopes.top()->pushback_child(inner_md_ptr);
 
@@ -84,14 +84,14 @@ struct DivBlockSyntax : public BlockSyntax {
                 read.move_next_line();
                 continue;
             }
-            text.emplace_back(read.get_row());
+            text.push_back(read.line());
             read.move_next_line();
         }
         // scopes.empty() iff completed DivBlock
         while (!scopes.empty()) {
             Markdown inner_md;
-            MarkdownParser parser(text);
-            parser.process(inner_md);
+            auto nested = read.nested(text);
+            detail::parse_into(nested, inner_md);
             auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
             scopes.top()->pushback_child(inner_md_ptr);
 

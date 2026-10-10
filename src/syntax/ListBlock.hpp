@@ -108,8 +108,8 @@ struct ListBlockSyntax : public BlockSyntax {
                     if (depth < current && (current - depth) % 2 == 0)
                         return true;
                     // ambiguous list definition detected
-                    std::cerr << "Ambiguous list: indent width must be 2. "
-                              "This line is considered as raw text." << std::endl;
+                    read.warn("Ambiguous list: indent width must be 2. "
+                              "This line is considered as raw text.");
                     return false;
                 }()) {
                 std::size_t delete_indent =

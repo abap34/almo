@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glob.h>
+#include "source.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -66,32 +67,17 @@ std::vector<std::string> split(std::string str, std::string sep) {
     return result;
 }
 
-// パースが失敗した時のエラー
-class ParseError : public std::exception {
-    std::string message;
-
-   public:
-    ParseError(std::string message) : message(message) {}
-    const char* what() const noexcept override {
-        std::string error = "パースエラー  \n" + message;
-        char* result = new char[error.length() + 1];
-        strcpy(result, error.c_str());
-        return result;
-    }
+// Keep the existing exception names and messages for callers.
+class ParseError : public almo::ParseException {
+public:
+    explicit ParseError(std::string message)
+        : ParseException(std::move(message), "パースエラー  \n") {}
 };
 
-// 構文が間違っている時のエラー
-class SyntaxError : public std::exception {
-    std::string message;
-
-   public:
-    SyntaxError(std::string message) : message(message) {}
-    const char* what() const noexcept override {
-        std::string error = "構文エラー  \n" + message;
-        char* result = new char[error.length() + 1];
-        strcpy(result, error.c_str());
-        return result;
-    }
+class SyntaxError : public almo::ParseException {
+public:
+    explicit SyntaxError(std::string message)
+        : ParseException(std::move(message), "構文エラー  \n") {}
 };
 
 // ファイルが存在しない時のエラー

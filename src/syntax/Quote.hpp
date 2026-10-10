@@ -32,10 +32,11 @@ struct QuoteSyntax : public BlockSyntax {
         // BEGIN : '> .*'
         // END   : '(?!> ).*'
 
-        std::vector<std::string> quote_contents;
+        std::vector<SourceLine> quote_contents;
         while (!read.is_eof()) {
             if (read.get_row().starts_with("> ")) {
-                quote_contents.emplace_back(read.get_row().substr(2));
+                const auto line = read.line();
+                quote_contents.push_back({line.text.substr(2), line.begin + 2, line.end});
                 read.move_next_line();
                 continue;
             }
@@ -45,8 +46,8 @@ struct QuoteSyntax : public BlockSyntax {
         // uuid order is node --> inner_md
         Quote node;
         Markdown inner_md;
-        MarkdownParser parser(quote_contents);
-        parser.process(inner_md);
+        auto nested = read.nested(std::move(quote_contents));
+        detail::parse_into(nested, inner_md);
         node.pushback_child(std::make_shared<Markdown>(inner_md));
         ast.pushback_child(std::make_shared<Quote>(node));
     }

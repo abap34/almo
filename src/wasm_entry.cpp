@@ -12,11 +12,8 @@ const char* almo_render(const char* md, int len) {
     static std::string result_buf;
     std::string input(md, len);
 
-    std::vector<std::string> lines = split(input, "\n");
-
-    almo::Markdown ast;
-    almo::MarkdownParser parser(lines);
-    parser.process(ast);
+    auto result = almo::Parser{}.parse(input);
+    auto& ast = result.ast;
 
     almo::move_footnote_to_end(ast);
 

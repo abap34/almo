@@ -75,18 +75,23 @@ inline std::optional<BlockSelection> match_block(const Reader& reader) {
 }
 
 inline void parse_into(Reader& reader, ASTNode& ast) {
-    while (!reader.is_eof()) {
-        auto selected = match_block(reader);
-        if (selected) {
-            selected->syntax->parse(reader, ast, selected->match);
-        } else {
-            std::string paragraph;
-            do {
-                if (!paragraph.empty()) paragraph += ' ';
-                paragraph += reader.get_row();
-                reader.move_next_line();
-            } while (!reader.is_eof() && !match_block(reader));
-            InlineParser::process(paragraph, ast);
+    while (static_cast<std::size_t>(reader.row) < reader.lines.size()) {
+        try {
+            auto selected = match_block(reader);
+            if (selected) {
+                selected->syntax->parse(reader, ast, selected->match);
+            } else {
+                std::string paragraph;
+                do {
+                    if (!paragraph.empty()) paragraph += ' ';
+                    paragraph += reader.get_row();
+                    reader.move_next_line();
+                } while (!reader.is_eof() && !match_block(reader));
+                InlineParser::process(paragraph, ast);
+            }
+        } catch (ParseException& error) {
+            error.locate(reader.range());
+            throw;
         }
     }
     reader.eof_read_flg = true;
@@ -96,7 +101,35 @@ inline void parse_into(Reader& reader, ASTNode& ast) {
 
 inline void MarkdownParser::process(ASTNode& ast) {
     if (reader.eof_read_flg) return;
-    detail::parse_into(reader, ast);
+    std::vector<Diagnostic> diagnostics;
+    auto* original = reader.diagnostics;
+    if (!original) reader.diagnostics = &diagnostics;
+    try {
+        detail::parse_into(reader, ast);
+    } catch (...) {
+        reader.diagnostics = original;
+        throw;
+    }
+    reader.diagnostics = original;
+    for (const auto& diagnostic : diagnostics)
+        std::cerr << "Warning: " << diagnostic.message << " ["
+                  << diagnostic.range.begin << ", " << diagnostic.range.end << ")\n";
 }
+
+struct ParseResult {
+    Markdown ast;
+    std::vector<Diagnostic> diagnostics;
+};
+
+class Parser {
+public:
+    // Source is borrowed only for this call. The result owns all parsed text.
+    [[nodiscard]] ParseResult parse(std::string_view source) const {
+        ParseResult result;
+        auto reader = Reader::from_source(source, &result.diagnostics);
+        detail::parse_into(reader, result.ast);
+        return result;
+    }
+};
 
 }  // namespace almo

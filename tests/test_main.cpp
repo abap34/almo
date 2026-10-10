@@ -2,6 +2,7 @@
 
 #include "cases/error_tests.hpp"
 #include "cases/parser_tests.hpp"
+#include "cases/parser_api_tests.hpp"
 #include "cases/syntax_match_tests.hpp"
 #include "cases/reader_utils_tests.hpp"
 #include "cases/render_tests.hpp"
@@ -15,6 +16,7 @@ int main() {
     almo_test::register_render_tests(tests);
     almo_test::register_error_tests(tests);
     almo_test::register_syntax_match_tests(tests);
+    almo_test::register_parser_api_tests(tests);
 
     return almo_test::run_tests(tests);
 }

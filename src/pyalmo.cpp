@@ -10,11 +10,7 @@
         .def(py::init<CONSTRUCTOR_ARGS>())
 
 almo::Markdown parse_md(std::string md_content) {
-    almo::Markdown ast;
-    std::vector<std::string> content_splitted = split(md_content, "\n");
-    almo::MarkdownParser parser(content_splitted);
-    parser.process(ast);
-    return ast;
+    return almo::Parser{}.parse(md_content).ast;
 }
 
 namespace py = pybind11;

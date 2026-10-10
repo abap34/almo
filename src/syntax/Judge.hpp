@@ -215,7 +215,9 @@ struct JudgeSyntax : BlockSyntax {
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : ':::judge\s*'
         // END   : ':::\s*'
+        const auto opening = read.range();
         std::map<std::string, std::string> judge_info;
+        std::map<std::string, SourceRange> option_ranges;
 
         const std::vector<std::string> required_args = {
             "title", "sample_in", "sample_out", "in", "out",
@@ -243,6 +245,7 @@ struct JudgeSyntax : BlockSyntax {
             if (judge_info.contains(key)) {
                 throw SyntaxError("Duplicate judge options : " + key);
             }
+            option_ranges[key] = read.range();
             judge_info[key] = value;
             read.move_next_line();
         }
@@ -253,12 +256,13 @@ struct JudgeSyntax : BlockSyntax {
             // lost args
             // set title
             if (judge_info.contains("title")) {
-                throw SyntaxError("問題" + judge_info["title"] + "の引数 " +
-                                  arg +
-                                  " がありません. 引数を追加してください.");
+                throw read.error<SyntaxError>("問題" + judge_info["title"] + "の引数 " +
+                                  arg + " がありません. 引数を追加してください.",
+                                  {opening.begin, read.offset()});
             } else {
-                throw SyntaxError(
-                    "問題タイトルがありません. 引数を追加してください.");
+                throw read.error<SyntaxError>(
+                    "問題タイトルがありません. 引数を追加してください.",
+                    {opening.begin, read.offset()});
             }
         }
 
@@ -268,12 +272,16 @@ struct JudgeSyntax : BlockSyntax {
             judge_info[arg] = default_value;
         }
 
-        Judge node(judge_info["title"], judge_info["sample_in"],
-                   judge_info["sample_out"], judge_info["in"],
-                   judge_info["out"], judge_info["judge"], judge_info["source"],
-                   "{{ editor_theme }}");
-
-        ast.pushback_child(std::make_shared<Judge>(node));
+        try {
+            Judge node(judge_info["title"], judge_info["sample_in"],
+                       judge_info["sample_out"], judge_info["in"],
+                       judge_info["out"], judge_info["judge"], judge_info["source"],
+                       "{{ editor_theme }}");
+            ast.pushback_child(std::make_shared<Judge>(node));
+        } catch (ParseException& error) {
+            error.locate(option_ranges.at("judge"));
+            throw;
+        }
     }
 };
 

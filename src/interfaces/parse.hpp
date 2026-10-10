@@ -15,7 +15,7 @@ namespace detail {
 void parse_into(Reader& reader, ASTNode& ast);
 }
 
-// Compatibility API for parsing a sequence of lines.
+// Compatibility API. New code should use Parser::parse(source).
 struct MarkdownParser {
     Reader reader;
     explicit MarkdownParser(const std::vector<std::string>& lines) : reader(lines) {}

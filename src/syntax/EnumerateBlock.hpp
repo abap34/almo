@@ -119,8 +119,8 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                     if (depth < current && (current - depth) % 3 == 0)
                         return true;
                     // ambiguous enum definition detected
-                    std::cerr << "Ambiguous enum: indent width must be 3. "
-                              "This line is considered as raw text." << std::endl;
+                    read.warn("Ambiguous enum: indent width must be 3. "
+                              "This line is considered as raw text.");
                     return false;
                 }()) {
                 std::size_t delete_indent =

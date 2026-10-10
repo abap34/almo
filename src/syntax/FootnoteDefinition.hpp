@@ -42,7 +42,7 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
         const auto& symbol = matched.captures[0];
         const auto& suffix = matched.captures[1];
         if (symbol.empty())
-            std::cerr << "Footnote symbol is empty. This may cause unexpected behavior." << std::endl;
+            read.warn("Footnote symbol is empty. This may cause unexpected behavior.");
 
         FootnoteDefinition node(symbol);
         InlineParser::process(suffix, node);
