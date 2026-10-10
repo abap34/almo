@@ -37,7 +37,7 @@ struct MathBlock : public ASTNode {
 struct MathBlockSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        return block_match(read.get_row().starts_with("$$"));
+        return block_match(read.line().text.starts_with("$$"));
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '$$.*'

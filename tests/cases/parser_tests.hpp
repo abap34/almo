@@ -8,6 +8,24 @@
 namespace almo_test {
 
 inline void register_parser_tests(std::vector<TestCase>& tests) {
+    tests.push_back({"ordered lists preserve scope changes and ambiguous continuations", [] {
+        const auto nested = almo::Parser{}.parse(
+            "1. root\n   1. first **bold**\n      1. deep\n   2. second\n2. last");
+        expect_eq(nested.ast.to_html(),
+                  std::string("<ol><li>root</li><ol><li>first <span class=\"strong\"><strong>bold</strong></span></li>"
+                              "<ol><li>deep</li></ol><li>second</li></ol><li>last</li></ol>"),
+                  "Cached patterns must follow every increase and decrease in depth");
+        expect_true(nested.diagnostics.empty(), "Valid scope changes must not warn");
+        const std::string source = "1. a\n  2. ambiguous\n3. c";
+        const auto ambiguous = almo::Parser{}.parse(source);
+        expect_eq(ambiguous.ast.to_html(), std::string("<ol><li>aambiguous</li><li>c</li></ol>"),
+                  "Ambiguous indentation must preserve the existing continuation behavior");
+        expect_eq(ambiguous.diagnostics.size(), std::size_t{1}, "Ambiguous indentation warns once");
+        expect_eq(ambiguous.diagnostics[0].range,
+                  almo::SourceRange{source.find("  2."), source.find("\n3.")},
+                  "Warnings must retain original source offsets");
+    }});
+
     tests.push_back({
         "parser outputs",
         []() {

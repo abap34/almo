@@ -38,9 +38,9 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
     static inline const std::regex rex = std::regex(R"(\[\^(.*)\]:(.*))");
     std::optional<BlockMatch> match(const Reader& read) const override {
         if (!read.is_line_begin()) return std::nullopt;
-        const std::string row = read.get_row();
-        std::smatch found;
-        if (!std::regex_match(row, found, rex)) return std::nullopt;
+        const auto row = read.line().text;
+        std::match_results<std::string_view::const_iterator> found;
+        if (!std::regex_match(row.begin(), row.end(), found, rex)) return std::nullopt;
         return BlockMatch{{found[1].str(), found[2].str()}};
     }
     void parse(Reader& read, ASTNode& ast, const BlockMatch& matched) const override {

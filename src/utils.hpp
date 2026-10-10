@@ -11,6 +11,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 // コンパイル時に埋め込む定数
 namespace almo {
@@ -233,6 +234,12 @@ std::string escape(const std::string& s, EscapeFormat format = EscapeFormat::JSO
 
 
 // 文字列を受け取り、末尾のスペースを削除する
+namespace almo::detail {
+inline std::string_view rtrim_view(std::string_view text) {
+    return text.substr(0, text.find_last_not_of(" \n\r\t") + 1);
+}
+}  // namespace almo::detail
+
 std::string rtrim(std::string s) {
     s.erase(s.find_last_not_of(" \n\r\t") + 1);
     return s;

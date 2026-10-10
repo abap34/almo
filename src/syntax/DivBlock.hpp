@@ -38,8 +38,9 @@ struct DivBlock : public ASTNode {
 struct DivBlockSyntax : public BlockSyntax {
     std::optional<BlockMatch> match(const Reader &read) const override {
         if (!read.is_line_begin()) return block_match(false);
-        if (!read.get_row().starts_with(":::")) return block_match(false);
-        if (rtrim(read.get_row()) != ":::") return block_match(true);
+        const auto line = read.line().text;
+        if (!line.starts_with(":::")) return block_match(false);
+        if (detail::rtrim_view(line) != ":::") return block_match(true);
         return block_match(false);
     }
     void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {

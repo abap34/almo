@@ -116,7 +116,7 @@ inline ParseUnit parse_next(Reader& reader) {
             std::string paragraph;
             do {
                 if (!paragraph.empty()) paragraph += ' ';
-                paragraph += reader.get_row();
+                paragraph += reader.line().text;
                 reader.move_next_line();
             } while (!reader.is_eof() && !match_block(reader));
             InlineParser::process(paragraph, ast);

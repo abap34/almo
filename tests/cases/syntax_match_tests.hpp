@@ -63,6 +63,92 @@ inline void expect_inline_matches_and_tree(const std::string& source) {
 }
 
 inline void register_syntax_match_tests(std::vector<TestCase>& tests) {
+    tests.push_back({"block matching preserves whitespace and captured text", [] {
+        const almo::NewLineSyntax newline;
+        const almo::JudgeSyntax judge;
+        const almo::ExecutableCodeBlockSyntax executable;
+        const almo::LoadLibSyntax loadlib;
+        const almo::DivBlockSyntax div;
+        const almo::QuoteSyntax quote;
+        const almo::ListBlockSyntax list;
+        const almo::EnumerateBlockSyntax enumeration;
+        const almo::HeaderSyntax header;
+        const almo::CodeBlockSyntax code;
+        const almo::MathBlockSyntax math;
+        const almo::HorizontalLineSyntax rule;
+        const almo::TableSyntax table;
+        const almo::FootnoteDefinitionSyntax footnote;
+        const std::array<const almo::BlockSyntax*, 14> syntaxes{
+            &newline, &judge, &executable, &loadlib, &div, &quote, &list,
+            &enumeration, &header, &code, &math, &rule, &table, &footnote};
+        const std::regex table_pattern(R"((\|[^\|]+).+\|)");
+        std::vector<std::string> rows{
+            "", " \t\r", "\v", "\f", "plain 日本語😀", ":::judge", ":::code \t",
+            ":::loadlib\r", ":::class", "::: ", "> quote", "- item", "1. item",
+            "123. ", "1. item\r", "   1. nested", "# heading", "###### heading",
+            "####### raw", "```cpp", "$$x$$", "---\t", "___\r", "*** ",
+            "| a | b |\r", "|a|", "||", "[^n]: text", "[^]: text", "[^a]:b]:c"};
+        const char embedded[] = "[^a\0b]:c\0d";
+        rows.emplace_back(embedded, sizeof(embedded) - 1);
+        for (const auto& row : rows) {
+            const auto trimmed = rtrim(row);
+            bool is_header = false;
+            for (int level = 1; level <= 6; ++level)
+                is_header = is_header || row.starts_with(std::string(level, '#') + " ");
+            const std::array<bool, 14> expected{
+                trimmed.empty(), trimmed == ":::judge", trimmed == ":::code",
+                trimmed == ":::loadlib", row.starts_with(":::") && trimmed != ":::",
+                row.starts_with("> "), row.starts_with("- "),
+                std::regex_match(row, enumeration.rex), is_header, row.starts_with("```"),
+                row.starts_with("$$"), trimmed == "---" || trimmed == "___" || trimmed == "***",
+                std::regex_match(trimmed, table_pattern), std::regex_match(row, footnote.rex)};
+            auto read = almo::Reader::from_source(row);
+            for (std::size_t i = 0; i < syntaxes.size(); ++i)
+                expect_eq(syntaxes[i]->match(read).has_value(), expected[i],
+                          "Block matching must preserve original predicates: " + escape(row));
+            if (expected.back()) {
+                std::smatch found;
+                std::regex_match(row, found, footnote.rex);
+                expect_eq(footnote.match(read)->captures,
+                          std::vector<std::string>{found[1].str(), found[2].str()},
+                          "Footnote captures must own the same bytes");
+            }
+            if (!row.empty()) {
+                read.move_next_char(1);
+                for (const auto* syntax : syntaxes)
+                    expect_true(!syntax->match(read), "Blocks require the beginning of a line");
+            }
+        }
+    }});
+
+    tests.push_back({"table cell scanning preserves the original regex matches", [] {
+        auto compare = [](const std::string& row) {
+            static const std::regex pattern(R"(\|[^\|]+)");
+            std::vector<std::string> expected;
+            std::smatch found;
+            auto rest = row;
+            while (std::regex_search(rest, found, pattern)) {
+                expected.push_back(found[0].str().substr(1));
+                rest = found.suffix();
+            }
+            std::vector<std::string> actual;
+            for (const auto cell : almo::detail::table_cells(row)) actual.emplace_back(cell);
+            expect_eq(actual, expected, "Table cells must preserve empty-cell and whitespace behavior");
+        };
+        for (const std::string row : {"", "|", "||", "|a||b|", "prefix | a | b |  ",
+                                     "| a\nline | b\r |", "| 日本語😀 | **bold** |"})
+            compare(row);
+        const char embedded[] = "|a\0b||c\0d|";
+        compare(std::string(embedded, sizeof(embedded) - 1));
+        std::mt19937 random(341);
+        const std::array<std::string, 8> tokens{"a", "|", "||", " ", "\r", "\n", "日本語", std::string(1, '\0')};
+        for (int i = 0; i < 600; ++i) {
+            std::string row;
+            for (int j = 0; j < 30; ++j) row += tokens[random() % tokens.size()];
+            compare(row);
+        }
+    }});
+
     tests.push_back({"inline matches retain their captured text", [] {
         almo::InlineStrongSyntax syntax;
         expect_true(!syntax.find({}), "Empty input has no match");
