@@ -198,33 +198,46 @@ enum class EscapeFormat {
 std::string escape(const std::string& s, EscapeFormat format = EscapeFormat::JSON) {
     switch (format) {
         case EscapeFormat::JSON: {
-            std::ostringstream o;
-            for (auto c = s.cbegin(); c != s.cend(); c++) {
-                if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
-                    o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
-                      << static_cast<int>(*c);
+            static constexpr char hex[] = "0123456789abcdef";
+            std::string ret;
+            ret.reserve(s.size());
+            for (const unsigned char ch : s) {
+                if (ch == '"' || ch == '\\' || ch <= 0x1f) {
+                    ret += "\\u00";
+                    ret += hex[ch >> 4];
+                    ret += hex[ch & 0x0f];
                 } else {
-                    o << *c;
+                    ret += static_cast<char>(ch);
                 }
             }
-            return o.str();
+            return ret;
         }
         case EscapeFormat::HTML: {
-            std::string ret = s;
-            ret = std::regex_replace(ret, std::regex("&"), "&amp;");
-            ret = std::regex_replace(ret, std::regex("<"), "&lt;");
-            ret = std::regex_replace(ret, std::regex(">"), "&gt;");
-            ret = std::regex_replace(ret, std::regex("\""), "&quot;");
-            ret = std::regex_replace(ret, std::regex("'"), "&#39;");
+            std::string ret;
+            ret.reserve(s.size());
+            for (const char ch : s) {
+                switch (ch) {
+                    case '&': ret += "&amp;"; break;
+                    case '<': ret += "&lt;"; break;
+                    case '>': ret += "&gt;"; break;
+                    case '"': ret += "&quot;"; break;
+                    case '\'': ret += "&#39;"; break;
+                    default: ret += ch; break;
+                }
+            }
             return ret;
         }
         case EscapeFormat::DOT: {
-            std::string ret = s;
-            ret = std::regex_replace(ret, std::regex("\\{"), "\\\\{");
-            ret = std::regex_replace(ret, std::regex("\\}"), "\\\\}");
-            ret = std::regex_replace(ret, std::regex("\\|"), "\\\\|");
-            ret = std::regex_replace(ret, std::regex("<"), "\\\\<");
-            ret = std::regex_replace(ret, std::regex(">"), "\\\\>");
+            std::string ret;
+            ret.reserve(s.size());
+            for (const char ch : s) {
+                switch (ch) {
+                    case '{': case '}': case '|': case '<': case '>':
+                        ret += "\\\\";
+                        break;
+                }
+                ret += ch;
+            }
             return ret;
         }
     }

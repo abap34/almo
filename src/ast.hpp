@@ -27,15 +27,18 @@ std::string ASTNode::to_json() const {
     json += "\"uuid\":\"" + escape(get_uuid_str()) + "\",";
 
     // add other properties
-    for (auto property : properties) {
-        json +=
-            "\"" + property.first + "\":\"" + escape(property.second) + "\",";
+    for (const auto& property : properties) {
+        json += '"';
+        json += property.first;
+        json += "\":\"";
+        json += escape(property.second);
+        json += "\",";
     }
 
     // has childs
     if (!childs.empty()) {
         json += "\"childs\":[";
-        for (auto child : childs) {
+        for (const auto& child : childs) {
             json += child->to_json();
             json += ',';
         }

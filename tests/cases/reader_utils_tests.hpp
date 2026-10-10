@@ -38,6 +38,38 @@ inline void register_reader_and_utils_tests(std::vector<TestCase>& tests) {
     });
 
     tests.push_back({
+        "escaping preserves every input byte",
+        []() {
+            std::string bytes = "日本語😀 &amp; <tag a=\"x\"> ' \\{a|b}\\n";
+            for (int byte = 0; byte < 256; ++byte) bytes += static_cast<char>(byte);
+            for (const auto& source : {std::string{}, bytes, bytes + bytes}) {
+                std::ostringstream json;
+                for (const char ch : source) {
+                    if (ch == '"' || ch == '\\' || (ch >= 0 && ch <= 0x1f))
+                        json << "\\u" << std::hex << std::setw(4) << std::setfill('0')
+                             << static_cast<int>(ch);
+                    else
+                        json << ch;
+                }
+                expect_eq(escape(source), json.str(), "JSON escaping must preserve every byte and escape spelling");
+                auto html = source;
+                for (const auto& [pattern, replacement] :
+                     std::vector<std::pair<std::string, std::string>>{
+                         {"&", "&amp;"}, {"<", "&lt;"}, {">", "&gt;"},
+                         {"\"", "&quot;"}, {"'", "&#39;"}})
+                    html = std::regex_replace(html, std::regex(pattern), replacement);
+                expect_eq(escape(source, EscapeFormat::HTML), html, "HTML escaping must match prior output");
+                auto dot = source;
+                for (const auto& pattern : {"\\{", "\\}", "\\|", "<", ">"}) {
+                    const std::string literal = std::string(pattern).substr(std::string(pattern).size() - 1);
+                    dot = std::regex_replace(dot, std::regex(pattern), "\\\\" + literal);
+                }
+                expect_eq(escape(source, EscapeFormat::DOT), dot, "DOT escaping must match prior output");
+            }
+        },
+    });
+
+    tests.push_back({
         "utility helpers",
         []() {
             expect_eq(join({"a", "b", "c"}, ","), std::string("a,b,c"),
