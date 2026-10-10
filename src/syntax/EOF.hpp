@@ -7,8 +7,8 @@
 namespace almo {
 
 struct EOFSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override { return read.is_eof(); }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    std::optional<BlockMatch> match(const Reader &read) const override { return block_match(read.is_eof()); }
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         read.read_eof();
     }
 };

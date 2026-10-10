@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -29,13 +31,13 @@ struct DivBlock : public ASTNode {
 };
 
 struct DivBlockSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (!read.get_row().starts_with(":::")) return false;
-        if (rtrim(read.get_row()) != ":::") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (!read.get_row().starts_with(":::")) return block_match(false);
+        if (rtrim(read.get_row()) != ":::") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         std::stack<std::shared_ptr<DivBlock>> scopes;
         std::string div_class = read.get_row().substr(3);
 

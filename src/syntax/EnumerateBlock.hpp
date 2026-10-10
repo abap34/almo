@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -27,11 +29,11 @@ struct EnumerateBlock : public ASTNode {
 
 struct EnumerateBlockSyntax : public BlockSyntax {
     static inline const std::regex rex = std::regex(R"(\d+\. (.*))");
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        return std::regex_match(read.get_row(), rex);
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        return block_match(std::regex_match(read.get_row(), rex));
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : rex match
         // END   : NewLine or EOF
 
@@ -73,7 +75,7 @@ struct EnumerateBlockSyntax : public BlockSyntax {
             read.move_next_line();
 
             // END
-            if (EOFSyntax{}(read) || NewLineSyntax{}(read)) {
+            if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) {
                 Item item;
                 InlineParser::process(text, item);
                 scopes.top()->pushback_child(std::make_shared<Item>(item));
@@ -117,12 +119,8 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                     if (depth < current && (current - depth) % 3 == 0)
                         return true;
                     // ambiguous enum definition detected
-                    std::cerr << "Warning: ambiguous enum\n ... \n"
-                              << read.near() << "\n^^^ parsing line"
-                              << std::endl;
-                    std::cerr << "indent width must be 3. this line is "
-                                 "considered as raw text."
-                              << std::endl;
+                    std::cerr << "Ambiguous enum: indent width must be 3. "
+                              "This line is considered as raw text." << std::endl;
                     return false;
                 }()) {
                 std::size_t delete_indent =

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -26,11 +28,11 @@ struct ListBlock : public ASTNode {
 };
 
 struct ListBlockSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        return read.get_row().starts_with("- ");
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        return block_match(read.get_row().starts_with("- "));
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '- .*'
         // END   : NewLine or EOF
 
@@ -64,7 +66,7 @@ struct ListBlockSyntax : public BlockSyntax {
             read.move_next_line();
 
             // END
-            if (EOFSyntax{}(read) || NewLineSyntax{}(read)) {
+            if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) {
                 Item item;
                 InlineParser::process(text, item);
                 scopes.top()->pushback_child(std::make_shared<Item>(item));
@@ -106,12 +108,8 @@ struct ListBlockSyntax : public BlockSyntax {
                     if (depth < current && (current - depth) % 2 == 0)
                         return true;
                     // ambiguous list definition detected
-                    std::cerr << "Warning: ambiguous list\n ... \n"
-                              << read.near() << "\n^^^ parsing line"
-                              << std::endl;
-                    std::cerr << "indent width must be 2. this line is "
-                                 "considered as raw text."
-                              << std::endl;
+                    std::cerr << "Ambiguous list: indent width must be 2. "
+                              "This line is considered as raw text." << std::endl;
                     return false;
                 }()) {
                 std::size_t delete_indent =

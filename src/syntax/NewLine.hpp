@@ -20,12 +20,12 @@ struct NewLine : public ASTNode {
 };
 
 struct NewLineSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == "") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (rtrim(read.get_row()) == "") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         NewLine node;
         ast.pushback_child(std::make_shared<NewLine>(node));
         read.move_next_line();

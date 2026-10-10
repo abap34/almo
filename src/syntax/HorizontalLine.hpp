@@ -20,14 +20,14 @@ struct HorizontalLine : public ASTNode {
 };
 
 struct HorizontalLineSyntax : BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == "---") return true;
-        if (rtrim(read.get_row()) == "___") return true;
-        if (rtrim(read.get_row()) == "***") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (rtrim(read.get_row()) == "---") return block_match(true);
+        if (rtrim(read.get_row()) == "___") return block_match(true);
+        if (rtrim(read.get_row()) == "***") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         HorizontalLine node;
         ast.pushback_child(std::make_shared<HorizontalLine>(node));
         read.move_next_line();

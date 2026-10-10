@@ -32,12 +32,12 @@ struct LoadLib : public ASTNode {
 };
 
 struct LoadLibSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == ":::loadlib") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (rtrim(read.get_row()) == ":::loadlib") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         std::vector<std::string> libs;
 
         // skip :::loadlib

@@ -31,23 +31,18 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
         "[^" + symbol + "]: + hoge"
     */
     static inline const std::regex rex = std::regex(R"(\[\^(.*)\]:(.*))");
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        std::string row = read.get_row();
-        std::smatch sm;
-        return std::regex_match(row, sm, rex);
+    std::optional<BlockMatch> match(const Reader& read) const override {
+        if (!read.is_line_begin()) return std::nullopt;
+        const std::string row = read.get_row();
+        std::smatch found;
+        if (!std::regex_match(row, found, rex)) return std::nullopt;
+        return BlockMatch{{found[1].str(), found[2].str()}};
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
-        std::string row = read.get_row();
-        std::smatch sm;
-        std::regex_search(row, sm, rex);
-        std::string symbol = sm.format("$1");
-        std::string suffix = sm.format("$2");
-        if (symbol.empty()) {
-            std::cerr << "Warning: Footnote symbol is empty. This may cause "
-                         "unexpected behavior. \n... \n"
-                      << read.near() << "\n^^^ parsing line" << std::endl;
-        }
+    void parse(Reader& read, ASTNode& ast, const BlockMatch& matched) const override {
+        const auto& symbol = matched.captures[0];
+        const auto& suffix = matched.captures[1];
+        if (symbol.empty())
+            std::cerr << "Footnote symbol is empty. This may cause unexpected behavior." << std::endl;
 
         FootnoteDefinition node(symbol);
         InlineParser::process(suffix, node);

@@ -47,11 +47,11 @@ struct CodeBlock : public ASTNode {
 };
 
 struct CodeBlockSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        return read.get_row().starts_with("```");
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        return block_match(read.get_row().starts_with("```"));
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : '```(.*)'
         // END   : '```\s*'
 

@@ -109,14 +109,14 @@ struct Table : public ASTNode {
 };
 
 struct TableSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (std::regex_match(rtrim(read.get_row()),
-                             std::regex(R"((\|[^\|]+).+\|)")))
-            return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        static const std::regex pattern(R"((\|[^\|]+).+\|)");
+        if (std::regex_match(rtrim(read.get_row()), pattern))
+            return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : R"((\|[^\|]+).+\|)"
         // END   : EOF or NewLine
         const std::regex each_col_regex(R"(\|[^\|]+)");
@@ -169,7 +169,7 @@ struct TableSyntax : public BlockSyntax {
         std::vector<std::string> table;
 
         while (true) {
-            if (EOFSyntax{}(read) || NewLineSyntax{}(read)) break;
+            if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) break;
             n_row++;
             line = read.get_row();
             while (std::regex_search(line, sm, each_col_regex)) {

@@ -207,12 +207,12 @@ struct Judge : public ASTNode {
 };
 
 struct JudgeSyntax : BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == ":::judge") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (rtrim(read.get_row()) == ":::judge") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         // BEGIN : ':::judge\s*'
         // END   : ':::\s*'
         std::map<std::string, std::string> judge_info;

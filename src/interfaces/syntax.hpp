@@ -1,35 +1,49 @@
 #pragma once
 
-#include "../reader.hpp"
-#include "ast.hpp"
+#include <optional>
 #include <regex>
-#include <limits>
+#include <string_view>
+#include "../reader.hpp"
+#include "../source.hpp"
+#include "ast.hpp"
 
 namespace almo {
 
-struct BlockSyntax {
-    // determine if it matches as the syntax
-    virtual bool operator()(Reader &read) const = 0;
+struct BlockMatch {
+    std::vector<std::string> captures;
+};
+inline std::optional<BlockMatch> block_match(bool matched) {
+    return matched ? std::optional<BlockMatch>(BlockMatch{}) : std::nullopt;
+}
 
-    // update read and ast
-    // assume that it matches as the syntax
-    virtual void operator()(Reader &read, ASTNode &ast) const = 0;
+struct BlockSyntax {
+    virtual ~BlockSyntax() = default;
+    virtual std::optional<BlockMatch> match(const Reader& read) const = 0;
+    virtual void parse(Reader& read, ASTNode& ast, const BlockMatch& match) const = 0;
+};
+
+struct InlineMatch {
+    SourceRange range;  // offsets relative to the inline input
+    std::vector<std::string> captures;
 };
 
 struct InlineSyntax {
-    // determine if the string matches as the syntax
-    // if so, calculate minimum position of the matched location
-    // example :
-    //   rex = $(.*)$;
-    //   str = "ab$c+d$e";
-    //   ---> substring located at [2,7) detected : '$c+d$'
-    //   ---> return 2
-    // ( ---> captured substring is located at [3,6) : 'c+d' )
-    virtual int operator()(const std::string &str) const = 0;
-
-    // update read and ast
-    // assume that the string matches as the syntax
-    virtual void operator()(const std::string &str, ASTNode &ast) const = 0;
+    virtual ~InlineSyntax() = default;
+    virtual std::optional<InlineMatch> find(std::string_view source) const = 0;
+    virtual void parse(const InlineMatch& match, ASTNode& ast) const = 0;
 };
 
-} // namespace almo
+inline std::optional<InlineMatch> find_inline(std::string_view source,
+                                             const std::regex& pattern) {
+    if (source.empty()) return std::nullopt;
+    std::match_results<std::string_view::const_iterator> found;
+    if (!std::regex_search(source.begin(), source.end(), found, pattern))
+        return std::nullopt;
+    auto begin = static_cast<std::size_t>(found.position());
+    InlineMatch result{{begin, begin + static_cast<std::size_t>(found.length())}, {}};
+    for (std::size_t i = 1; i < found.size(); ++i)
+        result.captures.push_back(found[i].str());
+    return result;
+}
+
+}  // namespace almo

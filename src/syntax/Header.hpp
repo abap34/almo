@@ -42,17 +42,17 @@ struct Header : public ASTNode {
 };
 
 struct HeaderSyntax : BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (read.get_row().starts_with("# ")) return true;
-        if (read.get_row().starts_with("## ")) return true;
-        if (read.get_row().starts_with("### ")) return true;
-        if (read.get_row().starts_with("#### ")) return true;
-        if (read.get_row().starts_with("##### ")) return true;
-        if (read.get_row().starts_with("###### ")) return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (read.get_row().starts_with("# ")) return block_match(true);
+        if (read.get_row().starts_with("## ")) return block_match(true);
+        if (read.get_row().starts_with("### ")) return block_match(true);
+        if (read.get_row().starts_with("#### ")) return block_match(true);
+        if (read.get_row().starts_with("##### ")) return block_match(true);
+        if (read.get_row().starts_with("###### ")) return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         int level = 0;
         if (read.get_row().starts_with("# ")) level = 1;
         if (read.get_row().starts_with("## ")) level = 2;

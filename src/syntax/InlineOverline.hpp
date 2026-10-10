@@ -21,26 +21,14 @@ struct InlineOverline : public ASTNode {
 };
 
 struct InlineOverlineSyntax : public InlineSyntax {
-    static inline const std::regex rex =
-        std::regex(R"((.*?)\~\~(.*?)\~\~(.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 2;
-        }
-        return std::numeric_limits<int>::max();
+    static inline const std::regex rex{R"(\~\~(.*?)\~\~)"};
+    std::optional<InlineMatch> find(std::string_view source) const override {
+        return find_inline(source, rex);
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string content = sm.format("$2");
-        std::string suffix = sm.format("$3");
-        InlineParser::process(prefix, ast);
-        InlineOverline node;
-        InlineParser::process(content, node);
-        ast.pushback_child(std::make_shared<InlineOverline>(node));
-        InlineParser::process(suffix, ast);
+    void parse(const InlineMatch& matched, ASTNode& ast) const override {
+        auto node = std::make_shared<InlineOverline>();
+        InlineParser::process(matched.captures[0], *node);
+        ast.pushback_child(std::move(node));
     }
 };
 

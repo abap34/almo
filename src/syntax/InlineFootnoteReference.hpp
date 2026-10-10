@@ -34,24 +34,13 @@ struct InlineFootnoteReference : public ASTNode {
     }
 };
 struct InlineFootnoteReferenceSyntax : public InlineSyntax {
-    static inline const std::regex rex = std::regex(R"((.*?)\[\^(.*?)\](.*))");
-    int operator()(const std::string &str) const override {
-        std::smatch sm;
-        if (std::regex_search(str, sm, rex)) {
-            return sm.position(2) - 1;
-        }
-        return std::numeric_limits<int>::max();
+    static inline const std::regex rex{R"(\[\^(.*?)\])"};
+    std::optional<InlineMatch> find(std::string_view source) const override {
+        return find_inline(source, rex);
     }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        std::smatch sm;
-        std::regex_search(str, sm, rex);
-        std::string prefix = sm.format("$1");
-        std::string symbol = sm.format("$2");
-        std::string suffix = sm.format("$3");
-        InlineParser::process(prefix, ast);
-        InlineFootnoteReference node(symbol);
-        ast.pushback_child(std::make_shared<InlineFootnoteReference>(node));
-        InlineParser::process(suffix, ast);
+    void parse(const InlineMatch& matched, ASTNode& ast) const override {
+        ast.pushback_child(std::make_shared<InlineFootnoteReference>(matched.captures[0]));
     }
 };
+
 }  // namespace almo

@@ -23,19 +23,5 @@ struct RawText : public ASTNode {
     std::string get_classname() const override { return "RawText"; }
 };
 
-struct RawTextSyntax : InlineSyntax {
-    // All string matches Rawtext syntax
-    // but matches infinity position
-    // because Rawtext syntax is weakest.
-    // If the string matches other Inline syntax
-    // RawText does not match it.
-    int operator()(const std::string &str) const override {
-        return std::numeric_limits<int>::max();
-    }
-    void operator()(const std::string &str, ASTNode &ast) const override {
-        RawText node(str);
-        ast.pushback_child(std::make_shared<RawText>(node));
-    }
-};
-
+// Raw text is emitted directly when no inline syntax matches.
 }  // namespace almo

@@ -85,12 +85,12 @@ struct ExecutableCodeBlock : public ASTNode {
 };
 
 struct ExecutableCodeBlockSyntax : public BlockSyntax {
-    bool operator()(Reader &read) const override {
-        if (!read.is_line_begin()) return false;
-        if (rtrim(read.get_row()) == ":::code") return true;
-        return false;
+    std::optional<BlockMatch> match(const Reader &read) const override {
+        if (!read.is_line_begin()) return block_match(false);
+        if (rtrim(read.get_row()) == ":::code") return block_match(true);
+        return block_match(false);
     }
-    void operator()(Reader &read, ASTNode &ast) const override {
+    void parse(Reader &read, ASTNode &ast, const BlockMatch&) const override {
         std::string code = "";
 
         // skip :::code
