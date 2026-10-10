@@ -43,6 +43,34 @@ inline BenchmarkScenario make_parse_scenario(
     };
 }
 
+// Construction is outside timing. Each sample replaces one ASCII byte in a
+// middle paragraph and alternates its value so every sample changes the input.
+inline BenchmarkScenario make_edit_scenario(
+    const std::string& name, const std::vector<std::string>& document,
+    bool incremental) {
+    std::string source = join(document, "\n");
+    const auto position = source.find("Paragraph ", source.size() / 2);
+    if (position == std::string::npos)
+        throw std::runtime_error("Edit benchmark needs a middle paragraph");
+    const auto work_units = source.size();
+    if (incremental) {
+        auto parser = std::make_shared<almo::IncrementalParser>(std::move(source));
+        return {name, work_units, [parser, position]() {
+            std::array edits{almo::TextEdit{{position, position + 1},
+                parser->source()[position] == 'P' ? "p" : "P"}};
+            const auto update = parser->apply_edits(edits);
+            if (update.reparsed_ranges.empty())
+                throw std::runtime_error("Edit benchmark must reparse a changed paragraph");
+        }};
+    }
+    return {name, work_units, [source = std::move(source), position]() mutable {
+        source[position] = source[position] == 'P' ? 'p' : 'P';
+        const auto parsed = almo::Parser{}.parse(source);
+        if (parsed.ast.childs.empty())
+            throw std::runtime_error("Edit benchmark must produce an AST");
+    }};
+}
+
 inline BenchmarkScenario make_render_scenario(
     const std::string& name, const std::vector<std::string>& document,
     const std::function<void(const almo::ParseSummary&)>& validate = nullptr) {

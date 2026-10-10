@@ -22,6 +22,8 @@ inline std::vector<BenchmarkScenario> make_benchmark_scenarios() {
     return {
         make_parse_scenario("parse_small_document", small_document),
         make_parse_scenario("parse_large_document", large_document),
+        make_edit_scenario("parse_full_single_edit_large_document", large_document, false),
+        make_edit_scenario("parse_incremental_single_edit_large_document", large_document, true),
         make_parse_scenario("parse_realistic_article_document",
                             realistic_article_document),
         make_parse_scenario("parse_release_notes_document",
