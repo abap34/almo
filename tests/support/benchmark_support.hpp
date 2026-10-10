@@ -43,6 +43,26 @@ inline BenchmarkScenario make_parse_scenario(
     };
 }
 
+inline BenchmarkScenario make_source_parse_scenario(
+    const std::string& name, const std::vector<std::string>& document) {
+    std::string source = join(document, "\n");
+    const auto bytes = source.size();
+    return {name, bytes, [source = std::move(source)] {
+        const auto result = almo::Parser{}.parse(source);
+        if (result.ast.childs.empty())
+            throw std::runtime_error("Full parse benchmark must produce an AST");
+    }};
+}
+
+inline BenchmarkScenario make_json_scenario(
+    const std::string& name, const std::vector<std::string>& document) {
+    auto result = almo::Parser{}.parse(join(document, "\n"));
+    return {name, document.size(), [ast = std::move(result.ast)] {
+        if (ast.to_json().empty())
+            throw std::runtime_error("JSON benchmark must serialize an AST");
+    }};
+}
+
 // Construction is outside timing. Each sample replaces one ASCII byte in a
 // middle paragraph and alternates its value so every sample changes the input.
 inline BenchmarkScenario make_edit_scenario(
@@ -89,6 +109,26 @@ inline BenchmarkScenario make_render_scenario(
             }
         },
     };
+}
+
+// Match the WASM preview path: preserve the parser, replace the source, clone
+// its AST, move footnotes and generate HTML. JSON/JS marshalling is measured by
+// the separate WASM tests rather than this native benchmark.
+inline BenchmarkScenario make_preview_edit_scenario(
+    const std::string& name, const std::vector<std::string>& document) {
+    std::string source = join(document, "\n");
+    const auto position = source.find("Paragraph ", source.size() / 2);
+    if (position == std::string::npos)
+        throw std::runtime_error("Preview benchmark needs a middle paragraph");
+    auto parser = std::make_shared<almo::IncrementalParser>(source);
+    return {name, source.size(), [parser, source = std::move(source), position]() mutable {
+        source[position] = source[position] == 'P' ? 'p' : 'P';
+        const auto update = parser->set_source(source);
+        auto ast = parser->clone_ast();
+        almo::move_footnote_to_end(ast);
+        if (update.reparsed_ranges.empty() || ast.to_html().empty())
+            throw std::runtime_error("Preview edit must reparse and render the source");
+    }};
 }
 
 inline BenchmarkScenario make_summary_scenario(

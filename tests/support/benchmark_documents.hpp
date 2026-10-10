@@ -70,6 +70,49 @@ inline std::vector<std::string> build_table_heavy_document(std::size_t sections,
     return markdown_lines(oss.str());
 }
 
+inline std::vector<std::string> build_long_inline_document(std::size_t repetitions) {
+    std::string paragraph;
+    for (std::size_t i = 0; i < repetitions; ++i)
+        paragraph += "**bold** *italic* ~~drop~~ `code` $x^2$ [link](target) ![plot](img.png) note[^n] ";
+    return {paragraph};
+}
+
+inline std::vector<std::string> build_plain_document(std::size_t paragraphs) {
+    std::vector<std::string> document;
+    for (std::size_t i = 0; i < paragraphs; ++i) {
+        document.push_back(std::string(1024, 'a'));
+        document.emplace_back();
+    }
+    return document;
+}
+
+inline std::vector<std::string> build_ordered_list_document(std::size_t items) {
+    std::vector<std::string> document;
+    for (std::size_t i = 0; i < items; ++i)
+        document.push_back(std::to_string(i + 1) + ". item **value**");
+    return document;
+}
+
+inline std::vector<std::string> build_large_code_document(std::size_t lines) {
+    std::vector<std::string> document{"```cpp"};
+    document.insert(document.end(), lines, "// " + std::string(1024, 'x'));
+    document.push_back("```");
+    return document;
+}
+
+inline std::vector<std::string> build_wide_table_document(std::size_t columns,
+                                                        std::size_t rows) {
+    std::string header = "|", alignment = "|", body = "|";
+    for (std::size_t i = 0; i < columns; ++i) {
+        header += " Column " + std::to_string(i) + " |";
+        alignment += " :---: |";
+        body += " Cell with **bold** text |";
+    }
+    std::vector<std::string> document{header, alignment};
+    document.insert(document.end(), rows, body);
+    return document;
+}
+
 inline std::vector<std::string> build_footnote_heavy_document(
     std::size_t paragraphs) {
     std::ostringstream oss;
