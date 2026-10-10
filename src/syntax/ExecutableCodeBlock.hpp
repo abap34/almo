@@ -21,7 +21,7 @@ struct ExecutableCodeBlock : public ASTNode {
 
    public:
     ExecutableCodeBlock(std::string code, std::string editor_theme)
-        : code(code), editor_theme(editor_theme) {
+        : code(std::move(code)), editor_theme(std::move(editor_theme)) {
         set_uuid();
     }
 
@@ -102,16 +102,17 @@ struct ExecutableCodeBlockSyntax : public BlockSyntax {
         read.move_next_line();
 
         while (!read.is_eof()) {
-            if (rtrim(read.get_row()) == ":::") {
+            if (detail::rtrim_view(read.line().text) == ":::") {
                 read.move_next_line();
                 break;
             }
-            code += read.get_row() + "\n";
+            code += read.line().text;
+            code += '\n';
             read.move_next_line();
         }
 
-        ExecutableCodeBlock node(code, "{{ editor_theme }}");
-        ast.pushback_child(std::make_shared<ExecutableCodeBlock>(node));
+        ast.pushback_child(std::make_shared<ExecutableCodeBlock>(
+            std::move(code), "{{ editor_theme }}"));
     }
 };
 

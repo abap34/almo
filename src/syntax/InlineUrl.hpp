@@ -20,7 +20,7 @@ struct InlineUrl : public ASTNode {
     std::string alt;
 
    public:
-    InlineUrl(std::string url, std::string alt) : url(url), alt(alt) {
+    InlineUrl(std::string url, std::string alt) : url(std::move(url)), alt(std::move(alt)) {
         set_uuid();
     }
 

@@ -44,8 +44,7 @@ struct EnumerateBlockSyntax : public BlockSyntax {
         // END   : NewLine or EOF
 
         std::stack<std::shared_ptr<EnumerateBlock>> scopes;
-        EnumerateBlock root_enum;
-        scopes.push(std::make_shared<EnumerateBlock>(root_enum));
+        scopes.push(std::make_shared<EnumerateBlock>());
 
         std::string current_match = R"(\d+\. (.*))";
         // width : 3
@@ -109,30 +108,29 @@ struct EnumerateBlockSyntax : public BlockSyntax {
 
             // END
             if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 break;
             }
             // same depth
             if (matches_item(read.line().text, indent, current_rex)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 continue;
             }
             // +3 depth
             if (matches_item(read.line().text, indent + 3u, nested_rex)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 // nested EnumerateBlock
-                EnumerateBlock new_node;
-                auto new_node_ptr = std::make_shared<EnumerateBlock>(new_node);
+                auto new_node_ptr = std::make_shared<EnumerateBlock>();
                 scopes.top()->pushback_child(new_node_ptr);
                 scopes.push(new_node_ptr);
 
@@ -163,9 +161,9 @@ struct EnumerateBlockSyntax : public BlockSyntax {
                 current_rex = std::regex(current_match);
                 nested_rex = std::regex(INDENT + current_match);
 
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 for (std::size_t del = 0; del < delete_indent; del += 3u) {

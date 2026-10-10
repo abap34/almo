@@ -29,6 +29,7 @@ struct Reader {
     // Compatibility constructor. Copies are owned together so views stay valid.
     explicit Reader(const std::vector<std::string>& input)
         : owned_lines_(std::make_shared<std::vector<std::string>>(input)) {
+        lines.reserve(input.size());
         std::size_t offset = 0;
         for (std::size_t i = 0; i < input.size(); ++i) {
             const auto& text = (*owned_lines_)[i];
@@ -41,7 +42,7 @@ struct Reader {
 
     static Reader from_source(std::string_view source,
                               std::vector<Diagnostic>* diagnostics = nullptr) {
-        Reader read(std::vector<std::string>{});
+        Reader read;
         std::size_t begin = 0;
         for (;;) {
             const auto newline = source.find('\n', begin);
@@ -57,7 +58,7 @@ struct Reader {
     }
 
     Reader nested(std::vector<SourceLine> input) const {
-        Reader read(std::vector<std::string>{});
+        Reader read;
         read.lines = std::move(input);
         read.owned_lines_ = owned_lines_;
         read.diagnostics = diagnostics;
@@ -120,6 +121,7 @@ struct Reader {
     }
 
 private:
+    Reader() = default;
     std::shared_ptr<std::vector<std::string>> owned_lines_;
     std::size_t eof_offset_ = 0;
 };

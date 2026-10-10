@@ -18,7 +18,7 @@ struct InlineFootnoteReference : public ASTNode {
     std::string symbol;
 
    public:
-    InlineFootnoteReference(std::string _symbol) : symbol(_symbol) {
+    InlineFootnoteReference(std::string _symbol) : symbol(std::move(_symbol)) {
         set_uuid();
     }
 

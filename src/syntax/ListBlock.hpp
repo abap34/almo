@@ -41,8 +41,7 @@ struct ListBlockSyntax : public BlockSyntax {
         // END   : NewLine or EOF
 
         std::stack<std::shared_ptr<ListBlock>> scopes;
-        ListBlock root_list;
-        scopes.push(std::make_shared<ListBlock>(root_list));
+        scopes.push(std::make_shared<ListBlock>());
 
         std::string current_prefix = "- ";
         const std::string INDENT = "  ";
@@ -71,30 +70,29 @@ struct ListBlockSyntax : public BlockSyntax {
 
             // END
             if (EOFSyntax{}.match(read) || NewLineSyntax{}.match(read)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 break;
             }
             // same depth
             if (read.get_row().starts_with(current_prefix)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
                 continue;
             }
             // +2 depth
             if (read.get_row().starts_with(INDENT + current_prefix)) {
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 // nested ListBlock
-                ListBlock new_node;
-                auto new_node_ptr = std::make_shared<ListBlock>(new_node);
+                auto new_node_ptr = std::make_shared<ListBlock>();
                 scopes.top()->pushback_child(new_node_ptr);
                 scopes.push(new_node_ptr);
 
@@ -120,9 +118,9 @@ struct ListBlockSyntax : public BlockSyntax {
                     (scopes.size() - 1u) * 2u - list_depth(read.get_row());
                 current_prefix = current_prefix.substr(delete_indent);
 
-                Item item;
-                InlineParser::process(text, item);
-                scopes.top()->pushback_child(std::make_shared<Item>(item));
+                auto item = std::make_shared<Item>();
+                InlineParser::process(text, *item);
+                scopes.top()->pushback_child(std::move(item));
                 text = "";
 
                 for (std::size_t del = 0; del < delete_indent; del += 2u) {

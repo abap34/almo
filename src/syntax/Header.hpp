@@ -68,9 +68,9 @@ struct HeaderSyntax : BlockSyntax {
         if (line.starts_with("##### ")) level = 5;
         if (line.starts_with("###### ")) level = 6;
         assert(1 <= level && level <= 6);
-        Header node(level);
-        InlineParser::process(std::string(line.substr(level + 1)), node);
-        ast.pushback_child(std::make_shared<Header>(node));
+        auto node = std::make_shared<Header>(level);
+        InlineParser::process(std::string(line.substr(level + 1)), *node);
+        ast.pushback_child(std::move(node));
         read.move_next_line();
     }
 };

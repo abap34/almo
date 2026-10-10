@@ -16,7 +16,7 @@ struct FootnoteDefinition : public ASTNode {
     std::string symbol;
 
    public:
-    FootnoteDefinition(std::string symbol_) : symbol(symbol_) { set_uuid(); }
+    FootnoteDefinition(std::string symbol_) : symbol(std::move(symbol_)) { set_uuid(); }
     std::string to_html() const override {
         std::string childs_html = concatenated_childs_html();
         std::string label = "label_" + symbol;
@@ -49,10 +49,10 @@ struct FootnoteDefinitionSyntax : public BlockSyntax {
         if (symbol.empty())
             read.warn("Footnote symbol is empty. This may cause unexpected behavior.");
 
-        FootnoteDefinition node(symbol);
-        InlineParser::process(suffix, node);
+        auto node = std::make_shared<FootnoteDefinition>(symbol);
+        InlineParser::process(suffix, *node);
 
-        ast.pushback_child(std::make_shared<FootnoteDefinition>(node));
+        ast.pushback_child(std::move(node));
         read.move_next_line();
     }
 };

@@ -20,7 +20,7 @@ struct DivBlock : public ASTNode {
     std::string div_class;
 
    public:
-    DivBlock(std::string div_class) : div_class(div_class) { set_uuid(); }
+    DivBlock(std::string div_class) : div_class(std::move(div_class)) { set_uuid(); }
 
     std::string to_html() const override {
         return "<div class=\"" + div_class + "\">" +
@@ -47,8 +47,7 @@ struct DivBlockSyntax : public BlockSyntax {
         std::stack<std::shared_ptr<DivBlock>> scopes;
         std::string div_class = read.get_row().substr(3);
 
-        DivBlock root_div(div_class);
-        scopes.push(std::make_shared<DivBlock>(root_div));
+        scopes.push(std::make_shared<DivBlock>(std::move(div_class)));
 
         read.move_next_line();
         std::vector<SourceLine> text;
@@ -56,11 +55,10 @@ struct DivBlockSyntax : public BlockSyntax {
         while (!read.is_eof()) {
             // Invariant : scopes.size() >= 1
             if (rtrim(read.get_row()) == ":::") {
-                Markdown inner_md;
+                auto inner_md_ptr = std::make_shared<Markdown>();
                 auto nested = read.nested(text);
-                detail::parse_into(nested, inner_md);
-                auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
-                scopes.top()->pushback_child(inner_md_ptr);
+                detail::parse_into(nested, *inner_md_ptr);
+                scopes.top()->pushback_child(std::move(inner_md_ptr));
 
                 text = {};
                 read.move_next_line();
@@ -74,14 +72,12 @@ struct DivBlockSyntax : public BlockSyntax {
                 continue;
             }
             if (read.get_row().starts_with(":::")) {
-                Markdown inner_md;
+                auto inner_md_ptr = std::make_shared<Markdown>();
                 auto nested = read.nested(text);
-                detail::parse_into(nested, inner_md);
-                auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
-                scopes.top()->pushback_child(inner_md_ptr);
+                detail::parse_into(nested, *inner_md_ptr);
+                scopes.top()->pushback_child(std::move(inner_md_ptr));
 
-                DivBlock new_node(read.get_row().substr(3));
-                auto new_node_ptr = std::make_shared<DivBlock>(new_node);
+                auto new_node_ptr = std::make_shared<DivBlock>(read.get_row().substr(3));
                 scopes.top()->pushback_child(new_node_ptr);
 
                 scopes.push(new_node_ptr);
@@ -95,11 +91,10 @@ struct DivBlockSyntax : public BlockSyntax {
         }
         // scopes.empty() iff completed DivBlock
         while (!scopes.empty()) {
-            Markdown inner_md;
+            auto inner_md_ptr = std::make_shared<Markdown>();
             auto nested = read.nested(text);
-            detail::parse_into(nested, inner_md);
-            auto inner_md_ptr = std::make_shared<Markdown>(inner_md);
-            scopes.top()->pushback_child(inner_md_ptr);
+            detail::parse_into(nested, *inner_md_ptr);
+            scopes.top()->pushback_child(std::move(inner_md_ptr));
 
             text = {};
 

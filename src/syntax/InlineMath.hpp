@@ -19,7 +19,7 @@ struct InlineMath : public ASTNode {
     std::string expr;
 
    public:
-    InlineMath(std::string _expr) : expr(_expr) { set_uuid(); }
+    InlineMath(std::string _expr) : expr(std::move(_expr)) { set_uuid(); }
 
     // mathjax の　インライン数式用に \( \) で囲む
     std::string to_html() const override {

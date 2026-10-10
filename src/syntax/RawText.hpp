@@ -18,7 +18,7 @@ struct RawText : public ASTNode {
     std::string content;
 
    public:
-    RawText(std::string _content) : content(_content) { set_uuid(); }
+    RawText(std::string _content) : content(std::move(_content)) { set_uuid(); }
 
     std::string to_html() const override { return content; }
 

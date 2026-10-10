@@ -53,11 +53,11 @@ struct Table : public ASTNode {
    public:
     Table(std::vector<std::shared_ptr<Markdown>> columns, int n_row, int n_col,
           std::vector<std::string> col_names, std::vector<int> col_format)
-        : columns(columns),
+        : columns(std::move(columns)),
           n_row(n_row),
           n_col(n_col),
-          col_names(col_names),
-          col_format(col_format) {
+          col_names(std::move(col_names)),
+          col_format(std::move(col_format)) {
         set_uuid();
     }
 
@@ -96,17 +96,19 @@ struct Table : public ASTNode {
 
     std::string to_html() const override {
         std::vector<std::string> columns_html;
-        for (auto child : columns) {
+        columns_html.reserve(columns.size());
+        for (const auto& child : columns) {
             columns_html.push_back(child->to_html());
         }
 
         std::vector<std::string> contents_html;
+        contents_html.reserve(childs.size());
 
-        for (auto child : childs) {
+        for (const auto& child : childs) {
             contents_html.push_back(child->to_html());
         }
 
-        return to_html(columns_html, contents_html);
+        return to_html(std::move(columns_html), std::move(contents_html));
     }
 
     std::map<std::string, std::string> get_properties() const override {
@@ -156,6 +158,7 @@ struct TableSyntax : public BlockSyntax {
 
         // 0 --> left (default), 1 --> center, 2 --> right
         std::vector<int> col_format;
+        col_format.reserve(n_col);
         static const std::regex Lrex(R"(\s*:-+\s*)");
         static const std::regex Crex(R"(\s*:-+:\s*)");
         static const std::regex Rrex(R"(\s*-+:\s*)");
@@ -196,23 +199,26 @@ struct TableSyntax : public BlockSyntax {
         }
 
         std::vector<std::shared_ptr<Markdown>> columns_markdowns;
+        columns_markdowns.reserve(n_col);
 
         for (int i = 0; i < n_col; i++) {
-            Markdown inner_md;
-            InlineParser::process(col_names[i], inner_md);
-            columns_markdowns.push_back(std::make_shared<Markdown>(inner_md));
+            auto inner_md = std::make_shared<Markdown>();
+            InlineParser::process(col_names[i], *inner_md);
+            columns_markdowns.push_back(std::move(inner_md));
         }
 
-        Table node(std::move(columns_markdowns), n_row, n_col,
-                   std::move(col_names), std::move(col_format));
+        auto node = std::make_shared<Table>(
+            std::move(columns_markdowns), n_row, n_col,
+            std::move(col_names), std::move(col_format));
+        node->childs.reserve(table.size());
 
         for (auto cell : table) {
-            Markdown inner_md;
-            InlineParser::process(std::string(cell), inner_md);
-            node.pushback_child(std::make_shared<Markdown>(inner_md));
+            auto inner_md = std::make_shared<Markdown>();
+            InlineParser::process(std::string(cell), *inner_md);
+            node->pushback_child(std::move(inner_md));
         }
 
-        ast.pushback_child(std::make_shared<Table>(node));
+        ast.pushback_child(std::move(node));
     }
 };
 

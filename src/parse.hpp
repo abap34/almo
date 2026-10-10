@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <iterator>
 #include <span>
 #include <utility>
 
@@ -137,7 +138,8 @@ inline ParseUnit parse_next(Reader& reader) {
 inline void parse_into(Reader& reader, ASTNode& ast) {
     while (static_cast<std::size_t>(reader.row) < reader.lines.size()) {
         auto unit = parse_next(reader);
-        ast.childs.insert(ast.childs.end(), unit.nodes.begin(), unit.nodes.end());
+        ast.childs.insert(ast.childs.end(), std::make_move_iterator(unit.nodes.begin()),
+                         std::make_move_iterator(unit.nodes.end()));
     }
     reader.eof_read_flg = true;
 }

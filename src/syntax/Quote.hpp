@@ -48,12 +48,12 @@ struct QuoteSyntax : public BlockSyntax {
         }
 
         // uuid order is node --> inner_md
-        Quote node;
-        Markdown inner_md;
+        auto node = std::make_shared<Quote>();
+        auto inner_md = std::make_shared<Markdown>();
         auto nested = read.nested(std::move(quote_contents));
-        detail::parse_into(nested, inner_md);
-        node.pushback_child(std::make_shared<Markdown>(inner_md));
-        ast.pushback_child(std::make_shared<Quote>(node));
+        detail::parse_into(nested, *inner_md);
+        node->pushback_child(std::move(inner_md));
+        ast.pushback_child(std::move(node));
     }
 };
 

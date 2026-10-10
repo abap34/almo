@@ -21,7 +21,7 @@ struct InlineImage : public ASTNode {
 
    public:
     InlineImage(std::string url, std::string caption)
-        : url(url), caption(caption) {
+        : url(std::move(url)), caption(std::move(caption)) {
         set_uuid();
     }
 

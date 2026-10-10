@@ -27,7 +27,7 @@ struct CodeBlock : public ASTNode {
 
    public:
     CodeBlock(std::string code, std::string language)
-        : code(code), language(language) {
+        : code(std::move(code)), language(std::move(language)) {
         set_uuid();
     }
 
@@ -60,20 +60,21 @@ struct CodeBlockSyntax : public BlockSyntax {
         // BEGIN : '```(.*)'
         // END   : '```\s*'
 
-        std::string language = rtrim(read.get_row().substr(3));
+        std::string language(detail::rtrim_view(read.line().text.substr(3)));
         read.move_next_line();
         std::string code;
         while (!read.is_eof()) {
-            if (rtrim(read.get_row()) == "```") {
+            if (detail::rtrim_view(read.line().text) == "```") {
                 read.move_next_line();
                 break;
             }
-            code += read.get_row() + "\n";
+            code += read.line().text;
+            code += '\n';
             read.move_next_line();
         }
 
-        CodeBlock node(code, language);
-        ast.pushback_child(std::make_shared<CodeBlock>(node));
+        ast.pushback_child(std::make_shared<CodeBlock>(
+            std::move(code), std::move(language)));
     }
 };
 
