@@ -12,6 +12,7 @@
 namespace almo {
 
 inline void InlineParser::process(const std::string& source, ASTNode& ast) {
+    if (source.empty()) return;
     static const InlineMathSyntax math;
     static const InlineOverlineSyntax overline;
     static const InlineStrongSyntax strong;
@@ -23,25 +24,39 @@ inline void InlineParser::process(const std::string& source, ASTNode& ast) {
     static const std::array<const InlineSyntax*, 8> syntaxes{
         &math, &overline, &strong, &italic, &code, &image, &url, &footnote};
 
-    std::string_view rest(source);
-    while (!rest.empty()) {
-        const InlineSyntax* selected = nullptr;
-        std::optional<InlineMatch> matched;
-        for (const auto* syntax : syntaxes) {
-            auto candidate = syntax->find(rest);
-            if (candidate && (!matched || candidate->range.begin < matched->range.begin)) {
-                selected = syntax;
-                matched = std::move(candidate);
+    // Keep each syntax's next match in original-source coordinates. Only
+    // matches consumed by the selected syntax need another search; an absent
+    // match stays absent in every suffix of these context-free patterns.
+    const std::string_view input(source);
+    std::array<std::optional<InlineMatch>, syntaxes.size()> candidates;
+    for (std::size_t i = 0; i < syntaxes.size(); ++i)
+        candidates[i] = syntaxes[i]->find(input);
+    std::size_t cursor = 0;
+    while (cursor < input.size()) {
+        auto selected = syntaxes.size();
+        for (std::size_t i = 0; i < syntaxes.size(); ++i) {
+            auto& candidate = candidates[i];
+            if (candidate && candidate->range.begin < cursor) {
+                candidate = syntaxes[i]->find(input.substr(cursor));
+                if (candidate) {
+                    candidate->range.begin += cursor;
+                    candidate->range.end += cursor;
+                }
             }
+            if (candidate && (selected == syntaxes.size() ||
+                              candidate->range.begin < candidates[selected]->range.begin))
+                selected = i;
         }
-        if (!matched) {
-            ast.pushback_child(std::make_shared<RawText>(std::string(rest)));
+        if (selected == syntaxes.size()) {
+            ast.pushback_child(std::make_shared<RawText>(std::string(input.substr(cursor))));
             break;
         }
-        if (matched->range.begin)
-            ast.pushback_child(std::make_shared<RawText>(std::string(rest.substr(0, matched->range.begin))));
-        selected->parse(*matched, ast);
-        rest.remove_prefix(matched->range.end);
+        const auto& matched = *candidates[selected];
+        if (matched.range.begin > cursor)
+            ast.pushback_child(std::make_shared<RawText>(
+                std::string(input.substr(cursor, matched.range.begin - cursor))));
+        syntaxes[selected]->parse(matched, ast);
+        cursor = matched.range.end;
     }
 }
 

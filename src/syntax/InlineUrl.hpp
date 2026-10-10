@@ -1,5 +1,7 @@
 #pragma once
 
+#include "inline_match.hpp"
+
 #include "../interfaces/ast.hpp"
 #include "../interfaces/parse.hpp"
 #include "../interfaces/syntax.hpp"
@@ -35,7 +37,7 @@ struct InlineUrl : public ASTNode {
 struct InlineUrlSyntax : public InlineSyntax {
     static inline const std::regex rex{R"(\[(.*?)\]\((.*?)\))"};
     std::optional<InlineMatch> find(std::string_view source) const override {
-        return find_inline(source, rex);
+        return detail::find_link_inline(source, "[");
     }
     void parse(const InlineMatch& matched, ASTNode& ast) const override {
         ast.pushback_child(std::make_shared<InlineUrl>(matched.captures[1], matched.captures[0]));
