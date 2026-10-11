@@ -7,6 +7,7 @@
 #include "cases/syntax_match_tests.hpp"
 #include "cases/reader_utils_tests.hpp"
 #include "cases/render_tests.hpp"
+#include "cases/dollar_tests.hpp"
 #include "support/framework.hpp"
 
 int main() {
@@ -19,6 +20,7 @@ int main() {
     almo_test::register_syntax_match_tests(tests);
     almo_test::register_parser_api_tests(tests);
     almo_test::register_incremental_parser_tests(tests);
+    almo_test::register_dollar_tests(tests);
 
     return almo_test::run_tests(tests);
 }

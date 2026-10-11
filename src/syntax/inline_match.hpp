@@ -4,6 +4,31 @@
 
 namespace almo::detail {
 
+inline bool is_escaped_delimiter(std::string_view source, std::size_t position) {
+    const auto end = position;
+    while (position > 0 && source[position - 1] == '\\') --position;
+    return (end - position) % 2 != 0;
+}
+
+inline std::string unescape_inline_text(std::string_view source) {
+    auto escape = source.find('\\');
+    if (escape == source.npos) return std::string(source);
+    std::string result;
+    result.reserve(source.size());
+    std::size_t cursor = 0;
+    do {
+        result.append(source.substr(cursor, escape - cursor));
+        cursor = escape + 1;
+        if (cursor < source.size() && (source[cursor] == '\\' || source[cursor] == '$'))
+            result += source[cursor++];
+        else
+            result += '\\';
+        escape = source.find('\\', cursor);
+    } while (escape != source.npos);
+    result.append(source.substr(cursor));
+    return result;
+}
+
 // These patterns have literal delimiters and non-greedy captures. Like the
 // original ECMAScript regexes, a capture must not cross CR or LF.
 inline std::optional<InlineMatch> find_delimited_inline(

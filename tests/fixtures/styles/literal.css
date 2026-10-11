@@ -1,0 +1,4 @@
+.literal::before {
+    content: "{{title}} {{contents}} {{runner}} $1 $30 $1500 $& $$";
+}
+/* Backslashes: \ \\ \$ */

@@ -118,6 +118,38 @@ test("JSON responses preserve embedded NUL bytes", (t) => {
   assert.ok(result.html.includes(source));
 });
 
+test("full and incremental rendering preserve dollars and text escapes", (t) => {
+  const handle = create();
+  t.after(() => destroy(handle));
+  const code = String.raw`$1 $30 $1500 \$40 \\ {{title}}`;
+  for (const [source, expected, hasMath] of [
+    ["$30", "$30", false],
+    ["$1500", "$1500", false],
+    [String.raw`\$30 と \$40`, "$30 と $40", false],
+    ["`" + code + "`\n\n```\n" + code + "\n```", code, false],
+    ["$" + String.raw`\frac{1}{2}+\$30` + "$", String.raw`\frac{1}{2}+\$30`, true],
+  ]) {
+    const full = withSource(source, render);
+    const incremental = setSource(handle, source);
+    assert.equal(incremental.ok, true);
+    assert.ok(full.includes(expected));
+    assert.equal(incremental.html.includes('class="math-inline"'), hasMath);
+    assert.equal(normalize(incremental.html), normalize(full));
+  }
+});
+
+test("incremental edits change escaped dollar delimiters by backslash parity", (t) => {
+  const handle = create();
+  t.after(() => destroy(handle));
+  for (const count of [0, 1, 2, 3, 4, 3, 2, 1, 0]) {
+    const source = "before " + "\\".repeat(count) + "$x$ after";
+    const result = setSource(handle, source);
+    assert.equal(result.ok, true);
+    assert.equal(result.html.includes('class="math-inline"'), count % 2 === 0);
+    assert.equal(normalize(result.html), normalize(withSource(source, render)));
+  }
+});
+
 test("render failures are distinguished from parse failures and can recover", (t) => {
   const handle = create();
   t.after(() => destroy(handle));

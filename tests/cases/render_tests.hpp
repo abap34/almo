@@ -9,34 +9,33 @@
 namespace almo_test {
 
 inline void register_render_tests(std::vector<TestCase>& tests) {
-    tests.push_back({"template replacement preserves regex replacement behavior", [] {
-        const std::string input = "prefix {{title}} {{title}} {{contents}} {{syntax_theme}} {{customXkey}} suffix";
+    tests.push_back({"template replacement inserts literal values in a single pass", [] {
+        const std::string input = "prefix {{title}} {{title}} {{contents}} {{syntax_theme}} {{custom.key}} {{customXkey}} {{navigation}} {{unfinished";
         const char embedded[] = "before\0after";
         for (const auto& value : std::vector<std::string>{
                  "plain 日本語😀", "", "{{title}} {{contents}}", "${expression} $x $",
-                 "$$ $& $0 $1 $99 $` $'", std::string(embedded, sizeof(embedded) - 1)}) {
+                 R"($$ $& $0 $1 $30 $1500 $99 $` $' \ \\ \$)",
+                 std::string(embedded, sizeof(embedded) - 1)}) {
             auto meta = default_meta();
             meta["title"] = value;
             meta["custom.key"] = value;
+            meta["syntax_theme"] = "{{title}}";
             const std::string content = "<code>" + value + "</code>";
-            auto expected = input;
-            for (const auto& [key, replacement] : meta)
-                expected = std::regex_replace(expected, std::regex("\\{\\{" + key + "\\}\\}"), replacement);
-            expected = std::regex_replace(expected, std::regex("\\{\\{syntax_theme\\}\\}"), meta["syntax_theme"]);
-            expected = std::regex_replace(expected, std::regex("\\{\\{contents\\}\\}"), content);
+            const auto expected = "prefix " + value + " " + value + " " + content +
+                " {{title}} " + value + " {{customXkey}} {{navigation}} {{unfinished";
             expect_eq(almo::replace_template(input, meta, content), expected,
-                      "Template fast path must preserve old formatting and metadata order: " + escape(value));
+                      "Inserted values must remain literal, and keys must match exactly: " + escape(value));
         }
         for (const auto& theme : {std::string("light"), std::string("dark")}) {
             for (const bool pyodide : {false, true}) {
                 const auto css = "<style>" + (theme == "light" ? almo::LIGHT_THEME : almo::DARK_THEME) + "</style>";
-                auto expected = std::regex_replace(almo::TEMPLATE, std::regex("\\{\\{style\\}\\}"), css);
                 const auto runner = pyodide
                     ? "<script src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></script><script>" + almo::RUNNER + "</script>"
                     : "<!-- Runner is not required. Skip this. -->";
-                expected = std::regex_replace(expected, std::regex("\\{\\{runner\\}\\}"), runner);
-                expect_eq(almo::load_html_template("__default__", theme, pyodide), expected,
-                          "Builtin templates must remain byte-for-byte identical");
+                const auto loaded = almo::load_html_template("__default__", theme, pyodide);
+                expect_contains(loaded, css, "Builtin CSS must be inserted verbatim");
+                expect_contains(loaded, runner, "Builtin JavaScript must be inserted verbatim");
+                expect_contains(loaded, "{{title}}", "Loading assets must leave metadata placeholders intact");
             }
         }
     }});

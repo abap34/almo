@@ -4,9 +4,10 @@
 #include <functional>
 #include <iostream>
 #include <map>
-#include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "parse.hpp"
@@ -16,37 +17,27 @@ namespace almo {
 
 namespace detail {
 
-inline std::string replace_template_value(std::string text,
-                                         const std::string& key,
-                                         const std::string& value) {
-    // Preserve the former regex API for unusual metadata keys and replacement
-    // tokens such as $&, $1, $$, $` and $', including its handling of embedded
-    // NUL bytes. Ordinary values need only a literal search.
-    bool regex_format = key.find_first_of(R"(\.^$|()[]*+?{})") != key.npos ||
-                        value.find('\0') != value.npos;
-    for (std::size_t i = value.find('$'); !regex_format && i != value.npos;
-         i = value.find('$', i + 1)) {
-        if (i + 1 < value.size()) {
-            const char next = value[i + 1];
-            regex_format = next == '$' || next == '&' || next == '`' || next == '\'' ||
-                           (next >= '0' && next <= '9');
-        }
-    }
-    if (regex_format)
-        return std::regex_replace(text, std::regex("\\{\\{" + key + "\\}\\}"), value);
-    const auto token = "{{" + key + "}}";
-    auto position = text.find(token);
-    if (position == text.npos) return text;
+inline std::string replace_template_values(
+    std::string_view text, const std::map<std::string, std::string>& values) {
+    // Scan only the original template. Inserted bytes are never interpreted as
+    // replacement syntax or as another template placeholder.
     std::string result;
     result.reserve(text.size());
-    std::size_t previous = 0;
-    do {
-        result.append(text, previous, position - previous);
-        result += value;
-        previous = position + token.size();
-        position = text.find(token, previous);
-    } while (position != text.npos);
-    result.append(text, previous, text.npos);
+    std::size_t cursor = 0;
+    while (cursor < text.size()) {
+        const auto begin = text.find("{{", cursor);
+        if (begin == text.npos) break;
+        const auto end = text.find("}}", begin + 2);
+        if (end == text.npos) break;
+        result.append(text.substr(cursor, begin - cursor));
+        const auto value = values.find(std::string(text.substr(begin + 2, end - begin - 2)));
+        if (value == values.end())
+            result.append(text.substr(begin, end + 2 - begin));
+        else
+            result += value->second;
+        cursor = end + 2;
+    }
+    result.append(text.substr(cursor));
     return result;
 }
 
@@ -68,35 +59,24 @@ inline void extract_footnotes(ASTNode& node, ASTNode& footnotes) {
     node.childs.resize(kept);
 }
 
-}  // namespace detail
+inline std::string read_html_template(const std::string& html_path) {
+    return html_path == "__default__" ? TEMPLATE : join(read_file(html_path), "\n");
+}
 
-std::string load_html_template(std::string html_path, std::string css_setting,
-                               bool required_pyodide) {
+inline void add_template_assets(std::map<std::string, std::string>& values,
+                                const std::string& css_setting, bool required_pyodide) {
     const std::string pyodide_loader =
         "<script "
         "src=\"https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js\"></"
         "script>";
 
-    std::string html;
-
-    if (html_path == "__default__") {
-        html = TEMPLATE;
-    } else {
-        html = join(read_file(html_path), "\n");
-    }
-
-    std::string result;
     if (css_setting == "light") {
-        std::string css = "<style>" + LIGHT_THEME + "</style>";
-        result = detail::replace_template_value(std::move(html), "style", css);
+        values["style"] = "<style>" + LIGHT_THEME + "</style>";
     } else if (css_setting == "dark") {
-        std::string css = "<style>" + DARK_THEME + "</style>";
-        result = detail::replace_template_value(std::move(html), "style", css);
+        values["style"] = "<style>" + DARK_THEME + "</style>";
     } else if (css_setting.ends_with(".css")) {
-        std::string css =
+        values["style"] =
             "<style>" + join(read_file(css_setting), "\n") + "</style>";
-
-        result = detail::replace_template_value(std::move(html), "style", css);
     } else {
         throw InvalidCommandLineArgumentsError(
             "不正なCSSの設定です。 `light`, `dark` もしくは `.css` "
@@ -111,27 +91,24 @@ std::string load_html_template(std::string html_path, std::string css_setting,
     } else {
         runner = "<!-- Runner is not required. Skip this. -->";
     }
-    // runner を挿入
-    result = detail::replace_template_value(std::move(result), "runner", runner);
+    values["runner"] = std::move(runner);
+}
 
-    return result;
+}  // namespace detail
+
+std::string load_html_template(std::string html_path, std::string css_setting,
+                               bool required_pyodide) {
+    std::map<std::string, std::string> values;
+    detail::add_template_assets(values, css_setting, required_pyodide);
+    return detail::replace_template_values(detail::read_html_template(html_path), values);
 }
 
 std::string replace_template(std::string html_template,
                              std::map<std::string, std::string> meta_data,
                              std::string content) {
-    std::string output_html = std::move(html_template);
-
-    for (const auto& [key, value] : meta_data) {
-        output_html = detail::replace_template_value(std::move(output_html), key, value);
-    }
-
-    std::string syntax_theme = meta_data["syntax_theme"];
-
-    output_html = detail::replace_template_value(std::move(output_html), "syntax_theme", syntax_theme);
-    output_html = detail::replace_template_value(std::move(output_html), "contents", content);
-
-    return output_html;
+    meta_data.try_emplace("syntax_theme", "");
+    meta_data["contents"] = std::move(content);
+    return detail::replace_template_values(html_template, meta_data);
 }
 
 void move_footnote_to_end(Markdown& ast) {
@@ -154,16 +131,11 @@ bool required_pyodide(Markdown& ast) {
 }
 
 std::string render(Markdown ast, std::map<std::string, std::string> meta_data) {
-    std::string content = ast.to_html();
-
-    std::string html_template =
-        load_html_template(meta_data["template_file"], meta_data["css_setting"],
-                           required_pyodide(ast));
-
-    std::string output_html =
-        replace_template(html_template, meta_data, content);
-
-    return output_html;
+    auto html_template = detail::read_html_template(meta_data["template_file"]);
+    // Assets and document data are inserted together so placeholders inside
+    // CSS or JavaScript cannot be substituted during a later rendering pass.
+    detail::add_template_assets(meta_data, meta_data["css_setting"], required_pyodide(ast));
+    return replace_template(std::move(html_template), std::move(meta_data), ast.to_html());
 }
 
 // Call from python to get html from lines without metadata `md_content` and

@@ -27,7 +27,7 @@ inline void InlineParser::process(const std::string& source, ASTNode& ast) {
 
     // Keep each syntax's next match in original-source coordinates. Only
     // matches consumed by the selected syntax need another search; an absent
-    // match stays absent in every suffix of these context-free patterns.
+    // match stays absent in every suffix beginning at a syntax boundary.
     const std::string_view input(source);
     std::array<std::optional<InlineMatch>, syntaxes.size()> candidates;
     for (std::size_t i = 0; i < syntaxes.size(); ++i)
@@ -49,13 +49,13 @@ inline void InlineParser::process(const std::string& source, ASTNode& ast) {
                 selected = i;
         }
         if (selected == syntaxes.size()) {
-            ast.pushback_child(std::make_shared<RawText>(std::string(input.substr(cursor))));
+            ast.pushback_child(std::make_shared<RawText>(detail::unescape_inline_text(input.substr(cursor))));
             break;
         }
         const auto& matched = *candidates[selected];
         if (matched.range.begin > cursor)
             ast.pushback_child(std::make_shared<RawText>(
-                std::string(input.substr(cursor, matched.range.begin - cursor))));
+                detail::unescape_inline_text(input.substr(cursor, matched.range.begin - cursor))));
         syntaxes[selected]->parse(matched, ast);
         cursor = matched.range.end;
     }
