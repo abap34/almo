@@ -27,6 +27,11 @@ jobs:
       - name: Prepare CI workspace
         run: mkdir -p .ci
 
+      - name: Test benchmark dashboard
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_benchmark_dashboard.py'
+          node --test scripts/benchmark_pages/app.test.cjs
+
       - name: Run tests
         id: tests
         continue-on-error: true

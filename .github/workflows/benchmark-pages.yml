@@ -31,12 +31,14 @@ jobs:
           sudo apt-get install -y python3
 
       - name: Configure Pages
+        id: pages
         if: env.ACT != 'true'
         uses: actions/configure-pages@v5
 
       - name: Build dashboard site
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          HISTORY_URL: ${{ steps.pages.outputs.base_url }}/dev/bench/dashboard.json
         run: |
           if [ "${ACT}" = "true" ]; then
             python3 scripts/build_benchmark_dashboard.py \
@@ -49,6 +51,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --workflow ci.yml \
               --out-dir site \
+              --history-url "$HISTORY_URL" \
               --token "$GITHUB_TOKEN"
           fi
 

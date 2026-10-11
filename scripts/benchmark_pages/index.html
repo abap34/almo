@@ -9,22 +9,9 @@
   <body>
     <div class="page-shell">
 
-      <header class="topbar">
-        <div class="topbar-left">
-          <span class="topbar-logo">ALMO</span>
-          <div class="topbar-sep"></div>
-          <span class="topbar-title">Benchmark Dashboard</span>
-        </div>
-        <span class="topbar-meta" id="generated-at"></span>
-      </header>
-
-      <div class="main-content">
+      <main class="main-content">
 
         <div class="stats-row">
-          <div class="stat-cell">
-            <div class="stat-label">Repository</div>
-            <div class="stat-value mono" id="repo-name">—</div>
-          </div>
           <div class="stat-cell">
             <div class="stat-label">Main Runs</div>
             <div class="stat-value" id="main-run-count">0</div>
@@ -44,40 +31,29 @@
           <div class="panel-header">
             <div>
               <div class="panel-title">Main Trend</div>
-              <div class="panel-caption">main ブランチの成功 run をベースラインとして時系列で表示</div>
             </div>
             <a id="main-coverage-link" class="panel-link hidden" href="#" target="_blank" rel="noreferrer">Coverage report →</a>
           </div>
 
-          <div id="main-benchmark-tabs" class="tab-row"></div>
+          <div id="main-charts" class="chart-grid"></div>
 
-          <div class="chart-meta">
-            <span class="chart-name" id="main-chart-title">—</span>
-            <span class="chart-runs" id="main-chart-caption"></span>
-          </div>
-          <div class="chart-wrap">
-            <svg id="main-chart" viewBox="0 0 960 260" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#171717" stop-opacity="0.08" />
-                  <stop offset="100%" stop-color="#171717" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Benchmark</th>
-                <th>Mean (ms)</th>
-                <th>Min (ms)</th>
-                <th>Max (ms)</th>
-                <th>Iterations</th>
-              </tr>
-            </thead>
-            <tbody id="main-latest-table"></tbody>
-          </table>
+          <details class="latest-results">
+            <summary>Latest results</summary>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Benchmark</th>
+                    <th>Mean (ms)</th>
+                    <th>Min (ms)</th>
+                    <th>Max (ms)</th>
+                    <th>Iterations</th>
+                  </tr>
+                </thead>
+                <tbody id="main-latest-table"></tbody>
+              </table>
+            </div>
+          </details>
         </div>
 
         <!-- PR Explorer -->
@@ -85,7 +61,6 @@
           <div class="panel-header">
             <div>
               <div class="panel-title">PR Explorer</div>
-              <div class="panel-caption">PR ごとの最新 run・再実行の推移・main との差分を確認</div>
             </div>
           </div>
 
@@ -127,18 +102,20 @@
                 <div class="detail-grid">
                   <div class="subpanel">
                     <div class="subpanel-header">Delta vs latest main</div>
-                    <table class="data-table">
-                      <thead>
-                        <tr>
-                          <th>Benchmark</th>
-                          <th>Main (ms)</th>
-                          <th>PR (ms)</th>
-                          <th>Delta (ms)</th>
-                          <th>Delta %</th>
-                        </tr>
-                      </thead>
-                      <tbody id="pr-compare-table"></tbody>
-                    </table>
+                    <div class="table-scroll">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Benchmark</th>
+                            <th>Main (ms)</th>
+                            <th>PR (ms)</th>
+                            <th>Delta (ms)</th>
+                            <th>Delta %</th>
+                          </tr>
+                        </thead>
+                        <tbody id="pr-compare-table"></tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div class="subpanel">
@@ -152,7 +129,8 @@
           </div>
         </div>
 
-      </div>
+        <footer id="generated-at" class="updated-at"></footer>
+      </main>
     </div>
 
     <script src="./app.js"></script>

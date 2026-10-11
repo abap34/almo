@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import shutil
@@ -24,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--coverage-artifact-name", default="coverage-report")
     parser.add_argument("--preview-artifact-name", default="preview-site")
     parser.add_argument("--max-runs", type=int, default=40)
+    parser.add_argument("--history-url")
     parser.add_argument("--fixture-json")
     parser.add_argument("--entry-json")
     parser.add_argument("--coverage-html-dir")
@@ -85,14 +87,64 @@ def load_local_dashboard_entry(path: str) -> dict:
         return json.load(infile)
 
 
+def load_published_history(url: str | None, repo: str) -> list[dict]:
+    if not url:
+        return []
+
+    request = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+    try:
+        # This is a public Pages URL, so do not send the GitHub API token.
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.load(response)
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            error.close()
+            return []  # First deployment.
+        raise
+
+    if not isinstance(payload, dict) or str(payload.get("repo", "")).lower() != repo.lower():
+        raise RuntimeError("Published benchmark history belongs to a different repository")
+    entries = payload.get("entries")
+    if not isinstance(entries, list) or any(
+        not isinstance(entry, dict)
+        or "run_id" not in entry
+        or not isinstance(entry.get("summary"), dict)
+        for entry in entries
+    ):
+        raise RuntimeError("Published benchmark history has invalid entries")
+    return entries
+
+
+def entry_timestamp(entry: dict) -> str:
+    return entry.get("run_started_at") or entry.get("created_at") or entry.get("updated_at") or ""
+
+
+def merge_entries(history: list[dict], fresh: list[dict]) -> list[dict]:
+    # Keep measurements even after their Actions artifacts expire or leave the
+    # recent-run window. A newly fetched result replaces the same run's history.
+    by_run = {}
+    for entry in history + fresh:
+        by_run[str(entry["run_id"])] = {
+            **entry,
+            "summary": {
+                **entry["summary"],
+                # HTML artifacts are regenerated separately and may have expired.
+                "coverage_url": None,
+                "preview_url": None,
+            },
+        }
+    return sorted(by_run.values(), key=entry_timestamp)
+
+
 def find_artifact_by_name(artifacts: list[dict], name: str) -> dict | None:
-    return next(
+    return max(
         (
             artifact
             for artifact in artifacts
             if artifact.get("name") == name and not artifact.get("expired")
         ),
-        None,
+        key=lambda artifact: artifact.get("id", 0),
+        default=None,
     )
 
 
@@ -110,6 +162,7 @@ def normalize_entry(run: dict, summary: dict) -> dict:
         "branch": run.get("head_branch"),
         "commit": run.get("head_sha"),
         "created_at": run.get("created_at"),
+        "run_started_at": run.get("run_started_at"),
         "updated_at": run.get("updated_at"),
         "conclusion": run.get("conclusion"),
         "pr_number": pr_number,
@@ -218,7 +271,7 @@ def fetch_dashboard_entries(args: argparse.Namespace) -> tuple[list[dict], dict[
 
         entries.append(normalize_entry(run, summary))
 
-    entries.sort(key=lambda entry: entry.get("updated_at") or entry.get("created_at") or "")
+    entries.sort(key=entry_timestamp)
     return entries, coverage_archives
 
 
@@ -500,9 +553,13 @@ def write_site(args: argparse.Namespace, payload: dict) -> None:
     shutil.rmtree(out_dir, ignore_errors=True)
     bench_dir.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy2(source_dir / "index.html", bench_dir / "index.html")
-    shutil.copy2(source_dir / "styles.css", bench_dir / "styles.css")
-    shutil.copy2(source_dir / "app.js", bench_dir / "app.js")
+    html = (source_dir / "index.html").read_text(encoding="utf-8")
+    for asset in ("styles.css", "app.js"):
+        content = (source_dir / asset).read_bytes()
+        (bench_dir / asset).write_bytes(content)
+        version = hashlib.sha256(content).hexdigest()[:12]
+        html = html.replace(f'"./{asset}"', f'"./{asset}?v={version}"')
+    (bench_dir / "index.html").write_text(html, encoding="utf-8")
 
     with (bench_dir / "dashboard.json").open("w") as outfile:
         json.dump(payload, outfile, indent=2)
@@ -543,7 +600,9 @@ def main() -> int:
     if args.entry_json:
         payload = build_local_payload(args)
     else:
+        history = load_published_history(args.history_url, args.repo)
         entries, coverage_archives = fetch_dashboard_entries(args)
+        entries = merge_entries(history, entries)
         payload = build_payload(args.repo, entries)
         write_site(args, payload)
         attach_coverage_pages(

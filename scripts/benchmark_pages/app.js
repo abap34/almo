@@ -46,15 +46,25 @@ function benchmarkNames(entries) {
   return Array.from(names);
 }
 
+function entryTimestamp(entry) {
+  return entry.run_started_at || entry.created_at || entry.updated_at;
+}
+
+function compareEntries(a, b) {
+  return new Date(entryTimestamp(a)) - new Date(entryTimestamp(b));
+}
+
 function benchmarkSeries(entries, benchmarkName) {
   return entries
+    .slice()
+    .sort(compareEntries)
     .map((entry) => {
       const b = (entry.summary?.benchmarks || []).find((x) => x.name === benchmarkName);
-      if (!b) return null;
+      if (!b || !Number.isFinite(b.mean_ms)) return null;
       return {
         label: shortCommit(entry.commit),
-        date: formatDate(entry.updated_at || entry.created_at),
-        timestamp: entry.updated_at || entry.created_at,
+        date: formatDate(entryTimestamp(entry)),
+        timestamp: entryTimestamp(entry),
         href: entry.run_url,
         value: b.mean_ms,
         min: b.min_ms,
@@ -77,7 +87,7 @@ function mainEntries(entries) {
       e.branch === "main" &&
       e.summary?.bench_status === "success" &&
       (e.summary?.benchmarks || []).length > 0
-  );
+  ).sort(compareEntries);
 }
 
 function pullRequestGroups(entries) {
@@ -92,14 +102,12 @@ function pullRequestGroups(entries) {
   return Array.from(groups.entries())
     .map(([number, groupEntries]) => ({
       number,
-      entries: groupEntries.sort(
-        (a, b) => new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at)
-      ),
+      entries: groupEntries.sort(compareEntries),
     }))
     .sort((a, b) => {
       const al = a.entries[a.entries.length - 1];
       const bl = b.entries[b.entries.length - 1];
-      return new Date(bl.updated_at || bl.created_at) - new Date(al.updated_at || al.created_at);
+      return compareEntries(bl, al);
     });
 }
 
@@ -145,9 +153,20 @@ function renderTabs(containerId, names, selectedName, onSelect) {
   });
 }
 
-function renderChart(svgId, series, captionId) {
+function escapeMarkup(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[char]);
+}
+
+function formatChartValue(value, step = Math.abs(value)) {
+  const decimals = Math.min(6, Math.max(0, 2 - Math.floor(Math.log10(step || 1))));
+  return value.toFixed(decimals).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
+function renderChart(svgId, series, captionId, compact = false) {
   const svg = document.getElementById(svgId);
-  const caption = document.getElementById(captionId);
+  const caption = captionId ? document.getElementById(captionId) : null;
   if (!svg) return;
 
   if (series.length === 0) {
@@ -158,17 +177,18 @@ function renderChart(svgId, series, captionId) {
 
   if (caption) caption.textContent = `${series.length} run${series.length !== 1 ? "s" : ""}`;
 
-  const W = 960;
-  const H = 260;
-  const pad = { top: 28, right: 32, bottom: 44, left: 72 };
+  const W = compact ? 480 : 960;
+  const H = compact ? 230 : 260;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const pad = { top: 28, right: 24, bottom: 48, left: compact ? 64 : 72 };
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
   const values = series.map((p) => p.value);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
-  const span = Math.max(rawMax - rawMin, 0.1);
-  const yMin = rawMin - span * 0.15;
+  const span = Math.max(rawMax - rawMin, rawMax * 0.1, 0.000001);
+  const yMin = Math.max(0, rawMin - span * 0.15);
   const yMax = rawMax + span * 0.15;
   const ySpan = yMax - yMin;
 
@@ -186,15 +206,18 @@ function renderChart(svgId, series, captionId) {
     const y = pad.top + iH * ratio;
     const val = yMax - (yMax - yMin) * ratio;
     gridLines += `<line class="chart-grid-line" x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" />`;
-    yLabels += `<text class="chart-axis-label" x="${pad.left - 8}" y="${y + 4}" text-anchor="end">${val.toFixed(2)}</text>`;
+    yLabels += `<text class="chart-axis-label" x="${pad.left - 8}" y="${y + 4}" text-anchor="end">${formatChartValue(val, ySpan / gridCount)}</text>`;
   }
 
-  // x-axis labels — show up to 8
-  const labelStep = Math.max(1, Math.ceil(series.length / 8));
+  const labelCount = Math.min(series.length, compact ? 3 : 6);
+  const labelIndices = new Set(Array.from({ length: labelCount }, (_, i) =>
+    labelCount === 1 ? 0 : Math.round(i * (series.length - 1) / (labelCount - 1))
+  ));
   let xLabels = "";
   series.forEach((p, i) => {
-    if (i % labelStep !== 0 && i !== series.length - 1) return;
-    xLabels += `<text class="chart-tick" x="${xPos(i)}" y="${H - 6}" text-anchor="middle">${p.label}</text>`;
+    if (!labelIndices.has(i)) return;
+    const anchor = i === 0 && series.length > 1 ? "start" : i === series.length - 1 && series.length > 1 ? "end" : "middle";
+    xLabels += `<text class="chart-tick" x="${xPos(i)}" y="${H - 24}" text-anchor="${anchor}">${escapeMarkup(p.date)}<tspan x="${xPos(i)}" dy="15">${escapeMarkup(p.label)}</tspan></text>`;
   });
 
   // line path
@@ -206,25 +229,26 @@ function renderChart(svgId, series, captionId) {
     ` L${xPos(series.length - 1)},${pad.top + iH} L${xPos(0)},${pad.top + iH} Z`;
 
   // dots + value labels (only for small series or last point)
-  const showAllLabels = series.length <= 8;
+  const showAllLabels = series.length <= (compact ? 3 : 6);
   let dots = "";
   series.forEach((p, i) => {
     const cx = xPos(i);
     const cy = yPos(p.value);
     const isLast = i === series.length - 1;
     dots += `
-      <a href="${p.href}" target="_blank" rel="noreferrer">
+      <a href="${escapeMarkup(p.href || "#")}" target="_blank" rel="noreferrer">
         <circle class="chart-dot" cx="${cx}" cy="${cy}" r="4">
-          <title>${p.date}: ${p.value.toFixed(3)} ms</title>
+          <title>${escapeMarkup(formatTimestamp(p.timestamp))} · ${escapeMarkup(p.label)}: ${formatChartValue(p.value)} ms</title>
         </circle>
       </a>`;
     if (showAllLabels || isLast) {
       const anchor = cx < pad.left + 40 ? "start" : cx > W - pad.right - 40 ? "end" : "middle";
-      dots += `<text class="chart-value-label" x="${cx}" y="${cy - 10}" text-anchor="${anchor}">${p.value.toFixed(2)}</text>`;
+      dots += `<text class="chart-value-label" x="${cx}" y="${cy - 10}" text-anchor="${anchor}">${formatChartValue(p.value)}</text>`;
     }
   });
 
   svg.innerHTML = `
+    <title>${escapeMarkup(svg.getAttribute("aria-label") || "Mean (ms)")}</title>
     ${gridLines}
     <line class="chart-axis-line" x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + iH}" />
     <line class="chart-axis-line" x1="${pad.left}" y1="${pad.top + iH}" x2="${W - pad.right}" y2="${pad.top + iH}" />
@@ -234,6 +258,44 @@ function renderChart(svgId, series, captionId) {
     ${yLabels}
     ${xLabels}
   `;
+}
+
+function renderMainCharts(entries) {
+  const container = document.getElementById("main-charts");
+  container.innerHTML = "";
+  const names = benchmarkNames(entries);
+  if (!names.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "No benchmark data";
+    container.appendChild(empty);
+    return;
+  }
+  names.forEach((name, index) => {
+    const series = benchmarkSeries(entries, name);
+    const card = document.createElement("section");
+    card.className = "chart-card";
+    const header = document.createElement("div");
+    header.className = "chart-card-header";
+    const title = document.createElement("h3");
+    title.className = "chart-name mono";
+    title.textContent = name;
+    const caption = document.createElement("span");
+    caption.className = "chart-runs";
+    caption.textContent = series.length
+      ? `${formatChartValue(series[series.length - 1].value)} ms · ${series.length} run${series.length !== 1 ? "s" : ""}`
+      : "No data";
+    header.appendChild(title);
+    header.appendChild(caption);
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.id = `main-chart-${index}`;
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `${name}: mean (ms)`);
+    card.appendChild(header);
+    card.appendChild(svg);
+    container.appendChild(card);
+    renderChart(svg.id, series, null, true);
+  });
 }
 
 function renderMainLatestTable(entry) {
@@ -254,7 +316,6 @@ function renderMainLatestTable(entry) {
 }
 
 function renderMeta(payload, mainRunEntries, prGroups) {
-  setText("repo-name", payload.repo);
   setText("generated-at", `Updated ${formatTimestamp(payload.generated_at)}`);
   setText("main-run-count", String(mainRunEntries.length));
   setText("pr-count", String(prGroups.length));
@@ -295,7 +356,7 @@ function renderPrList(groups, selectedPrNumber, onSelect) {
 
     const time = document.createElement("span");
     time.className = "pr-item-time";
-    time.textContent = formatDate(latest.updated_at || latest.created_at);
+    time.textContent = formatDate(entryTimestamp(latest));
 
     const tone = statusClass(
       latest.summary?.coverage_status === "failure" ? "failure" : latest.conclusion
@@ -381,7 +442,7 @@ function renderRunHistory(entries) {
 
       const time = document.createElement("div");
       time.className = "run-history-time";
-      time.textContent = formatTimestamp(entry.updated_at || entry.created_at);
+      time.textContent = formatTimestamp(entryTimestamp(entry));
 
       const stats = document.createElement("div");
       stats.className = "run-history-stats";
@@ -422,7 +483,7 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
   setText(
     "pr-meta",
     `${latest.branch} · ${shortCommit(latest.commit)} · ${formatTimestamp(
-      latest.updated_at || latest.created_at
+      entryTimestamp(latest)
     )} · ${group.entries.length} run${group.entries.length !== 1 ? "s" : ""}`
   );
   setLink("pr-run-link", latest.run_url);
@@ -444,17 +505,6 @@ function renderPrDetail(group, mainEntry, selectedBenchmark, onSelectBenchmark) 
 function renderDashboard(payload) {
   const allEntries = payload.entries || [];
 
-  if (allEntries.length === 0) {
-    setText("repo-name", payload.repo || "Unknown");
-    setText("generated-at", `Updated ${formatTimestamp(payload.generated_at || new Date().toISOString())}`);
-    setText("main-run-count", "0");
-    setText("pr-count", "0");
-    setText("bench-count", "0");
-    setLink("main-coverage-link", null);
-    renderPrDetail(null, null, null, () => {});
-    return;
-  }
-
   const mainRunEntries = mainEntries(allEntries);
   const prGroups = pullRequestGroups(allEntries);
   const mainNames = benchmarkNames(mainRunEntries);
@@ -465,28 +515,22 @@ function renderDashboard(payload) {
     selectedPrNumber: Number(params.get("pr")) || (prGroups[0] ? prGroups[0].number : null),
   };
 
+  const latestMain = mainRunEntries[mainRunEntries.length - 1];
+  renderMeta(payload, mainRunEntries, prGroups);
+  setLink("main-coverage-link", latestMain?.summary?.coverage_url || null);
+  renderMainCharts(mainRunEntries);
+  renderMainLatestTable(latestMain);
+
   function render() {
-    const latestMain = mainRunEntries[mainRunEntries.length - 1];
     const selectedPrGroup = prGroups.find((g) => g.number === state.selectedPrNumber) || null;
     const prBenchNames = selectedPrGroup ? benchmarkNames(selectedPrGroup.entries) : [];
-    const availableNames = mainNames.length > 0 ? mainNames : prBenchNames;
+    const availableNames = prBenchNames.length > 0 ? prBenchNames : mainNames;
 
     if (!availableNames.includes(state.selectedBenchmark)) {
       state.selectedBenchmark = availableNames[0];
     }
 
     updateUrl(state);
-    renderMeta(payload, mainRunEntries, prGroups);
-    setLink("main-coverage-link", latestMain?.summary?.coverage_url || null);
-
-    renderTabs("main-benchmark-tabs", availableNames, state.selectedBenchmark, (name) => {
-      state.selectedBenchmark = name;
-      render();
-    });
-
-    setText("main-chart-title", state.selectedBenchmark || "No benchmark data");
-    renderChart("main-chart", benchmarkSeries(mainRunEntries, state.selectedBenchmark), "main-chart-caption");
-    renderMainLatestTable(latestMain);
 
     renderPrList(prGroups, state.selectedPrNumber, (number) => {
       state.selectedPrNumber = number;
